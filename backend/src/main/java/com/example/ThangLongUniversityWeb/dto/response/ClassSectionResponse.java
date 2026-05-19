@@ -1,0 +1,67 @@
+package com.example.ThangLongUniversityWeb.dto.response;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Thông tin lớp học")
+public class ClassSectionResponse {
+    @Schema(description = "ID của lớp học", example = "1")
+    private Long id;
+    
+    @Schema(description = "Mã lớp học", example = "IT001.N1")
+    private String classCode;
+
+    @Schema(description = "ID môn học", example = "1")
+    private Long courseId;
+    
+    @Schema(description = "Mã môn học", example = "IT001")
+    private String courseCode;
+    
+    @Schema(description = "Tên môn học", example = "Java Core")
+    private String courseName;
+    
+    @Schema(description = "Số tín chỉ", example = "3")
+    private Integer credits;
+
+    @Schema(description = "ID học kỳ", example = "1")
+    private Long semesterId;
+    
+    @Schema(description = "Tên học kỳ", example = "HK1 2025-2026")
+    private String semesterName;
+    
+    @Schema(description = "ID giảng viên", example = "1")
+    private Long teacherId;
+    
+    @Schema(description = "Tên giảng viên", example = "Nguyễn Văn A")
+    private String teacherName;
+
+    @Schema(description = "Phòng học", example = "A301")
+    private String room;
+    
+    @Schema(description = "ID phòng học", example = "1")
+    private Long roomId;
+    
+    @Schema(description = "Sức chứa phòng", example = "60")
+    private Integer roomCapacity;
+    
+    @Schema(description = "Danh sách lịch học (ngày + tiết)")
+    private List<ClassSectionScheduleResponse> schedules;
+
+    @Schema(description = "Sĩ số tối đa", example = "60")
+    private Integer maxSlots;
+    
+    @Schema(description = "Số sinh viên hiện tại", example = "50")
+    private Integer currentSlots;
+    
+    @Schema(description = "Trạng thái đóng ghi danh", example = "false")
+    private boolean isClosed;
+}

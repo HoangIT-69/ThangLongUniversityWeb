@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /teacher/
+Disallow: /student/
+
+Sitemap: https://academe-view-pro.lovable.app/sitemap.xml
