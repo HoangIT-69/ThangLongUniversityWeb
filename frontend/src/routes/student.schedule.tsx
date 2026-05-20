@@ -7,7 +7,7 @@ import { studentApi } from "@/lib/api/student";
 
 export const Route = createFileRoute("/student/schedule")({ component: SchedulePage });
 
-const dayLabels: Record<number, string> = { 1: "Thu 2", 2: "Thu 3", 3: "Thu 4", 4: "Thu 5", 5: "Thu 6", 6: "Thu 7", 7: "CN" };
+const dayLabels: Record<number, string> = { 2: "Thu 2", 3: "Thu 3", 4: "Thu 4", 5: "Thu 5", 6: "Thu 6", 7: "Thu 7", 8: "CN" };
 const periods = [
   { index: 1, start: "07:00", end: "07:50" },
   { index: 2, start: "08:00", end: "08:50" },
@@ -15,7 +15,10 @@ const periods = [
   { index: 4, start: "10:00", end: "10:50" },
   { index: 5, start: "13:00", end: "13:50" },
   { index: 6, start: "14:00", end: "14:50" },
+  { index: 7, start: "15:00", end: "15:50" },
+  { index: 8, start: "16:00", end: "16:50" },
 ];
+const days = [2, 3, 4, 5, 6, 7, 8];
 
 function SchedulePage() {
   const semestersQuery = useQuery({ queryKey: ["student", "semesters"], queryFn: studentApi.listSemesters });
@@ -55,14 +58,14 @@ function SchedulePage() {
           <thead>
             <tr className="bg-muted/40">
               <th className="w-24 border-b p-2 text-left text-xs uppercase tracking-wide text-muted-foreground">Tiet</th>
-              {[1, 2, 3, 4, 5, 6, 7].map((d) => <th key={d} className="border-b border-l p-2 text-left text-xs uppercase tracking-wide text-muted-foreground">{dayLabels[d]}</th>)}
+              {days.map((d) => <th key={d} className="border-b border-l p-2 text-left text-xs uppercase tracking-wide text-muted-foreground">{dayLabels[d]}</th>)}
             </tr>
           </thead>
           <tbody>
             {periods.map((p) => (
               <tr key={p.index}>
                 <td className="border-b p-2 align-top"><div className="font-semibold">Tiet {p.index}</div><div className="text-[10px] tabular-nums text-muted-foreground">{p.start}-{p.end}</div></td>
-                {[1, 2, 3, 4, 5, 6, 7].map((d) => {
+                {days.map((d) => {
                   const cell = cells[`${d}-${p.index}`];
                   return <td key={d} className={cn("h-16 border-b border-l p-1.5 align-top", cell && "bg-primary/5")}>{cell && (
                     <div className="rounded-md border border-primary/30 bg-card p-1.5 text-xs leading-tight">

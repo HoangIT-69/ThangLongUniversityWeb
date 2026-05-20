@@ -195,7 +195,10 @@ export function ChatModule() {
     const page = await listRooms();
     const readRoomId = preferredId ?? activeId;
     setRooms(page.content.map((room) => room.id === readRoomId ? { ...room, unreadCount: 0 } : room));
-    setActiveId((current) => preferredId ?? current ?? page.content[0]?.id ?? null);
+    setActiveId((current) => {
+      if (preferredId) return preferredId;
+      return page.content.some((room) => room.id === current) ? current : null;
+    });
   };
 
   const selectRoom = (roomId: number) => {

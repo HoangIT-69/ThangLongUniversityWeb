@@ -37,5 +37,18 @@ public class AdminEnrollmentController {
     public ResponseEntity<?> override(@RequestBody AdminOverrideEnrollmentRequest request) {
         return ResponseEntity.ok(adminEnrollmentService.overrideEnrollment(request));
     }
-}
 
+    @Operation(summary = "Admin khoa/chot danh sach dang ky dang chon trong hoc ky")
+    @PostMapping("/lock-semester/{semesterId}")
+    public ResponseEntity<?> lockSemester(@PathVariable Long semesterId) {
+        int lockedCount = adminEnrollmentService.lockPendingEnrollments(semesterId);
+        return ResponseEntity.ok("Da chot " + lockedCount + " dang ky cho hoc ky " + semesterId + ".");
+    }
+
+    @Operation(summary = "Admin khoa/chot danh sach dang ky thi lai dang chon trong hoc ky")
+    @PostMapping("/lock-retakes/{semesterId}")
+    public ResponseEntity<?> lockRetakes(@PathVariable Long semesterId) {
+        int lockedCount = adminEnrollmentService.lockPendingRetakes(semesterId);
+        return ResponseEntity.ok("Da chot " + lockedCount + " dang ky thi lai/nang diem cho hoc ky " + semesterId + ".");
+    }
+}

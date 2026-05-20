@@ -5,10 +5,17 @@ import com.example.ThangLongUniversityWeb.dto.request.AdminOverrideEnrollmentReq
 import com.example.ThangLongUniversityWeb.dto.response.AdminEnrollmentResponse;
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
+import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
+import com.example.ThangLongUniversityWeb.entity.Grade;
+import com.example.ThangLongUniversityWeb.entity.Semester;
 import com.example.ThangLongUniversityWeb.entity.Student;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
+import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
+import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
+import com.example.ThangLongUniversityWeb.repository.GradeRepository;
+import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,6 +30,9 @@ public class AdminEnrollmentService {
     private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final ClassSectionRepository classSectionRepository;
+    private final SemesterRepository semesterRepository;
+    private final GradeRepository gradeRepository;
+    private final ExamRegistrationRepository examRegistrationRepository;
 
     public Page<AdminEnrollmentResponse> search(Long semesterId, Long classSectionId, EnrollmentStatus status, Pageable pageable) {
         return enrollmentRepository.searchAdmin(semesterId, classSectionId, status, pageable)
@@ -55,6 +65,56 @@ public class AdminEnrollmentService {
         }
     }
 
+    @Transactional
+    @Audit(action = "ENROLLMENT_LOCK_SEMESTER", targetType = "Enrollment")
+    public int lockPendingEnrollments(Long semesterId) {
+        Semester semester = semesterRepository.findById(semesterId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky."));
+        var pendingEnrollments = enrollmentRepository.findByClassSectionSemesterIdAndStatus(semesterId, EnrollmentStatus.PENDING);
+
+        for (Enrollment enrollment : pendingEnrollments) {
+            enrollment.setStatus(EnrollmentStatus.REGISTERED);
+            Enrollment saved = enrollmentRepository.save(enrollment);
+
+            ClassSection classSection = saved.getClassSection();
+            classSection.setCurrentSlots((classSection.getCurrentSlots() == null ? 0 : classSection.getCurrentSlots()) + 1);
+            classSectionRepository.save(classSection);
+
+            if (saved.getGrade() == null) {
+                Grade grade = new Grade();
+                grade.setEnrollment(saved);
+                grade.setAttemptNumber(1);
+                grade.setEnrollmentType(EnrollmentType.ORDINARY);
+                gradeRepository.save(grade);
+            }
+        }
+
+        semester.setRegistrationOpen(false);
+        semester.setLocked(true);
+        semesterRepository.save(semester);
+
+        return pendingEnrollments.size();
+    }
+
+    @Transactional
+    @Audit(action = "RETAKE_LOCK_SEMESTER", targetType = "ExamRegistration")
+    public int lockPendingRetakes(Long semesterId) {
+        Semester semester = semesterRepository.findById(semesterId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky."));
+        var pendingRetakes = examRegistrationRepository.findByClassSectionSemesterIdAndStatus(semesterId, EnrollmentStatus.PENDING);
+
+        for (ExamRegistration registration : pendingRetakes) {
+            registration.setStatus(EnrollmentStatus.REGISTERED);
+            examRegistrationRepository.save(registration);
+        }
+
+        semester.setRegistrationOpen(false);
+        semester.setLocked(true);
+        semesterRepository.save(semester);
+
+        return pendingRetakes.size();
+    }
+
     private AdminEnrollmentResponse toAdminResponse(Enrollment e) {
         return new AdminEnrollmentResponse(
                 e.getId(),
@@ -69,4 +129,3 @@ public class AdminEnrollmentService {
         );
     }
 }
-

@@ -4,10 +4,13 @@ import com.example.ThangLongUniversityWeb.config.VNPayConfig;
 import com.example.ThangLongUniversityWeb.dto.response.TuitionItemResponse;
 import com.example.ThangLongUniversityWeb.dto.response.TuitionResponse;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
+import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
 import com.example.ThangLongUniversityWeb.entity.Semester;
 import com.example.ThangLongUniversityWeb.entity.Student;
 import com.example.ThangLongUniversityWeb.entity.TuitionBill;
+import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
+import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.repository.TuitionBillRepository;
@@ -30,6 +33,7 @@ public class StudentTuitionService {
 
     private final TuitionBillRepository tuitionBillRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final ExamRegistrationRepository examRegistrationRepository;
     private final StudentRepository studentRepository;
     private final SemesterRepository semesterRepository;
     private final VNPayConfig vnPayConfig;
@@ -49,13 +53,21 @@ public class StudentTuitionService {
         Semester semester = semesterRepository.findById(semesterId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ!"));
 
-        List<Enrollment> enrollments = enrollmentRepository.findByStudentIdAndClassSection_SemesterId(student.getId(), semesterId);
+        List<Enrollment> enrollments = enrollmentRepository.findByStudentIdAndClassSection_SemesterIdAndStatus(
+                student.getId(), semesterId, EnrollmentStatus.REGISTERED);
+        List<ExamRegistration> retakeRegistrations = examRegistrationRepository.findByStudentIdAndClassSectionSemesterIdAndStatus(
+                student.getId(), semesterId, EnrollmentStatus.REGISTERED);
 
         int totalCredits = enrollments.stream()
                 .mapToInt(e -> e.getClassSection().getCourse().getCredits())
                 .sum();
 
-        BigDecimal totalAmount = PRICE_PER_CREDIT.multiply(new BigDecimal(totalCredits));
+        long retakeTotal = retakeRegistrations.stream()
+                .mapToLong(reg -> reg.getFeeCharged() != null ? reg.getFeeCharged() : 0L)
+                .sum();
+
+        BigDecimal totalAmount = PRICE_PER_CREDIT.multiply(new BigDecimal(totalCredits))
+                .add(BigDecimal.valueOf(retakeTotal));
 
         TuitionBill bill = tuitionBillRepository.findByStudentIdAndSemesterId(student.getId(), semesterId)
                 .orElse(new TuitionBill());
@@ -75,6 +87,7 @@ public class StudentTuitionService {
             int credits = course.getCredits() != null ? course.getCredits() : 0;
             long subtotal = PRICE_PER_CREDIT.longValue() * credits;
             return new TuitionItemResponse(
+                    "COURSE",
                     course.getCode(),
                     course.getName(),
                     credits,
@@ -83,13 +96,30 @@ public class StudentTuitionService {
             );
         }).toList();
 
+        List<TuitionItemResponse> retakeItems = retakeRegistrations.stream().map(reg -> {
+            var course = reg.getClassSection().getCourse();
+            long fee = reg.getFeeCharged() != null ? reg.getFeeCharged() : 0L;
+            return new TuitionItemResponse(
+                    "RETAKE",
+                    course.getCode(),
+                    course.getName(),
+                    course.getCredits(),
+                    fee,
+                    fee
+            );
+        }).toList();
+
+        List<TuitionItemResponse> allItems = new ArrayList<>();
+        allItems.addAll(items);
+        allItems.addAll(retakeItems);
+
         return TuitionResponse.builder()
                 .semesterName(semester.getName())
                 .totalCredits(totalCredits)
                 .totalAmount(bill.getTotalAmount().longValue())
                 .pricePerCredit(PRICE_PER_CREDIT.longValue())
                 .isPaid(bill.isCompleted())
-                .items(items)
+                .items(allItems)
                 .build();
     }
 

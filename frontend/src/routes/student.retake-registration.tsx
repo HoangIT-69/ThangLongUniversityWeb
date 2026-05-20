@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Lock, X } from "lucide-react";
 import { studentApi } from "@/lib/api/student";
 
 export const Route = createFileRoute("/student/retake-registration")({ component: RetakePage });
@@ -45,19 +45,33 @@ function RetakePage() {
     enabled: semesterId != null,
   });
 
+  const currentSemester = semestersQuery.data?.find((s) => s.id === semesterId);
+  const readonly = Boolean(currentSemester?.locked || !currentSemester?.registrationOpen);
+
   const registerMutation = useMutation({
-    mutationFn: (courseIds: number[]) => studentApi.registerRetakes(courseIds),
+    mutationFn: (courseIds: number[]) => studentApi.registerRetakes(courseIds, semesterId),
     onSuccess: (response) => {
       setLastResult({ count: response.registeredCount, totalFee: response.totalFee });
       setSelectedCourseIds(new Set());
       queryClient.invalidateQueries({ queryKey: ["student", "retakes"] });
-      toast.success(`Đã đăng ký thành công ${response.registeredCount} môn. Phí: ${formatVND(response.totalFee)}`);
+      toast.success(`Đã thêm ${response.registeredCount} môn vào danh sách chờ. Phí sẽ tính sau khi admin chốt.`);
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Đăng ký thất bại"),
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (examRegistrationId: number) => studentApi.cancelRetake(examRegistrationId),
+    onSuccess: (message) => {
+      queryClient.invalidateQueries({ queryKey: ["student", "retakes"] });
+      toast.success(message || "Đã bỏ chọn thi lại / nâng điểm");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Bỏ chọn thất bại"),
+  });
+
   const rows = eligibleQuery.data ?? [];
-  const registeredCourseIds = new Set((requestsQuery.data ?? []).map((r) => r.courseId));
+  const requests = requestsQuery.data ?? [];
+  const requestedCourseIds = new Set(requests.map((r) => r.courseId));
+  const pendingRequests = requests.filter((r) => r.status === "PENDING");
   const feePerCourse = rows[0]?.retakeFee ?? 200000;
   const totalFee = selectedCourseIds.size * feePerCourse;
 
@@ -92,13 +106,20 @@ function RetakePage() {
             >
               {semesterOptions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            <Button onClick={submit} disabled={selectedCourseIds.size === 0 || registerMutation.isPending}>
+            <Button onClick={submit} disabled={readonly || selectedCourseIds.size === 0 || registerMutation.isPending}>
               {registerMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Xác nhận đăng ký ({selectedCourseIds.size})
             </Button>
           </>
         }
       />
+
+      {readonly && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          <Lock className="h-4 w-4" />
+          Kỳ đăng ký đã đóng hoặc đã khóa. Danh sách hiện tại chỉ được xem.
+        </div>
+      )}
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card className="p-5">
@@ -113,6 +134,40 @@ function RetakePage() {
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Tổng học phí dự kiến</div>
           <div className="mt-2 text-2xl font-semibold text-primary">{formatVND(totalFee)}</div>
         </Card>
+      </div>
+
+      <div className="mb-6 rounded-xl border bg-card p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold">Danh sách thi lại / nâng điểm đã chọn</h2>
+          <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">{pendingRequests.length} môn</span>
+        </div>
+        <div className="mt-3 divide-y">
+          {requestsQuery.isLoading ? (
+            <div className="py-4 text-sm text-muted-foreground">Đang tải danh sách...</div>
+          ) : pendingRequests.length === 0 ? (
+            <div className="py-4 text-sm text-muted-foreground">Chưa có môn nào ở trạng thái PENDING.</div>
+          ) : pendingRequests.map((r) => {
+            const canceling = cancelMutation.isPending && cancelMutation.variables === r.enrollmentId;
+            return (
+              <div key={r.enrollmentId} className="flex items-center justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{r.courseName}</div>
+                  <div className="text-xs text-muted-foreground">{r.courseCode} - {r.classCode} - {r.enrollmentType}</div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={readonly || canceling}
+                  onClick={() => cancelMutation.mutate(r.enrollmentId)}
+                >
+                  {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                  Bỏ chọn
+                </Button>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {eligibleQuery.isError && (
@@ -133,26 +188,26 @@ function RetakePage() {
             <div className="py-10 text-center text-sm text-muted-foreground">Không có môn đủ điều kiện trong học kỳ này.</div>
           ) : (
             rows.map((r) => {
-              const alreadyRegistered = registeredCourseIds.has(r.courseId);
+              const alreadyRequested = requestedCourseIds.has(r.courseId);
               const isSelected = selectedCourseIds.has(r.courseId);
               return (
                 <label
                   key={r.courseId}
-                  className={`flex cursor-pointer items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/30 ${alreadyRegistered ? "opacity-60 cursor-not-allowed" : ""}`}
+                  className={`flex cursor-pointer items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/30 ${alreadyRequested || readonly ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
                   <input
                     type="checkbox"
                     className="h-4 w-4"
-                    checked={isSelected || alreadyRegistered}
-                    disabled={alreadyRegistered}
-                    onChange={() => !alreadyRegistered && toggleCourse(r.courseId)}
+                    checked={isSelected || alreadyRequested}
+                    disabled={alreadyRequested || readonly}
+                    onChange={() => !alreadyRequested && !readonly && toggleCourse(r.courseId)}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium">{r.courseName}</span>
                       <span className="font-mono text-xs text-muted-foreground">{r.courseCode}</span>
                       <StatusBadge value={r.registrationType} />
-                      {alreadyRegistered && <StatusBadge value="REGISTERED" />}
+                      {alreadyRequested && <StatusBadge value={(requests.find((req) => req.courseId === r.courseId)?.status) ?? "PENDING"} />}
                     </div>
                     <div className="mt-0.5 flex gap-4 text-xs text-muted-foreground">
                       <span>{r.credits} tín chỉ</span>
@@ -178,26 +233,24 @@ function RetakePage() {
         <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />
         <div>
           <div className="font-medium text-amber-700 dark:text-amber-400">Lưu ý</div>
-          <ul className="mt-1 list-inside list-disc text-muted-foreground">
-            <li>Điểm tổng kết dưới 4: đăng ký thi lại.</li>
-            <li>Điểm tổng kết từ 4 đến dưới 8: đăng ký thi nâng điểm.</li>
-            <li>Học phí mỗi môn là {formatVND(feePerCourse)}, cố định theo quy định.</li>
-          </ul>
+          <div className="mt-1 text-muted-foreground">
+            Điểm dưới 4 là thi lại, từ 4 đến dưới 8 là nâng điểm. Phí {formatVND(feePerCourse)} mỗi môn chỉ cộng vào học phí sau khi admin khóa/chốt.
+          </div>
         </div>
       </div>
 
       {lastResult && (
         <div className="mt-4 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 p-4 text-sm">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <span>Đã đăng ký thành công <strong>{lastResult.count}</strong> môn. Tổng phí: <strong>{formatVND(lastResult.totalFee)}</strong>.</span>
+          <span>Đã thêm <strong>{lastResult.count}</strong> môn vào danh sách chờ. Phí dự kiến: <strong>{formatVND(lastResult.totalFee)}</strong>.</span>
         </div>
       )}
 
-      {(requestsQuery.data ?? []).length > 0 && (
+      {requests.length > 0 && (
         <div className="mt-6">
           <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Đã đăng ký thi lại</h3>
           <div className="rounded-xl border bg-card shadow-sm divide-y">
-            {(requestsQuery.data ?? []).map((r) => (
+            {requests.map((r) => (
               <div key={r.enrollmentId} className="flex items-center justify-between px-4 py-3">
                 <div>
                   <div className="font-medium">{r.courseName}</div>
@@ -205,6 +258,7 @@ function RetakePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {r.enrollmentType && <StatusBadge value={r.enrollmentType} />}
+                  {r.status && <StatusBadge value={r.status} />}
                   {r.totalScore != null && (
                     <span className="text-xs text-muted-foreground">Điểm: {r.totalScore.toFixed(1)}</span>
                   )}

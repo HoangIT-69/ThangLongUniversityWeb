@@ -1,35 +1,80 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Loader2, Check } from "lucide-react";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { Check, ChevronDown, Loader2, Lock, X } from "lucide-react";
 import { toast } from "sonner";
 import { studentApi } from "@/lib/api/student";
-import type { ClassSectionResponse } from "@/lib/api/types";
+import type { ClassSectionResponse, EnrollmentResponse } from "@/lib/api/types";
 
 export const Route = createFileRoute("/student/course-registration")({ component: CourseRegistrationPage });
 
 const dayLabels: Record<number, string> = {
-  1: "Thu 2",
-  2: "Thu 3",
-  3: "Thu 4",
-  4: "Thu 5",
-  5: "Thu 6",
-  6: "Thu 7",
-  7: "CN",
+  2: "Thu 2",
+  3: "Thu 3",
+  4: "Thu 4",
+  5: "Thu 5",
+  6: "Thu 6",
+  7: "Thu 7",
+  8: "CN",
 };
 
-function formatVND(value: number) {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
-}
+type CourseGroup = {
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  credits: number;
+  courseType: "REQUIRED" | "ELECTIVE";
+  courseTypeLabel: string;
+  sections: ClassSectionResponse[];
+};
 
 function formatSchedule(section: ClassSectionResponse) {
   if (!section.schedules?.length) return "Chua co lich";
   return section.schedules
-    .map((s) => `${dayLabels[s.dayOfWeek] ?? `Thu ${s.dayOfWeek}`} tiet ${s.startPeriod}-${s.endPeriod}${s.roomName ? ` ${s.roomName}` : ""}`)
-    .join(" - ");
+    .map((s) => `${dayLabels[s.dayOfWeek] ?? `Thu ${s.dayOfWeek}`} tiet ${s.startPeriod}-${s.endPeriod}${s.roomName ? `, ${s.roomName}` : ""}`)
+    .join(" | ");
+}
+
+function getSeats(section: ClassSectionResponse) {
+  return Math.max((section.maxSlots ?? 0) - (section.currentSlots ?? 0), 0);
+}
+
+function isPeriodOverlap(startA: number, endA: number, startB: number, endB: number) {
+  return startA <= endA && startB <= endB && startA <= endB && startB <= endA;
+}
+
+function overlapsSelectedSchedule(section: ClassSectionResponse, selected: EnrollmentResponse[]) {
+  return section.schedules.some((schedule) =>
+    selected.some((item) =>
+      item.classSectionId !== section.id &&
+      item.dayOfWeek === schedule.dayOfWeek &&
+      isPeriodOverlap(schedule.startPeriod, schedule.endPeriod, item.startPeriod, item.endPeriod)
+    )
+  );
+}
+
+function groupByCourse(sections: ClassSectionResponse[]): CourseGroup[] {
+  const groups = new Map<number, CourseGroup>();
+  for (const section of sections) {
+    const courseType = section.courseType ?? "REQUIRED";
+    const existing = groups.get(section.courseId);
+    if (existing) {
+      existing.sections.push(section);
+      continue;
+    }
+    groups.set(section.courseId, {
+      courseId: section.courseId,
+      courseCode: section.courseCode,
+      courseName: section.courseName,
+      credits: section.credits,
+      courseType,
+      courseTypeLabel: section.courseTypeLabel ?? (courseType === "ELECTIVE" ? "Tu chon" : "Bat buoc"),
+      sections: [section],
+    });
+  }
+  return Array.from(groups.values()).sort((a, b) => a.courseCode.localeCompare(b.courseCode));
 }
 
 function CourseRegistrationPage() {
@@ -37,7 +82,7 @@ function CourseRegistrationPage() {
   const semestersQuery = useQuery({ queryKey: ["student", "semesters"], queryFn: studentApi.listSemesters });
   const semesters = semestersQuery.data ?? [];
   const [semesterId, setSemesterId] = useState<number | null>(null);
-  const [sentIds, setSentIds] = useState<Record<number, string>>({});
+  const [activeType, setActiveType] = useState<"REQUIRED" | "ELECTIVE">("REQUIRED");
 
   useEffect(() => {
     if (!semesterId && semesters.length) {
@@ -45,88 +90,219 @@ function CourseRegistrationPage() {
     }
   }, [semesterId, semesters]);
 
+  const currentSemester = semesters.find((s) => s.id === semesterId);
+  const readonly = Boolean(currentSemester?.locked || !currentSemester?.registrationOpen);
+
   const classesQuery = useQuery({
     queryKey: ["student", "available-classes", semesterId],
     queryFn: () => studentApi.listAvailableClasses(semesterId as number),
     enabled: semesterId != null,
   });
 
-  const enrollMutation = useMutation({
-    mutationFn: (classSectionId: number) => studentApi.enrollClass(classSectionId),
-    onSuccess: (response, classSectionId) => {
-      setSentIds((current) => ({ ...current, [classSectionId]: response.requestId }));
-      queryClient.invalidateQueries({ queryKey: ["student", "available-classes", semesterId] });
-      toast.success(response.message || "Da gui yeu cau dang ky");
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Dang ky that bai"),
+  const selectedQuery = useQuery({
+    queryKey: ["student", "selected-enrollments", semesterId],
+    queryFn: () => studentApi.listSelectedEnrollments(semesterId as number),
+    enabled: semesterId != null,
   });
 
-  const list = classesQuery.data ?? [];
+  const invalidateRegistration = () => {
+    queryClient.invalidateQueries({ queryKey: ["student", "available-classes", semesterId] });
+    queryClient.invalidateQueries({ queryKey: ["student", "selected-enrollments", semesterId] });
+    queryClient.invalidateQueries({ queryKey: ["student", "schedule", semesterId] });
+    queryClient.invalidateQueries({ queryKey: ["student", "tuition", semesterId] });
+  };
+
+  const enrollMutation = useMutation({
+    mutationFn: (classSectionId: number) => studentApi.enrollClass(classSectionId),
+    onSuccess: (response) => {
+      invalidateRegistration();
+      toast.success(response.message || "Da chon lop hoc phan");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Chon lop that bai"),
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (classSectionId: number) => studentApi.cancelClass(classSectionId),
+    onSuccess: (message) => {
+      invalidateRegistration();
+      toast.success(message || "Da bo chon lop hoc phan");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Bo chon that bai"),
+  });
+
+  const selected = selectedQuery.data ?? [];
+  const selectedByClassId = useMemo(() => {
+    const map = new Map<number, EnrollmentResponse>();
+    selected.forEach((item) => {
+      if (item.classSectionId != null) map.set(item.classSectionId, item);
+    });
+    return map;
+  }, [selected]);
+
+  const selectedCourseCodes = useMemo(() => new Set(selected.map((item) => item.courseCode).filter(Boolean)), [selected]);
+  const selectedCredits = selected.reduce((sum, item) => sum + (item.credits ?? 0), 0);
+
+  const groups = useMemo(() => groupByCourse(classesQuery.data ?? []), [classesQuery.data]);
+  const visibleGroups = groups.filter((group) => group.courseType === activeType);
 
   return (
     <div>
       <PageHeader
         title="Dang ky mon hoc"
-        description="Chon lop hoc phan de dang ky"
+        description="Chon lop hoc phan vao danh sach cho, admin se chot sau"
         actions={
           <select
             className="h-9 rounded-md border bg-background px-3 text-sm"
             value={semesterId ?? ""}
-            onChange={(e) => {
-              setSemesterId(Number(e.target.value));
-              setSentIds({});
-            }}
+            onChange={(e) => setSemesterId(Number(e.target.value))}
           >
             {semesters.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         }
       />
 
-      {classesQuery.isError && (
-        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          {classesQuery.error instanceof Error ? classesQuery.error.message : "Khong tai duoc danh sach lop hoc phan"}
+      {readonly && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          <Lock className="h-4 w-4" />
+          Ky dang ky da dong hoac da khoa. Danh sach hien tai chi duoc xem.
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {classesQuery.isLoading ? (
-          <div className="col-span-full rounded-lg border bg-card p-6 text-sm text-muted-foreground">Dang tai du lieu...</div>
-        ) : list.length === 0 ? (
-          <div className="col-span-full rounded-lg border bg-card p-6 text-sm text-muted-foreground">Khong co lop hoc phan phu hop.</div>
-        ) : list.map((cs) => {
-          const seats = Math.max((cs.maxSlots ?? 0) - (cs.currentSlots ?? 0), 0);
-          const sent = sentIds[cs.id];
-          const isPending = enrollMutation.isPending && enrollMutation.variables === cs.id;
-          const closed = cs.closed || seats <= 0;
+      {(classesQuery.isError || selectedQuery.isError) && (
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          Khong tai duoc du lieu dang ky hoc phan.
+        </div>
+      )}
 
-          return (
-            <div key={cs.id} className="flex flex-col rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="font-mono text-xs text-muted-foreground">{cs.classCode}</div>
-                  <h3 className="mt-0.5 truncate font-semibold">{cs.courseName}</h3>
-                </div>
-                <StatusBadge value={closed ? "CLOSED" : "OPEN"} />
-              </div>
-              <div className="mt-3 space-y-1.5 text-sm">
-                <div className="text-muted-foreground">GV: <span className="text-foreground">{cs.teacherName ?? "Chua phan cong"}</span></div>
-                <div className="text-muted-foreground">Lich: <span className="text-foreground">{formatSchedule(cs)}</span></div>
-                <div className="text-muted-foreground">Con lai: <span className={seats < 5 ? "font-semibold text-destructive" : "font-semibold text-success"}>{seats}/{cs.maxSlots ?? 0}</span></div>
-                <div className="text-muted-foreground">Hoc phi du kien: <span className="font-medium tabular-nums text-foreground">{formatVND((cs.credits ?? 0) * 850000)}</span></div>
-              </div>
-              <div className="mt-4">
-                {sent ? (
-                  <Button className="w-full gap-2" variant="outline" disabled><Check className="h-4 w-4 text-success" />Da gui yeu cau</Button>
-                ) : (
-                  <Button className="w-full gap-2" disabled={closed || isPending} onClick={() => enrollMutation.mutate(cs.id)}>
-                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                    Dang ky
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="min-w-0">
+          <div className="mb-3 inline-flex rounded-lg border bg-background p-1">
+            <button
+              type="button"
+              className={`rounded-md px-3 py-1.5 text-sm ${activeType === "REQUIRED" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              onClick={() => setActiveType("REQUIRED")}
+            >
+              Mon bat buoc cua nganh
+            </button>
+            <button
+              type="button"
+              className={`rounded-md px-3 py-1.5 text-sm ${activeType === "ELECTIVE" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              onClick={() => setActiveType("ELECTIVE")}
+            >
+              Tin chi tu do / tu chon
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {classesQuery.isLoading ? (
+              <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">Dang tai du lieu...</div>
+            ) : visibleGroups.length === 0 ? (
+              <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">Khong co mon hoc phu hop.</div>
+            ) : visibleGroups.map((course) => {
+              const courseSelected = selectedCourseCodes.has(course.courseCode);
+              return (
+                <details key={course.courseId} className="group rounded-lg border bg-card">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs text-muted-foreground">{course.courseCode}</span>
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{course.courseTypeLabel}</span>
+                        {courseSelected && <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs font-medium text-success">Da chon</span>}
+                      </div>
+                      <div className="mt-1 truncate font-medium">{course.courseName}</div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
+                      <span>{course.credits} TC</span>
+                      <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                    </div>
+                  </summary>
+
+                  <div className="border-t">
+                    {course.sections.map((section) => {
+                      const selectedClass = selectedByClassId.get(section.id);
+                      const hasSelectedOtherClass = courseSelected && !selectedClass;
+                      const overlapsSelected = !selectedClass && overlapsSelectedSchedule(section, selected);
+                      const seats = getSeats(section);
+                      const closed = section.closed || seats <= 0;
+                      const enrolling = enrollMutation.isPending && enrollMutation.variables === section.id;
+                      const canceling = cancelMutation.isPending && cancelMutation.variables === section.id;
+                      const disabled = readonly || closed || hasSelectedOtherClass || overlapsSelected || enrolling || canceling;
+
+                      return (
+                        <div key={section.id} className="grid gap-3 border-b px-4 py-3 last:border-b-0 lg:grid-cols-[minmax(0,1fr)_132px] lg:items-center">
+                          <div className="min-w-0 text-sm">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                              <span className="font-mono font-medium">{section.classCode}</span>
+                              <span className="text-muted-foreground">GV: {section.teacherName ?? "Chua phan cong"}</span>
+                            </div>
+                            <div className="mt-1 text-muted-foreground">Lich: <span className="text-foreground">{formatSchedule(section)}</span></div>
+                            <div className="mt-1 text-muted-foreground">Slot: <span className={seats < 5 ? "font-medium text-destructive" : "font-medium text-success"}>{seats}/{section.maxSlots ?? 0}</span></div>
+                            {overlapsSelected && <div className="mt-1 text-xs font-medium text-destructive">Trung lich voi lop da chon</div>}
+                          </div>
+                          {selectedClass ? (
+                            <Button variant="outline" className="gap-2" disabled={readonly || canceling} onClick={() => cancelMutation.mutate(section.id)}>
+                              {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                              Bo chon
+                            </Button>
+                          ) : (
+                            <Button className="gap-2" disabled={disabled} onClick={() => enrollMutation.mutate(section.id)}>
+                              {enrolling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                              {overlapsSelected ? "Trung lich" : hasSelectedOtherClass ? "Da chon lop khac" : "Chon lop"}
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        </section>
+
+        <aside className="h-fit rounded-lg border bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-semibold">Danh sach hoc phan da chon</h2>
+            <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">{selectedCredits} TC</span>
+          </div>
+          <div className="mt-4 space-y-3">
+            {selectedQuery.isLoading ? (
+              <div className="text-sm text-muted-foreground">Dang tai danh sach...</div>
+            ) : selected.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Chua co lop nao o trang thai PENDING.</div>
+            ) : selected.map((item) => {
+              const classSectionId = item.classSectionId;
+              const canceling = classSectionId != null && cancelMutation.isPending && cancelMutation.variables === classSectionId;
+              return (
+                <div key={item.enrollmentId} className="rounded-lg border p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs text-muted-foreground">{item.classCode}</div>
+                      <div className="truncate text-sm font-medium">{item.courseName}</div>
+                    </div>
+                    <span className="shrink-0 rounded-md bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">PENDING</span>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {item.courseCode ? `${item.courseCode} - ` : ""}{item.credits} TC - {item.teacherName ?? "Chua phan cong"}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {dayLabels[item.dayOfWeek] ?? `Thu ${item.dayOfWeek}`} tiet {item.startPeriod}-{item.endPeriod}{item.room ? `, ${item.room}` : ""}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full gap-2"
+                    disabled={readonly || classSectionId == null || canceling}
+                    onClick={() => classSectionId != null && cancelMutation.mutate(classSectionId)}
+                  >
+                    {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                    Bo chon
                   </Button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+                </div>
+              );
+            })}
+          </div>
+        </aside>
       </div>
     </div>
   );

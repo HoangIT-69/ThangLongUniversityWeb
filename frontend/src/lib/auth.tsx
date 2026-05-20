@@ -7,6 +7,7 @@ interface AuthState {
   role: Role | null;
   name: string | null;
   profile: UserProfile | null;
+  isRestoring: boolean;
   login: (username: string, password: string) => Promise<Role>;
   setRole: (r: Role | null) => void;
   logout: () => Promise<void>;
@@ -18,16 +19,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<Role | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isRestoring, setIsRestoring] = useState(() => Boolean(getStoredAuth()));
 
   useEffect(() => {
+    let alive = true;
     const stored = getStoredAuth();
-    if (!stored) return;
+    if (!stored) {
+      setIsRestoring(false);
+      return;
+    }
 
     setRoleState(stored.role);
     setName(stored.name ?? null);
 
     authApi.getMe()
       .then((me) => {
+        if (!alive) return;
         const displayName = me.fullName || me.username;
         setProfile(me);
         setRoleState(me.role);
@@ -35,11 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStoredAuth({ ...stored, role: me.role, name: displayName });
       })
       .catch(() => {
+        if (!alive) return;
         setStoredAuth(null);
         setRoleState(null);
         setName(null);
         setProfile(null);
+      })
+      .finally(() => {
+        if (alive) setIsRestoring(false);
       });
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const clearAuth = () => {
@@ -47,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setName(null);
     setProfile(null);
     setStoredAuth(null);
+    setIsRestoring(false);
   };
 
   const setRole = (r: Role | null) => {
@@ -80,7 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return <Ctx.Provider value={{ role, name, profile, login, setRole, logout }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ role, name, profile, isRestoring, login, setRole, logout }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth() {

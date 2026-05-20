@@ -3,21 +3,20 @@ package com.example.ThangLongUniversityWeb.service;
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionResponse;
 import com.example.ThangLongUniversityWeb.dto.response.EnrollmentRequestResponse;
 import com.example.ThangLongUniversityWeb.dto.response.EnrollmentResponse;
+import com.example.ThangLongUniversityWeb.dto.response.StudentExamResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentGradeItemResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentGradesSummaryResponse;
-import com.example.ThangLongUniversityWeb.dto.response.StudentExamResponse;
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
+import com.example.ThangLongUniversityWeb.entity.Course;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.entity.Grade;
 import com.example.ThangLongUniversityWeb.entity.Student;
+import com.example.ThangLongUniversityWeb.enums.CourseType;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
-import com.example.ThangLongUniversityWeb.utils.ScheduleUtils;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,36 +29,27 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class StudentEnrollmentService {
-    private static final Logger log = LoggerFactory.getLogger(StudentEnrollmentService.class);
 
     private final EnrollmentRepository enrollmentRepository;
     private final ClassSectionRepository classSectionRepository;
     private final StudentRepository studentRepository;
     private final ClassSectionService classSectionService;
-    private final EnrollmentRequestStatusService enrollmentRequestStatusService;
 
-    /**
-     * Strategy pattern: DirectEnrollmentProcessor (kafka=false) hoặc KafkaEnrollmentProcessor (kafka=true).
-     * Được inject bởi Spring dựa vào @ConditionalOnProperty.
-     */
-    private final EnrollmentProcessor enrollmentProcessor;
-
-    // --- HÀM TIỆN ÍCH: LẤY THÔNG TIN SINH VIÊN TỪ TOKEN ---
     private Student getCurrentStudent() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return studentRepository.findByUser_Username(username)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin sinh viên của tài khoản này!"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay thong tin sinh vien cua tai khoan nay!"));
     }
 
-    // 1. XEM DANH SÁCH LỚP ĐANG MỞ (Đã giấu các môn đã học / đang học)
     public List<ClassSectionResponse> getAvailableClasses(Long semesterId) {
         Student student = getCurrentStudent();
-
         List<ClassSection> allSectionsInSemester = classSectionRepository.findBySemesterId(semesterId);
 
         return allSectionsInSemester.stream()
+                .filter(section -> isVisibleForStudentMajor(section, student))
                 .filter(section -> {
-                    List<Enrollment> sameCourseEnrollments = enrollmentRepository.findByStudentIdAndCourseIdOrderByIdDesc(student.getId(), section.getCourse().getId());
+                    List<Enrollment> sameCourseEnrollments = enrollmentRepository.findByStudentIdAndCourseIdOrderByIdDesc(
+                            student.getId(), section.getCourse().getId());
                     return sameCourseEnrollments.stream().noneMatch(e -> e.getStatus() == EnrollmentStatus.REGISTERED
                             && e.getClassSection().getSemester().getId().equals(section.getSemester().getId()));
                 })
@@ -67,31 +57,40 @@ public class StudentEnrollmentService {
                 .collect(Collectors.toList());
     }
 
-    // 2. ĐĂNG KÝ MÔN HỌC — sử dụng EnrollmentProcessor (Direct hoặc Kafka)
     @Transactional
     public EnrollmentRequestResponse registerClass(Long classSectionId) {
         Student student = getCurrentStudent();
-
         ClassSection targetClass = classSectionRepository.findById(classSectionId)
-                .orElseThrow(() -> new RuntimeException("Lớp học phần không tồn tại!"));
+                .orElseThrow(() -> new RuntimeException("Lop hoc phan khong ton tai!"));
 
-        // Luật 1 & 2: Mở cửa + Còn slot
         if (!targetClass.getSemester().isRegistrationOpen()) {
-            throw new RuntimeException("Học kỳ này hiện không mở cổng đăng ký!");
+            throw new RuntimeException("Hoc ky nay hien khong mo cong dang ky!");
         }
-        if (targetClass.isClosed() || targetClass.getCurrentSlots() >= targetClass.getMaxSlots()) {
-            throw new RuntimeException("Lớp học đã đầy hoặc bị khóa!");
+        if (targetClass.getSemester().isLocked()) {
+            throw new RuntimeException("Hoc ky nay da bi khoa/chot.");
         }
-
-        // Luật 3: Chống trùng môn trong cùng học kỳ
-        List<Enrollment> previousCourseEnrollments = enrollmentRepository.findByStudentIdAndCourseIdOrderByIdDesc(student.getId(), targetClass.getCourse().getId());
-        if (previousCourseEnrollments.stream().anyMatch(e -> e.getStatus() == EnrollmentStatus.REGISTERED &&
-                e.getClassSection().getSemester().getId().equals(targetClass.getSemester().getId()))) {
-            throw new RuntimeException("Bạn đã đăng ký môn này rồi trong cùng học kỳ.");
+        if (targetClass.isClosed()) {
+            throw new RuntimeException("Lop hoc phan da bi khoa!");
         }
 
-        // Luật 3.1: Check môn học tiên quyết
-        Set<com.example.ThangLongUniversityWeb.entity.Course> prereqs = targetClass.getCourse().getPrerequisites();
+        Enrollment existingEnrollment = enrollmentRepository.findByStudentIdAndClassSectionId(student.getId(), classSectionId)
+                .orElse(null);
+        if (existingEnrollment != null && existingEnrollment.getStatus() == EnrollmentStatus.PENDING) {
+            return new EnrollmentRequestResponse(null,
+                    "Lop " + targetClass.getClassCode() + " da co trong danh sach chon.");
+        }
+        if (existingEnrollment != null && existingEnrollment.getStatus() == EnrollmentStatus.REGISTERED) {
+            throw new RuntimeException("Lop " + targetClass.getClassCode() + " da duoc chot dang ky.");
+        }
+
+        List<Enrollment> previousCourseEnrollments = enrollmentRepository.findByStudentIdAndCourseIdOrderByIdDesc(
+                student.getId(), targetClass.getCourse().getId());
+        if (previousCourseEnrollments.stream().anyMatch(e -> isActiveSelection(e)
+                && e.getClassSection().getSemester().getId().equals(targetClass.getSemester().getId()))) {
+            throw new RuntimeException("Ban da chon/dang ky mon nay trong cung hoc ky.");
+        }
+
+        Set<Course> prereqs = targetClass.getCourse().getPrerequisites();
         if (prereqs != null && !prereqs.isEmpty()) {
             List<Long> passedCourseIds = enrollmentRepository.findPassedCourseIdsByStudentId(student.getId());
             List<String> missing = prereqs.stream()
@@ -99,76 +98,69 @@ public class StudentEnrollmentService {
                     .map(p -> (p.getMajor() != null ? p.getMajor().getMajorCode() : "Unknown") + " - " + p.getName())
                     .collect(Collectors.toList());
             if (!missing.isEmpty()) {
-                throw new RuntimeException("Bạn chưa hoàn thành môn tiên quyết: " + String.join(", ", missing));
+                throw new RuntimeException("Ban chua hoan thanh mon tien quyet: " + String.join(", ", missing));
             }
         }
 
-        // Luật 4: Chống trùng thời khóa biểu
-        List<ClassSection> currentRegisteredClasses = enrollmentRepository.findCurrentRegisteredClasses(student.getId(), targetClass.getSemester().getId());
-        for (ClassSection enrolledClass : currentRegisteredClasses) {
+        List<ClassSection> currentClasses = enrollmentRepository.findCurrentSelectedOrRegisteredClasses(
+                student.getId(), targetClass.getSemester().getId());
+        for (ClassSection enrolledClass : currentClasses) {
             if (enrolledClass.isOverlapping(targetClass)) {
-                throw new RuntimeException("Trùng lịch học với lớp: " + enrolledClass.getClassCode()
-                        + " (T" + enrolledClass.getDayOfWeek() + "(" + enrolledClass.getStartPeriod().getPeriodNumber() + "-" + enrolledClass.getEndPeriod().getPeriodNumber() + "))");
+                throw new RuntimeException("Trung lich hoc voi lop: " + enrolledClass.getClassCode());
             }
         }
 
-        // =========== DELEGATE TO PROCESSOR (Direct hoặc Kafka) ===========
-        return enrollmentProcessor.process(student, targetClass);
+        Enrollment enrollment = existingEnrollment != null ? existingEnrollment : new Enrollment();
+        enrollment.setStudent(student);
+        enrollment.setClassSection(targetClass);
+        enrollment.setStatus(EnrollmentStatus.PENDING);
+        enrollmentRepository.save(enrollment);
+
+        return new EnrollmentRequestResponse(null,
+                "Da them lop " + targetClass.getClassCode() + " vao danh sach chon.");
     }
 
-    // 3. HỦY MÔN HỌC (RÚT ĐĂNG KÝ)
     @Transactional
     public String cancelClass(Long classSectionId) {
         Student student = getCurrentStudent();
-
         Enrollment enrollment = enrollmentRepository.findByStudentIdAndClassSectionId(student.getId(), classSectionId)
-                .orElseThrow(() -> new RuntimeException("Bạn chưa đăng ký lớp này nên không thể hủy!"));
+                .orElseThrow(() -> new RuntimeException("Ban chua chon lop nay nen khong the bo chon!"));
 
-        if (!enrollment.getClassSection().getSemester().isRegistrationOpen()) {
-            throw new RuntimeException("Đã hết hạn rút môn học!");
+        if (!enrollment.getClassSection().getSemester().isRegistrationOpen()
+                || enrollment.getClassSection().getSemester().isLocked()) {
+            throw new RuntimeException("Da het han bo chon hoc phan!");
+        }
+        if (enrollment.getStatus() != EnrollmentStatus.PENDING) {
+            throw new RuntimeException("Chi co the bo chon lop dang o trang thai PENDING.");
         }
 
+        String classCode = enrollment.getClassSection().getClassCode();
         enrollmentRepository.delete(enrollment);
-
-        ClassSection classSection = enrollment.getClassSection();
-        classSection.setCurrentSlots(classSection.getCurrentSlots() - 1);
-        classSectionRepository.save(classSection);
-
-        return "Đã hủy đăng ký lớp " + classSection.getClassCode() + " thành công!";
+        return "Da bo chon lop " + classCode + " thanh cong!";
     }
 
-    // 4. XEM TKB CỦA MÌNH
     public List<EnrollmentResponse> getMySchedule(Long semesterId) {
         Student student = getCurrentStudent();
-
-        return enrollmentRepository.findByStudentIdAndClassSection_SemesterId(student.getId(), semesterId)
+        return enrollmentRepository.findByStudentIdAndClassSection_SemesterIdAndStatus(
+                        student.getId(), semesterId, EnrollmentStatus.REGISTERED)
                 .stream()
-                .map(enrollment -> {
-                    Grade grade = enrollment.getGrade();
-                    return EnrollmentResponse.builder()
-                            .enrollmentId(enrollment.getId())
-                            .classCode(enrollment.getClassSection().getClassCode())
-                            .courseName(enrollment.getClassSection().getCourse().getName())
-                            .credits(enrollment.getClassSection().getCourse().getCredits())
-                            .room(enrollment.getClassSection().getRoom() != null ? enrollment.getClassSection().getRoom().getName() : null)
-                            .dayOfWeek(enrollment.getClassSection().getDayOfWeek())
-                            .startPeriod(enrollment.getClassSection().getStartPeriod().getPeriodNumber())
-                            .endPeriod(enrollment.getClassSection().getEndPeriod().getPeriodNumber())
-                            .teacherName(enrollment.getClassSection().getTeacher() != null ?
-                                    enrollment.getClassSection().getTeacher().getFullName() : "Chưa có")
-                            // Điểm lấy từ Grade (nguồn sự thật duy nhất)
-                            .midTermScore(grade != null ? grade.getMidtermScore() : null)
-                            .finalScore(grade != null ? grade.getFinalScore() : null)
-                            .totalScore(grade != null ? grade.getTotalScore() : null)
-                            .status(enrollment.getStatus().name())
-                            .build();
-                })
+                .map(this::mapToEnrollmentResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<EnrollmentResponse> getSelectedEnrollments(Long semesterId) {
+        Student student = getCurrentStudent();
+        return enrollmentRepository.findByStudentIdAndClassSection_SemesterIdAndStatus(
+                        student.getId(), semesterId, EnrollmentStatus.PENDING)
+                .stream()
+                .map(this::mapToEnrollmentResponse)
                 .collect(Collectors.toList());
     }
 
     public List<StudentExamResponse> getMyExams(Long semesterId) {
         Student student = getCurrentStudent();
-        return enrollmentRepository.findByStudentIdAndClassSection_SemesterId(student.getId(), semesterId)
+        return enrollmentRepository.findByStudentIdAndClassSection_SemesterIdAndStatus(
+                        student.getId(), semesterId, EnrollmentStatus.REGISTERED)
                 .stream()
                 .map(e -> new StudentExamResponse(
                         e.getClassSection().getClassCode(),
@@ -184,7 +176,6 @@ public class StudentEnrollmentService {
         Student student = getCurrentStudent();
         List<Enrollment> all = enrollmentRepository.findByStudentId(student.getId());
 
-        // Chỉ tính những enrollment có Grade đã có totalScore
         List<Enrollment> filtered = all.stream()
                 .filter(e -> semesterId == null || Objects.equals(e.getClassSection().getSemester().getId(), semesterId))
                 .filter(e -> e.getGrade() != null && e.getGrade().getTotalScore() != null)
@@ -229,6 +220,45 @@ public class StudentEnrollmentService {
         );
 
         return new StudentGradesSummaryResponse(semesterId, round2(semesterGpa), round2(cumulativeGpa), items);
+    }
+
+    private boolean isActiveSelection(Enrollment enrollment) {
+        return enrollment.getStatus() == EnrollmentStatus.PENDING || enrollment.getStatus() == EnrollmentStatus.REGISTERED;
+    }
+
+    private boolean isVisibleForStudentMajor(ClassSection section, Student student) {
+        Course course = section.getCourse();
+        CourseType courseType = course.getCourseType() != null ? course.getCourseType() : CourseType.REQUIRED;
+        if (courseType == CourseType.ELECTIVE) {
+            return true;
+        }
+        if (student.getMajor() == null || course.getMajor() == null) {
+            return false;
+        }
+        return Objects.equals(course.getMajor().getId(), student.getMajor().getId());
+    }
+
+    private EnrollmentResponse mapToEnrollmentResponse(Enrollment enrollment) {
+        Grade grade = enrollment.getGrade();
+        return EnrollmentResponse.builder()
+                .enrollmentId(enrollment.getId())
+                .classSectionId(enrollment.getClassSection().getId())
+                .classCode(enrollment.getClassSection().getClassCode())
+                .courseCode(enrollment.getClassSection().getCourse().getCode())
+                .courseName(enrollment.getClassSection().getCourse().getName())
+                .credits(enrollment.getClassSection().getCourse().getCredits())
+                .room(enrollment.getClassSection().getRoom() != null ? enrollment.getClassSection().getRoom().getName() : null)
+                .dayOfWeek(enrollment.getClassSection().getDayOfWeek())
+                .startPeriod(enrollment.getClassSection().getStartPeriod().getPeriodNumber())
+                .endPeriod(enrollment.getClassSection().getEndPeriod().getPeriodNumber())
+                .teacherName(enrollment.getClassSection().getTeacher() != null
+                        ? enrollment.getClassSection().getTeacher().getFullName()
+                        : "Chua co")
+                .midTermScore(grade != null ? grade.getMidtermScore() : null)
+                .finalScore(grade != null ? grade.getFinalScore() : null)
+                .totalScore(grade != null ? grade.getTotalScore() : null)
+                .status(enrollment.getStatus().name())
+                .build();
     }
 
     private double toGradePoint(float totalScore10) {

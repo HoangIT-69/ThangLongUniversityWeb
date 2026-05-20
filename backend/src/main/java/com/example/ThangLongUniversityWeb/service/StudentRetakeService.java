@@ -11,6 +11,7 @@ import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.entity.Grade;
 import com.example.ThangLongUniversityWeb.entity.Student;
 import com.example.ThangLongUniversityWeb.entity.SystemSettings;
+import com.example.ThangLongUniversityWeb.entity.Semester;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
@@ -18,6 +19,7 @@ import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.GradeRepository;
+import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.repository.SystemSettingsRepository;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +53,7 @@ public class StudentRetakeService {
     private final ClassSectionRepository classSectionRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
     private final SystemSettingsRepository systemSettingsRepository;
+    private final SemesterRepository semesterRepository;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Lay phi thi lai tu system_settings (fallback mac dinh 200k)
@@ -88,6 +91,11 @@ public class StudentRetakeService {
         }
 
         Student student = getCurrentStudent();
+        Semester targetSemester = semesterRepository.findById(request.getSemesterId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky dang ky thi lai / nang diem."));
+        if (!targetSemester.isRegistrationOpen() || targetSemester.isLocked()) {
+            throw new RuntimeException("Hoc ky nay da dong hoac da khoa dang ky thi lai / nang diem.");
+        }
         long feePerCourse = getRetakeFee();
 
         // Build map ket qua moi nhat theo courseId
@@ -109,50 +117,56 @@ public class StudentRetakeService {
             }
 
             Course course = latestGrade.getEnrollment().getClassSection().getCourse();
-            Long semesterId = latestGrade.getEnrollment().getClassSection().getSemester().getId();
-
             // Xac dinh loai dang ky
             EnrollmentType enrollmentType = latestGrade.getTotalScore() < RETAKE_THRESHOLD
                     ? EnrollmentType.RETAKE : EnrollmentType.IMPROVE;
             int nextAttempt = (latestGrade.getAttemptNumber() != null ? latestGrade.getAttemptNumber() : 1) + 1;
 
             // Tim ClassSection co lich thi cho mon nay
-            ClassSection examSection = findExamSectionForRetake(course.getId(), semesterId);
+            ClassSection examSection = findExamSectionForRetake(course.getId(), targetSemester.getId());
 
-            // Kiem tra xem da dang ky examRegistration nay chua
-            if (examRegistrationRepository.findByStudentIdAndClassSectionId(student.getId(), examSection.getId()).isPresent()) {
-                throw new RuntimeException("Ban da dang ky thi mon " + course.getName() + " (Lop: " + examSection.getClassCode() + ") truoc do roi.");
+            ExamRegistration existing = examRegistrationRepository.findByStudentIdAndClassSectionCourseId(student.getId(), course.getId())
+                    .orElse(null);
+            if (existing != null && existing.getStatus() == EnrollmentStatus.REGISTERED) {
+                throw new RuntimeException("Ban da duoc chot dang ky thi mon " + course.getName() + " truoc do roi.");
+            }
+            if (existing != null && existing.getStatus() == EnrollmentStatus.PENDING) {
+                results.add(mapRegisteredItem(existing));
+                continue;
             }
 
-            // Tao ExamRegistration moi
-            ExamRegistration examReg = new ExamRegistration();
+            ExamRegistration examReg = existing != null ? existing : new ExamRegistration();
             examReg.setStudent(student);
             examReg.setClassSection(examSection);
             examReg.setOriginalGrade(latestGrade);
-            examReg.setStatus(EnrollmentStatus.REGISTERED);
+            examReg.setStatus(EnrollmentStatus.PENDING);
             examReg.setRegistrationType(enrollmentType);
             examReg.setFeeCharged(feePerCourse);
             examReg.setAttemptNumber(nextAttempt);
-            examRegistrationRepository.save(examReg);
-
-            // Build response item
-            RetakeRegisteredItemResponse item = new RetakeRegisteredItemResponse();
-            item.setCourseId(course.getId());
-            item.setCourseCode(course.getCode());
-            item.setCourseName(course.getName());
-            item.setCredits(course.getCredits());
-            item.setRegistrationType(enrollmentType.name());
-            item.setAttemptNumber(nextAttempt);
-            item.setFeeCharged(feePerCourse);
-            if (examSection.getExamAt() != null) {
-                item.setExamAt(examSection.getExamAt()
-                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-                item.setExamRoom(examSection.getExamRoom());
-            }
-            results.add(item);
+            results.add(mapRegisteredItem(examRegistrationRepository.save(examReg)));
         }
 
         return new RetakeRegistrationResponse(results, (long) results.size() * feePerCourse);
+    }
+
+    @Transactional
+    public String cancel(Long examRegistrationId) {
+        Student student = getCurrentStudent();
+        ExamRegistration reg = examRegistrationRepository.findById(examRegistrationId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay dang ky thi lai / nang diem."));
+        if (!reg.getStudent().getId().equals(student.getId())) {
+            throw new RuntimeException("Ban khong co quyen bo chon dang ky nay.");
+        }
+        if (!reg.getClassSection().getSemester().isRegistrationOpen() || reg.getClassSection().getSemester().isLocked()) {
+            throw new RuntimeException("Da het han bo chon thi lai / nang diem.");
+        }
+        if (reg.getStatus() != EnrollmentStatus.PENDING) {
+            throw new RuntimeException("Chi co the bo chon dang ky thi lai / nang diem o trang thai PENDING.");
+        }
+
+        String courseName = reg.getClassSection().getCourse().getName();
+        examRegistrationRepository.delete(reg);
+        return "Da bo chon thi lai / nang diem mon " + courseName + ".";
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -186,11 +200,8 @@ public class StudentRetakeService {
                 .filter(cs -> cs.getExamAt() != null)
                 .findFirst()
                 .orElseGet(() -> inSameSemester.stream().findFirst()
-                        .orElseGet(() -> classSectionRepository.findAll().stream()
-                                .filter(cs -> cs.getCourse().getId().equals(courseId))
-                                .findFirst()
-                                .orElseThrow(() -> new RuntimeException(
-                                        "Khong tim thay lop hoc phan nao cho mon hoc nay. Lien he phong dao tao."))));
+                        .orElseThrow(() -> new RuntimeException(
+                                "Khong tim thay lop hoc phan/lich thi lai cho mon nay trong hoc ky dang chon.")));
     }
 
     private Student getCurrentStudent() {
@@ -247,5 +258,24 @@ public class StudentRetakeService {
                 reg.getAttemptNumber(),
                 reg.getOriginalGrade().getTotalScore() // Show original grade total score
         );
+    }
+
+    private RetakeRegisteredItemResponse mapRegisteredItem(ExamRegistration reg) {
+        ClassSection examSection = reg.getClassSection();
+        Course course = examSection.getCourse();
+        RetakeRegisteredItemResponse item = new RetakeRegisteredItemResponse();
+        item.setCourseId(course.getId());
+        item.setCourseCode(course.getCode());
+        item.setCourseName(course.getName());
+        item.setCredits(course.getCredits());
+        item.setRegistrationType(reg.getRegistrationType() != null ? reg.getRegistrationType().name() : null);
+        item.setAttemptNumber(reg.getAttemptNumber());
+        item.setFeeCharged(reg.getFeeCharged());
+        if (examSection.getExamAt() != null) {
+            item.setExamAt(examSection.getExamAt()
+                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            item.setExamRoom(examSection.getExamRoom());
+        }
+        return item;
     }
 }

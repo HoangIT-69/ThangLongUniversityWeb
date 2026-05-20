@@ -15,6 +15,18 @@ public class EnrollmentResponse {
     private Long enrollmentId;
 
     @Schema(
+            description = "ID lop hoc phan",
+            example = "1"
+    )
+    private Long classSectionId;
+
+    @Schema(
+            description = "Ma mon hoc",
+            example = "IT001"
+    )
+    private String courseCode;
+
+    @Schema(
             description = "Mã lớp học",
             example = "IT001.N1"
     )
@@ -83,7 +95,7 @@ public class EnrollmentResponse {
     @Schema(
             description = "Trạng thái ghi danh",
             example = "REGISTERED",
-            allowableValues = {"REGISTERED", "PASSED", "FAILED", "CANCELED"}
+            allowableValues = {"PENDING", "REGISTERED", "PASSED", "FAILED", "CANCELED"}
     )
     private String status;
 }

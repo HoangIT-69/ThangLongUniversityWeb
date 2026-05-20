@@ -7,7 +7,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,6 +35,12 @@ public class StudentRetakeController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RetakeRegistrationRequest request) {
         return ResponseEntity.ok(studentRetakeService.register(request));
+    }
+
+    @Operation(summary = "Bo chon dang ky thi lai / thi nang diem dang PENDING")
+    @DeleteMapping("/{examRegistrationId}")
+    public ResponseEntity<?> cancel(@PathVariable Long examRegistrationId) {
+        return ResponseEntity.ok(studentRetakeService.cancel(examRegistrationId));
     }
 
     @Operation(summary = "Lay danh sach dang ky thi lai / thi nang diem cua sinh vien")

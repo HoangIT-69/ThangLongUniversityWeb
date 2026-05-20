@@ -12,8 +12,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { notifications } from "@/data/mock";
+import {
+  listNotifications,
+  markNotificationRead,
+  type StudentNotification,
+} from "@/lib/api/notifications";
 
 type Item = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 type NavGroup = { heading: string; items: Item[] };
@@ -112,6 +117,11 @@ const chatByRole: Record<Role, string> = {
   STUDENT: "/student/chat",
 };
 
+function notificationTarget(item: StudentNotification) {
+  if (item.type === "CHAT") return "/student/chat";
+  return item.link || "/student/notifications";
+}
+
 function NavItem({ item, pathname, onNavigate }: { item: Item; pathname: string; onNavigate?: () => void }) {
   const active = pathname === item.to || pathname.startsWith(item.to + "/");
   return (
@@ -200,11 +210,39 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { name, role, logout } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
 
   const initials = (name ?? "?").split(" ").slice(-2).map((s) => s[0]).join("").toUpperCase();
-  const unreadCount = role === "STUDENT" ? notifications.filter((n) => !n.read).length : 0;
+  const notificationsQuery = useQuery({
+    queryKey: ["student", "notifications"],
+    queryFn: listNotifications,
+    enabled: role === "STUDENT",
+    refetchInterval: role === "STUDENT" ? 30000 : false,
+  });
+  const notificationItems = notificationsQuery.data ?? [];
+  const unreadCount = notificationItems.filter((n) => !n.read).length;
+
+  const markReadMutation = useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["student", "notifications"] }),
+  });
+
+  const openNotification = async (item: StudentNotification) => {
+    if (!item.read) {
+      await markReadMutation.mutateAsync(item.id);
+    }
+
+    const target = notificationTarget(item);
+    if (target.startsWith("/student/")) {
+      navigate({ to: target as never });
+      return;
+    }
+
+    window.location.href = target;
+  };
+
   const handleLogout = async () => {
     await logout();
     navigate({ to: "/login" });
@@ -264,11 +302,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel>Thong bao</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {notifications.slice(0, 4).map((item) => (
+                  {notificationsQuery.isLoading ? (
+                    <div className="px-3 py-4 text-sm text-muted-foreground">Dang tai thong bao...</div>
+                  ) : notificationItems.length === 0 ? (
+                    <div className="px-3 py-4 text-sm text-muted-foreground">Khong co thong bao moi.</div>
+                  ) : notificationItems.slice(0, 4).map((item) => (
                     <DropdownMenuItem
                       key={item.id}
                       className="flex cursor-pointer items-start gap-3 py-3"
-                      onClick={() => item.link && navigate({ to: item.link as never })}
+                      onClick={() => void openNotification(item)}
                     >
                       <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", item.read ? "bg-muted-foreground/30" : "bg-primary")} />
                       <span className="min-w-0">

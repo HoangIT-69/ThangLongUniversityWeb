@@ -79,6 +79,8 @@ public class DataInitializer implements CommandLineRunner {
 
         Major cntt = major("CNTT", "Cong nghe thong tin", "Dao tao lap trinh, he thong thong tin va cong nghe phan mem.");
         Major kt = major("KT", "Kinh te", "Dao tao kinh te ung dung va quan tri.");
+        Major qtkd = major("QTKD", "Quan tri kinh doanh", "Dao tao quan tri doanh nghiep, marketing va van hanh.");
+        Major nn = major("NN", "Ngon ngu Anh", "Dao tao ngon ngu, bien phien dich va tieng Anh ung dung.");
 
         Semester hk1 = semester("HK1 2025-2026", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 15), false, false);
         Semester hk2 = semester("HK2 2025-2026", LocalDate.of(2026, 2, 2), LocalDate.of(2026, 6, 15), true, false);
@@ -86,6 +88,8 @@ public class DataInitializer implements CommandLineRunner {
         Room a101 = room("A101", 60);
         Room b202 = room("B202", 45);
         Room lab301 = room("LAB301", 35);
+        Room c303 = room("C303", 55);
+        Room lab402 = room("LAB402", 40);
 
         Period p1 = period(1, "07:00", "07:50");
         Period p2 = period(2, "08:00", "08:50");
@@ -93,17 +97,40 @@ public class DataInitializer implements CommandLineRunner {
         Period p4 = period(4, "10:00", "10:50");
         Period p5 = period(5, "13:00", "13:50");
         Period p6 = period(6, "14:00", "14:50");
+        Period p7 = period(7, "15:00", "15:50");
+        Period p8 = period(8, "16:00", "16:50");
 
-        Course web = course("INT2208", "Lap trinh Web", 3, "Xay dung ung dung web full-stack.", cntt);
-        Course db = course("INT2207", "Co so du lieu", 3, "Thiet ke va truy van co so du lieu.", cntt);
-        Course math = course("MATH1101", "Giai tich 1", 3, "Nen tang giai tich cho sinh vien nam nhat.", cntt);
-        Course java = course("INT2204", "Lap trinh huong doi tuong", 3, "Lap trinh Java va thiet ke huong doi tuong.", cntt);
-        Course network = course("INT2213", "Mang may tinh", 3, "Kien thuc co ban ve TCP/IP va he thong mang.", cntt);
-        Course english = course("ENG1101", "Tieng Anh hoc thuat", 2, "Ky nang doc viet tieng Anh trong moi truong dai hoc.", cntt);
-        Course econ = course("ECON1101", "Kinh te vi mo", 3, "Kien thuc co ban ve kinh te vi mo.", kt);
+        Course web = course("INT2208", "Lap trinh Web", 3, "Xay dung ung dung web full-stack.", cntt, CourseType.REQUIRED);
+        Course db = course("INT2207", "Co so du lieu", 3, "Thiet ke va truy van co so du lieu.", cntt, CourseType.REQUIRED);
+        Course math = course("MATH1101", "Giai tich 1", 3, "Nen tang giai tich cho sinh vien nam nhat.", cntt, CourseType.REQUIRED);
+        Course java = course("INT2204", "Lap trinh huong doi tuong", 3, "Lap trinh Java va thiet ke huong doi tuong.", cntt, CourseType.REQUIRED);
+        Course network = course("INT2213", "Mang may tinh", 3, "Kien thuc co ban ve TCP/IP va he thong mang.", cntt, CourseType.REQUIRED);
+        Course dataStructures = course("INT2214", "Cau truc du lieu va giai thuat", 3, "Danh sach, cay, do thi va phan tich do phuc tap.", cntt, CourseType.REQUIRED);
+        Course os = course("INT2215", "He dieu hanh", 3, "Tien trinh, bo nho, he thong tep va dong bo.", cntt, CourseType.REQUIRED);
+        Course se = course("INT2216", "Cong nghe phan mem", 3, "Quy trinh phat trien, phan tich yeu cau va kiem thu.", cntt, CourseType.REQUIRED);
+        Course ai = course("INT2217", "Tri tue nhan tao nhap mon", 3, "Tim kiem, suy dien, hoc may co ban va ung dung AI.", cntt, CourseType.REQUIRED);
+        Course mobile = course("INT2218", "Lap trinh di dong", 3, "Xay dung ung dung Android/iOS va API backend.", cntt, CourseType.REQUIRED);
+        Course security = course("INT2219", "An toan thong tin", 3, "Mat ma ung dung, bao mat mang va phong chong tan cong.", cntt, CourseType.REQUIRED);
+        Course discreteMath = course("MATH1102", "Toan roi rac", 3, "Logic, tap hop, quan he, to hop va do thi.", cntt, CourseType.REQUIRED);
+
+        Course econ = course("ECON1101", "Kinh te vi mo", 3, "Kien thuc co ban ve kinh te vi mo.", kt, CourseType.REQUIRED);
+        Course macro = course("ECON1201", "Kinh te vi mo nang cao", 3, "Thi truong, chinh sach va phan tich vi mo ung dung.", kt, CourseType.REQUIRED);
+        Course accounting = course("ACC1101", "Nguyen ly ke toan", 3, "He thong tai khoan, chung tu va bao cao tai chinh.", kt, CourseType.REQUIRED);
+        Course marketing = course("MKT1101", "Marketing can ban", 3, "Nghien cuu thi truong, dinh vi va marketing mix.", qtkd, CourseType.REQUIRED);
+        Course management = course("BUS1101", "Quan tri hoc", 3, "Chuc nang quan tri, to chuc va lanh dao doanh nghiep.", qtkd, CourseType.REQUIRED);
+        Course translation = course("ENG2101", "Bien dich can ban", 3, "Ky nang bien dich Anh - Viet va Viet - Anh.", nn, CourseType.REQUIRED);
+
+        Course english = course("ENG1101", "Tieng Anh hoc thuat", 2, "Ky nang doc viet tieng Anh trong moi truong dai hoc.", null, CourseType.ELECTIVE);
+        Course english2 = course("ENG1102", "Tieng Anh giao tiep", 2, "Giao tiep hoc thuat va cong viec bang tieng Anh.", null, CourseType.ELECTIVE);
+        Course softSkills = course("GEN1101", "Ky nang mem", 2, "Lam viec nhom, thuyet trinh va quan ly thoi gian.", null, CourseType.ELECTIVE);
+        Course law = course("LAW1101", "Phap luat dai cuong", 2, "Kien thuc phap luat nen tang cho sinh vien.", null, CourseType.ELECTIVE);
+        Course startup = course("BUS1201", "Khoi nghiep doi moi sang tao", 2, "Tu duy san pham, mo hinh kinh doanh va go-to-market.", null, CourseType.ELECTIVE);
+        Course psychology = course("SOC1101", "Tam ly hoc dai cuong", 2, "Hanh vi ca nhan, dong luc va giao tiep xa hoi.", null, CourseType.ELECTIVE);
 
         Teacher gv101 = teacher("gv101", "teacher1@tlu.edu.vn", "GV101", "Nguyen Minh Anh", "Cong nghe thong tin", "ThS");
         Teacher gv102 = teacher("gv102", "teacher2@tlu.edu.vn", "GV102", "Tran Hoang Nam", "Kinh te", "TS");
+        Teacher gv103 = teacher("gv103", "teacher3@tlu.edu.vn", "GV103", "Do Quang Huy", "Cong nghe thong tin", "TS");
+        Teacher gv104 = teacher("gv104", "teacher4@tlu.edu.vn", "GV104", "Pham Thu Ha", "Ngoai ngu", "ThS");
 
         Student sv001 = student("sv001", "student1@tlu.edu.vn", "SV001", "Le Thanh Binh", cntt, 2025);
         Student sv002 = student("sv002", "student2@tlu.edu.vn", "SV002", "Pham Ngoc Linh", kt, 2025);
@@ -136,6 +163,40 @@ public class DataInitializer implements CommandLineRunner {
                 LocalDateTime.of(2026, 6, 15, 8, 0), "B202");
         ClassSection econ02 = classSection("ECON1101-02", econ, hk2, gv102, b202, 3, p1, p3, 45,
                 LocalDateTime.of(2026, 6, 8, 8, 0), "B202");
+        ClassSection dataStructures02 = classSection("INT2214-02", dataStructures, hk2, gv103, lab402, 2, p4, p6, 40,
+                LocalDateTime.of(2026, 6, 16, 13, 30), "LAB402");
+        ClassSection os02 = classSection("INT2215-02", os, hk2, gv103, lab402, 4, p1, p3, 40,
+                LocalDateTime.of(2026, 6, 18, 8, 0), "LAB402");
+        ClassSection se02 = classSection("INT2216-02", se, hk2, gv101, c303, 5, p4, p6, 55,
+                LocalDateTime.of(2026, 6, 20, 13, 30), "C303");
+        ClassSection ai02 = classSection("INT2217-02", ai, hk2, gv103, lab301, 6, p1, p3, 35,
+                LocalDateTime.of(2026, 6, 22, 8, 0), "LAB301");
+        ClassSection mobile02 = classSection("INT2218-02", mobile, hk2, gv101, lab402, 7, p4, p6, 40,
+                LocalDateTime.of(2026, 6, 24, 13, 30), "LAB402");
+        ClassSection security02 = classSection("INT2219-02", security, hk2, gv103, c303, 2, p7, p8, 50,
+                LocalDateTime.of(2026, 6, 26, 15, 0), "C303");
+        ClassSection discreteMath02 = classSection("MATH1102-02", discreteMath, hk2, gv101, a101, 3, p4, p6, 60,
+                LocalDateTime.of(2026, 6, 28, 13, 30), "A101");
+        ClassSection english202 = classSection("ENG1102-02", english2, hk2, gv104, b202, 5, p7, p8, 40,
+                LocalDateTime.of(2026, 6, 19, 15, 0), "B202");
+        ClassSection softSkills02 = classSection("GEN1101-02", softSkills, hk2, gv104, c303, 6, p7, p8, 55,
+                LocalDateTime.of(2026, 6, 21, 15, 0), "C303");
+        ClassSection law02 = classSection("LAW1101-02", law, hk2, gv102, a101, 4, p7, p8, 60,
+                LocalDateTime.of(2026, 6, 23, 15, 0), "A101");
+        ClassSection startup02 = classSection("BUS1201-02", startup, hk2, gv102, c303, 7, p1, p2, 55,
+                LocalDateTime.of(2026, 6, 25, 8, 0), "C303");
+        ClassSection psychology02 = classSection("SOC1101-02", psychology, hk2, gv104, b202, 2, p5, p6, 45,
+                LocalDateTime.of(2026, 6, 27, 13, 0), "B202");
+        ClassSection macro02 = classSection("ECON1201-02", macro, hk2, gv102, b202, 4, p1, p3, 45,
+                LocalDateTime.of(2026, 6, 17, 8, 0), "B202");
+        ClassSection accounting02 = classSection("ACC1101-02", accounting, hk2, gv102, c303, 5, p1, p3, 55,
+                LocalDateTime.of(2026, 6, 19, 8, 0), "C303");
+        ClassSection marketing02 = classSection("MKT1101-02", marketing, hk2, gv102, c303, 3, p4, p6, 55,
+                LocalDateTime.of(2026, 6, 21, 13, 30), "C303");
+        ClassSection management02 = classSection("BUS1101-02", management, hk2, gv102, a101, 6, p1, p3, 60,
+                LocalDateTime.of(2026, 6, 23, 8, 0), "A101");
+        ClassSection translation02 = classSection("ENG2101-02", translation, hk2, gv104, b202, 4, p4, p6, 45,
+                LocalDateTime.of(2026, 6, 25, 13, 30), "B202");
 
         Enrollment e1 = enrollment(sv001, web01, EnrollmentStatus.REGISTERED);
         Enrollment e2 = enrollment(sv001, db01, EnrollmentStatus.REGISTERED);
@@ -227,12 +288,16 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Course course(String code, String name, Integer credits, String description, Major major) {
+        return course(code, name, credits, description, major, defaultCourseType(code));
+    }
+
+    private Course course(String code, String name, Integer credits, String description, Major major, CourseType courseType) {
         return courseRepository.findByCode(code).map(existing -> {
             existing.setName(name);
             existing.setCredits(credits);
             existing.setDescription(description);
             existing.setMajor(major);
-            existing.setCourseType(defaultCourseType(code));
+            existing.setCourseType(courseType);
             return courseRepository.save(existing);
         }).orElseGet(() -> {
             Course course = new Course();
@@ -241,7 +306,7 @@ public class DataInitializer implements CommandLineRunner {
             course.setCredits(credits);
             course.setDescription(description);
             course.setMajor(major);
-            course.setCourseType(defaultCourseType(code));
+            course.setCourseType(courseType);
             return courseRepository.save(course);
         });
     }
