@@ -11,6 +11,7 @@ import com.example.ThangLongUniversityWeb.entity.Period;
 import com.example.ThangLongUniversityWeb.entity.Room;
 import com.example.ThangLongUniversityWeb.entity.Semester;
 import com.example.ThangLongUniversityWeb.entity.Teacher;
+import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionScheduleRepository;
 import com.example.ThangLongUniversityWeb.repository.CourseRepository;
@@ -70,7 +71,7 @@ public class ClassSectionService {
         ClassSection targetClass = classSectionRepository.findById(classSectionId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
 
-        List<ClassSection> enrolledClasses = enrollmentRepository.findCurrentRegisteredClasses(studentId, targetClass.getSemester().getId());
+        List<ClassSection> enrolledClasses = enrollmentRepository.findCurrentSelectedOrRegisteredClasses(studentId, targetClass.getSemester().getId());
 
         for (ClassSectionSchedule targetSchedule : targetClass.getSchedules()) {
             for (ClassSection enrolledClass : enrolledClasses) {
@@ -229,6 +230,12 @@ public class ClassSectionService {
         List<ClassSectionScheduleResponse> schedules = section.getSchedules().stream()
                 .map(this::mapScheduleToResponse)
                 .collect(Collectors.toList());
+        int activeSlots = section.getId() == null
+                ? (section.getCurrentSlots() == null ? 0 : section.getCurrentSlots())
+                : (int) enrollmentRepository.countByClassSectionIdAndStatusIn(
+                section.getId(),
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED)
+        );
 
         var distinctRooms = schedules.stream()
                 .map(ClassSectionScheduleResponse::getRoomName)
@@ -250,6 +257,8 @@ public class ClassSectionService {
                 .courseId(section.getCourse().getId())
                 .courseCode(section.getCourse().getCode())
                 .courseName(section.getCourse().getName())
+                .courseType(section.getCourse().getCourseType())
+                .courseTypeLabel(section.getCourse().getCourseType() != null && section.getCourse().getCourseType().name().equals("ELECTIVE") ? "Tu do" : "Bat buoc")
                 .credits(section.getCourse().getCredits())
                 .semesterId(section.getSemester().getId())
                 .semesterName(section.getSemester().getName())
@@ -260,7 +269,7 @@ public class ClassSectionService {
                 .roomCapacity(topRoomCapacity)
                 .schedules(schedules)
                 .maxSlots(section.getMaxSlots())
-                .currentSlots(section.getCurrentSlots())
+                .currentSlots(activeSlots)
                 .isClosed(section.isClosed())
                 .build();
     }

@@ -122,6 +122,7 @@ public class TeacherService {
 
         return enrollmentRepository.findByClassSectionId(classSectionId)
                 .stream()
+                .filter(enrollment -> enrollment.getStatus() != EnrollmentStatus.PENDING)
                 .map(enrollment -> {
                     Grade grade = enrollment.getGrade();
                     return StudentGradeResponse.builder()

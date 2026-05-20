@@ -39,6 +39,10 @@ function TuitionPage() {
 
   const tuition = tuitionQuery.data;
   const items = tuition?.items ?? [];
+  const courseItems = items.filter((item) => (item.feeType ?? "COURSE") === "COURSE");
+  const retakeItems = items.filter((item) => item.feeType === "RETAKE");
+  const courseTotal = courseItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const retakeTotal = retakeItems.reduce((sum, item) => sum + item.subtotal, 0);
 
   return (
     <div>
@@ -79,6 +83,14 @@ function TuitionPage() {
                   {formatVND(tuition.paid ? 0 : tuition.totalAmount)}
                 </div>
               </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <div className="text-xs text-muted-foreground">Học phần</div>
+                <div className="mt-1 font-semibold tabular-nums">{formatVND(courseTotal)}</div>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <div className="text-xs text-muted-foreground">Thi lại / nâng điểm</div>
+                <div className="mt-1 font-semibold tabular-nums">{formatVND(retakeTotal)}</div>
+              </div>
             </div>
 
             <div className="mt-4 flex gap-3">
@@ -99,6 +111,7 @@ function TuitionPage() {
                         <TableHeader>
                           <TableRow className="bg-muted/40">
                             <TableHead>Môn học</TableHead>
+                            <TableHead>Loại phí</TableHead>
                             <TableHead className="text-center">Tín chỉ</TableHead>
                             <TableHead className="text-right">Đơn giá</TableHead>
                             <TableHead className="text-right">Thành tiền</TableHead>
@@ -111,6 +124,9 @@ function TuitionPage() {
                                 <div className="font-medium">{item.courseName}</div>
                                 <div className="font-mono text-xs text-muted-foreground">{item.courseCode}</div>
                               </TableCell>
+                              <TableCell>
+                                <StatusBadge value={(item.feeType ?? "COURSE") === "RETAKE" ? "Thi lại/Nâng điểm" : "Học phần"} />
+                              </TableCell>
                               <TableCell className="text-center tabular-nums">{item.credits}</TableCell>
                               <TableCell className="text-right tabular-nums text-sm">{formatVND(item.pricePerCredit)}</TableCell>
                               <TableCell className="text-right tabular-nums font-medium">{formatVND(item.subtotal)}</TableCell>
@@ -118,6 +134,7 @@ function TuitionPage() {
                           ))}
                           <TableRow className="bg-muted/20 font-semibold">
                             <TableCell>Tổng cộng</TableCell>
+                            <TableCell />
                             <TableCell className="text-center tabular-nums">{tuition.totalCredits}</TableCell>
                             <TableCell />
                             <TableCell className="text-right tabular-nums text-primary">{formatVND(tuition.totalAmount)}</TableCell>

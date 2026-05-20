@@ -27,6 +27,9 @@ export const studentApi = {
   cancelClass: (classSectionId: number | string) =>
     apiRequest<string>(`/api/student/enroll/${classSectionId}`, { method: "DELETE" }),
 
+  listSelectedEnrollments: (semesterId: number | string) =>
+    apiRequest<EnrollmentResponse[]>(`/api/student/enrollments/selected?semesterId=${encodeURIComponent(String(semesterId))}`),
+
   getEnrollmentStatus: (requestId: string) =>
     apiRequest<EnrollmentRequestStatusResponse>(`/api/student/enrollments/status/${encodeURIComponent(requestId)}`),
 
@@ -59,11 +62,14 @@ export const studentApi = {
     return apiRequest<RetakeEligibleCourseResponse[]>(`/api/student/retakes/eligible-courses${qs}`);
   },
 
-  registerRetakes: (courseIds: Array<number | string>) =>
+  registerRetakes: (courseIds: Array<number | string>, semesterId?: number | string | null) =>
     apiRequest<RetakeRegistrationResponse>("/api/student/retakes/register", {
       method: "POST",
-      body: jsonBody({ courseIds: courseIds.map(Number) }),
+      body: jsonBody({ semesterId: semesterId == null ? null : Number(semesterId), courseIds: courseIds.map(Number) }),
     }),
+
+  cancelRetake: (examRegistrationId: number | string) =>
+    apiRequest<string>(`/api/student/retakes/${examRegistrationId}`, { method: "DELETE" }),
 
   listRetakeRequests: (semesterId?: number | string | null) => {
     const qs = semesterId ? `?semesterId=${encodeURIComponent(String(semesterId))}` : "";

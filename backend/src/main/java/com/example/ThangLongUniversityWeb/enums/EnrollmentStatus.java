@@ -1,3 +1,3 @@
 package com.example.ThangLongUniversityWeb.enums;
 
-public enum EnrollmentStatus { REGISTERED, CANCELED, PASSED, FAILED }
+public enum EnrollmentStatus { PENDING, REGISTERED, CANCELED, PASSED, FAILED }

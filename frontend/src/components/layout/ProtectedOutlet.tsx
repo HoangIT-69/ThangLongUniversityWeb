@@ -4,7 +4,16 @@ import type { Role } from "@/lib/api/types";
 import { AppLayout } from "./AppLayout";
 
 export function ProtectedOutlet({ role }: { role: Role }) {
-  const { role: current } = useAuth();
+  const { role: current, isRestoring } = useAuth();
+
+  if (isRestoring) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">
+        Dang khoi phuc phien dang nhap...
+      </div>
+    );
+  }
+
   if (!current) return <Navigate to="/login" />;
   if (current !== role) {
     const to = current === "ADMIN" ? "/admin/dashboard" : current === "TEACHER" ? "/teacher/dashboard" : "/student/dashboard";

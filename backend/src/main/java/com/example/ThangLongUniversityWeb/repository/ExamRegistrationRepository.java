@@ -1,6 +1,7 @@
 package com.example.ThangLongUniversityWeb.repository;
 
 import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
+import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,7 +23,15 @@ public interface ExamRegistrationRepository extends JpaRepository<ExamRegistrati
     
     Optional<ExamRegistration> findByStudentIdAndClassSectionId(Long studentId, Long classSectionId);
 
+    Optional<ExamRegistration> findByStudentIdAndClassSectionCourseId(Long studentId, Long courseId);
+
     List<ExamRegistration> findByClassSectionId(Long classSectionId);
+
+    List<ExamRegistration> findByClassSectionIdAndStatus(Long classSectionId, EnrollmentStatus status);
+
+    List<ExamRegistration> findByClassSectionSemesterIdAndStatus(Long semesterId, EnrollmentStatus status);
+
+    List<ExamRegistration> findByStudentIdAndClassSectionSemesterIdAndStatus(Long studentId, Long semesterId, EnrollmentStatus status);
 
     List<ExamRegistration> findByOriginalGrade_Enrollment_Id(Long enrollmentId);
 }

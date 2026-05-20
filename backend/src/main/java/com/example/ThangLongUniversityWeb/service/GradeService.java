@@ -5,6 +5,7 @@ import com.example.ThangLongUniversityWeb.dto.response.GradeResponse;
 import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse;
 import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse.SemesterGpaSummary;
 import com.example.ThangLongUniversityWeb.entity.*;
+import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.AcademicResultRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.GradeRepository;
@@ -86,7 +87,7 @@ public class GradeService {
                 .collect(Collectors.toList());
 
         // 2. Sinh viên thi lại/cải thiện (qua ExamRegistration)
-        List<GradeResponse> retakeGrades = examRegistrationRepository.findByClassSectionId(classSectionId).stream()
+        List<GradeResponse> retakeGrades = examRegistrationRepository.findByClassSectionIdAndStatus(classSectionId, EnrollmentStatus.REGISTERED).stream()
                 .map(reg -> {
                     GradeResponse res = mapToResponse(reg.getOriginalGrade());
                     // Ghi đè loại đăng ký để giảng viên biết đây là thi lại/cải thiện

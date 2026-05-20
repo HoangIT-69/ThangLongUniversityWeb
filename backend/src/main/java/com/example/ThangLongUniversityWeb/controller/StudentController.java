@@ -66,6 +66,12 @@ public class StudentController {
         return ResponseEntity.ok(studentEnrollmentService.registerClass(classSectionId));
     }
 
+    @Operation(summary = "Danh sach hoc phan dang chon trong mot hoc ky")
+    @GetMapping("/enrollments/selected")
+    public ResponseEntity<?> getSelectedEnrollments(@RequestParam Long semesterId) {
+        return ResponseEntity.ok(studentEnrollmentService.getSelectedEnrollments(semesterId));
+    }
+
     @Operation(summary = "Huy dang ky lop hoc phan")
     @DeleteMapping("/enroll/{classSectionId}")
     public ResponseEntity<?> cancelClass(@PathVariable Long classSectionId) {

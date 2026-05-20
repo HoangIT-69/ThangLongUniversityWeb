@@ -37,7 +37,7 @@ public class ExamRegistration {
     private Grade originalGrade;
 
     @Enumerated(EnumType.STRING)
-    private EnrollmentStatus status = EnrollmentStatus.REGISTERED;
+    private EnrollmentStatus status = EnrollmentStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
     private EnrollmentType registrationType; // RETAKE or IMPROVE

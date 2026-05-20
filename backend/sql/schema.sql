@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS enrollments (
     mid_term_score   FLOAT,
     final_score      FLOAT,
     total_score      FLOAT,
-    status           VARCHAR(30),
+    status           VARCHAR(30) CHECK (status IS NULL OR status IN ('PENDING', 'REGISTERED', 'CANCELED', 'PASSED', 'FAILED')),
     CONSTRAINT uk_enrollments_student_class UNIQUE (student_id, class_section_id)
 );
 
@@ -349,6 +349,21 @@ CREATE INDEX IF NOT EXISTS idx_chat_room_type            ON chat_rooms(type);
 CREATE INDEX IF NOT EXISTS idx_chat_room_created_at      ON chat_rooms(created_at);
 CREATE INDEX IF NOT EXISTS idx_chat_room_members_room    ON chat_room_members(chat_room_id);
 CREATE INDEX IF NOT EXISTS idx_chat_room_members_user    ON chat_room_members(user_id);
+
+-- Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGSERIAL PRIMARY KEY,
+    type VARCHAR(20) NOT NULL DEFAULT 'SCHOOL',
+    recipient_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    body TEXT,
+    link VARCHAR(255),
+    read_flag BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient_read ON notifications(recipient_id, read_flag);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
 
 
 -- ==============================================================

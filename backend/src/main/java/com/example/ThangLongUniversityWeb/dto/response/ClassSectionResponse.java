@@ -1,5 +1,6 @@
 package com.example.ThangLongUniversityWeb.dto.response;
 
+import com.example.ThangLongUniversityWeb.enums.CourseType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +29,12 @@ public class ClassSectionResponse {
     
     @Schema(description = "Tên môn học", example = "Java Core")
     private String courseName;
+
+    @Schema(description = "Loai mon hoc", example = "REQUIRED")
+    private CourseType courseType;
+
+    @Schema(description = "Nhan loai mon hoc", example = "Bat buoc")
+    private String courseTypeLabel;
     
     @Schema(description = "Số tín chỉ", example = "3")
     private Integer credits;

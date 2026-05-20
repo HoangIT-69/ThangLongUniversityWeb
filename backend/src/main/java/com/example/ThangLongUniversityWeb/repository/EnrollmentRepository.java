@@ -16,11 +16,19 @@ import java.util.Optional;
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
-    // 1. Dùng cho Giảng viên: Lấy danh sách sinh viên của 1 lớp học phần để chấm điểm
     List<Enrollment> findByClassSectionId(Long classSectionId);
 
-    // 2. Dùng cho Sinh viên: Lấy thời khóa biểu / bảng điểm của mình trong 1 kỳ cụ thể
     List<Enrollment> findByStudentIdAndClassSection_SemesterId(Long studentId, Long semesterId);
+
+    List<Enrollment> findByStudentIdAndClassSection_SemesterIdAndStatus(Long studentId, Long semesterId, EnrollmentStatus status);
+
+    List<Enrollment> findByStudentIdAndClassSection_SemesterIdAndStatusIn(Long studentId, Long semesterId, List<EnrollmentStatus> statuses);
+
+    List<Enrollment> findByClassSectionSemesterId(Long semesterId);
+
+    List<Enrollment> findByClassSectionSemesterIdAndStatus(Long semesterId, EnrollmentStatus status);
+
+    long countByClassSectionIdAndStatusIn(Long classSectionId, List<EnrollmentStatus> statuses);
 
     List<Enrollment> findByStudentId(Long studentId);
 
@@ -30,16 +38,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findByStudentIdAndCourseIdOrderByIdDesc(@Param("studentId") Long studentId,
                                                             @Param("courseId") Long courseId);
 
-    // Tìm tất cả enrollment trong một học kỳ (dùng cho tính GPA)
-    List<Enrollment> findByClassSectionSemesterId(Long semesterId);
-
-    // 3. Nghiệp vụ: Kiểm tra xem sinh viên này ĐÃ ĐĂNG KÝ lớp này chưa (để chặn đăng ký trùng)
     boolean existsByStudentIdAndClassSectionId(Long studentId, Long classSectionId);
 
-    // 4. Tìm chính xác 1 bản ghi đăng ký (để Hủy môn hoặc Nhập điểm)
     Optional<Enrollment> findByStudentIdAndClassSectionId(Long studentId, Long classSectionId);
 
-    // 1. Lấy danh sách ID các MÔN HỌC (Course) mà sinh viên ĐÃ QUA MÔN hoặc ĐANG ĐĂNG KÝ
     @Query("SELECT e.classSection.course.id FROM Enrollment e " +
             "WHERE e.student.id = :studentId AND e.status IN ('PASSED', 'REGISTERED')")
     List<Long> findEnrolledOrPassedCourseIdsByStudentId(@Param("studentId") Long studentId);
@@ -48,10 +50,13 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             "WHERE e.student.id = :studentId AND e.status = 'PASSED'")
     List<Long> findPassedCourseIdsByStudentId(@Param("studentId") Long studentId);
 
-    // 2. Lấy danh sách LỚP HỌC (ClassSection) mà sinh viên đang đăng ký TRONG CÙNG HỌC KỲ
     @Query("SELECT e.classSection FROM Enrollment e " +
             "WHERE e.student.id = :studentId AND e.classSection.semester.id = :semesterId AND e.status = 'REGISTERED'")
     List<ClassSection> findCurrentRegisteredClasses(@Param("studentId") Long studentId, @Param("semesterId") Long semesterId);
+
+    @Query("SELECT e.classSection FROM Enrollment e " +
+            "WHERE e.student.id = :studentId AND e.classSection.semester.id = :semesterId AND e.status IN ('PENDING', 'REGISTERED')")
+    List<ClassSection> findCurrentSelectedOrRegisteredClasses(@Param("studentId") Long studentId, @Param("semesterId") Long semesterId);
 
     @Query("""
             SELECT e FROM Enrollment e

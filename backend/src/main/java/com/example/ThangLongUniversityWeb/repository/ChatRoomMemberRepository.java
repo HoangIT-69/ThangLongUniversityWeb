@@ -27,6 +27,8 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
      */
     List<ChatRoomMember> findByChatRoomAndIsActive(ChatRoom chatRoom, Boolean isActive);
 
+    List<ChatRoomMember> findByUserAndIsActive(User user, Boolean isActive);
+
     /**
      * Lấy số lượng thành viên active trong phòng
      */

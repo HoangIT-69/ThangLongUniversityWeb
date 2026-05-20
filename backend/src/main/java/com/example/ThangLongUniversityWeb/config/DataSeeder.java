@@ -16,28 +16,24 @@ public class DataSeeder {
     @Bean
     public CommandLineRunner seedMajors() {
         return args -> {
-            if (majorRepository.count() == 0) {
-                // Seed sample majors
-                Major cntt = new Major();
-                cntt.setMajorCode("CNTT");
-                cntt.setName("Công nghệ thông tin");
-                cntt.setDescription("Ngành Công nghệ thông tin");
-                majorRepository.save(cntt);
-
-                Major kt = new Major();
-                kt.setMajorCode("KT");
-                kt.setName("Kinh tế");
-                kt.setDescription("Ngành Kinh tế");
-                majorRepository.save(kt);
-
-                Major nn = new Major();
-                nn.setMajorCode("NN");
-                nn.setName("Ngoại ngữ");
-                nn.setDescription("Ngành Ngoại ngữ");
-                majorRepository.save(nn);
-
-                System.out.println("Seeded sample majors");
-            }
+            upsertMajor("CNTT", "Cong nghe thong tin", "Dao tao lap trinh, he thong thong tin va cong nghe phan mem.");
+            upsertMajor("KT", "Kinh te", "Dao tao kinh te ung dung va quan tri.");
+            upsertMajor("QTKD", "Quan tri kinh doanh", "Dao tao quan tri doanh nghiep, marketing va van hanh.");
+            upsertMajor("NN", "Ngon ngu Anh", "Dao tao ngon ngu, bien phien dich va tieng Anh ung dung.");
         };
+    }
+
+    private Major upsertMajor(String code, String name, String description) {
+        return majorRepository.findByMajorCode(code).map(existing -> {
+            existing.setName(name);
+            existing.setDescription(description);
+            return majorRepository.save(existing);
+        }).orElseGet(() -> {
+            Major major = new Major();
+            major.setMajorCode(code);
+            major.setName(name);
+            major.setDescription(description);
+            return majorRepository.save(major);
+        });
     }
 }

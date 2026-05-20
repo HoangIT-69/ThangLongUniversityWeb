@@ -13,6 +13,7 @@ import com.example.ThangLongUniversityWeb.repository.UserRepository;
 import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
+import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.service.GradeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -79,7 +80,8 @@ public class TeacherGradeController {
         if (!isAuthorized || isClosed) {
             List<ExamRegistration> retakes = examRegistrationRepository.findByOriginalGrade_Enrollment_Id(enrollmentId);
             for (ExamRegistration reg : retakes) {
-                if (reg.getClassSection().getTeacher().getId().equals(currentTeacher.getId())) {
+                if (reg.getStatus() == EnrollmentStatus.REGISTERED
+                        && reg.getClassSection().getTeacher().getId().equals(currentTeacher.getId())) {
                     isAuthorized = true;
                     isClosed = reg.getClassSection().isClosed();
                     if (!isClosed) break; // Ưu tiên lớp đang mở

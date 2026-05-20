@@ -36,6 +36,12 @@ export interface PeriodResponse {
   endTime: string;
 }
 
+export interface PeriodRequest {
+  periodNumber: number;
+  startTime: string;
+  endTime: string;
+}
+
 export interface ClassSectionScheduleResponse {
   id: number;
   dayOfWeek: number;
@@ -53,6 +59,8 @@ export interface ClassSectionResponse {
   courseId: number;
   courseCode: string;
   courseName: string;
+  courseType?: "REQUIRED" | "ELECTIVE" | null;
+  courseTypeLabel?: string | null;
   credits: number;
   semesterId: number;
   semesterName: string;
@@ -77,7 +85,7 @@ export interface StudentSemesterResponse {
 }
 
 export interface EnrollmentRequestResponse {
-  requestId: string;
+  requestId?: string | null;
   message: string;
 }
 
@@ -89,6 +97,8 @@ export interface EnrollmentRequestStatusResponse {
 
 export interface EnrollmentResponse {
   enrollmentId: number;
+  classSectionId?: number | null;
+  courseCode?: string | null;
   classCode: string;
   courseName: string;
   credits: number;
@@ -133,6 +143,7 @@ export interface StudentGradesSummaryResponse {
 }
 
 export interface TuitionItemResponse {
+  feeType?: "COURSE" | "RETAKE" | string | null;
   courseCode: string;
   courseName: string;
   credits: number;
@@ -193,6 +204,13 @@ export interface RetakeRequestResponse {
   enrollmentType?: "RETAKE" | "IMPROVE" | string | null;
   attemptNumber?: number | null;
   totalScore?: number | null;
+}
+
+export interface SemesterRequest {
+  name: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  registrationOpen: boolean;
 }
 
 export interface SemesterGpaSummary {
