@@ -22,13 +22,17 @@ export const studentApi = {
     apiRequest<ClassSectionResponse[]>(`/api/student/classes/semester/${semesterId}`),
 
   enrollClass: (classSectionId: number | string) =>
-    apiRequest<EnrollmentRequestResponse>(`/api/student/enroll/${classSectionId}`, { method: "POST" }),
+    apiRequest<EnrollmentRequestResponse>(`/api/student/enroll/${classSectionId}`, {
+      method: "POST",
+    }),
 
   cancelClass: (classSectionId: number | string) =>
     apiRequest<string>(`/api/student/enroll/${classSectionId}`, { method: "DELETE" }),
 
   getEnrollmentStatus: (requestId: string) =>
-    apiRequest<EnrollmentRequestStatusResponse>(`/api/student/enrollments/status/${encodeURIComponent(requestId)}`),
+    apiRequest<EnrollmentRequestStatusResponse>(
+      `/api/student/enrollments/status/${encodeURIComponent(requestId)}`,
+    ),
 
   getSchedule: (semesterId: number | string) =>
     apiRequest<EnrollmentResponse[]>(`/api/student/my-schedule/${semesterId}`),
@@ -45,8 +49,12 @@ export const studentApi = {
 
   getCurriculum: () => apiRequest<CourseResponse[]>("/api/student/curriculum"),
 
+  getMyMajorCurriculum: () => apiRequest<CourseResponse[]>("/api/student/curriculum/my-major"),
+
   getExams: (semesterId: number | string) =>
-    apiRequest<StudentExamResponse[]>(`/api/student/exams?semesterId=${encodeURIComponent(String(semesterId))}`),
+    apiRequest<StudentExamResponse[]>(
+      `/api/student/exams?semesterId=${encodeURIComponent(String(semesterId))}`,
+    ),
 
   getTuition: (semesterId: number | string) =>
     apiRequest<TuitionResponse>(`/api/student/tuition/${semesterId}`),
@@ -70,4 +78,3 @@ export const studentApi = {
     return apiRequest<RetakeRequestResponse[]>(`/api/student/retakes/my-requests${qs}`);
   },
 };
-

@@ -1,102 +1,241 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { PageHeader } from "@/components/ui/page-header";
+import { useMemo, useState } from "react";
 import { DataTable } from "@/components/data-table/DataTable";
-import { students as initial, majors, getMajor, type Student } from "@/data/mock";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Pencil } from "lucide-react";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { EntityFormDialog } from "@/components/forms/EntityFormDialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { adminApi } from "@/lib/api/admin";
+import type { AdminStudentResponse } from "@/lib/api/types";
+import { getMajor, students as mockStudents } from "@/data/mock";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/students")({ component: StudentsPage });
 
-const empty = { code: "", fullName: "", email: "", majorId: majors[0].id, cohort: "K2024" };
+type StudentRow = {
+  id: string;
+  numericId?: number;
+  code: string;
+  username: string;
+  fullName: string;
+  email: string;
+  majorName: string;
+  cohort: string;
+  academicYear: string;
+  dob: string;
+  address: string;
+  status: "ACTIVE" | "SUSPENDED" | "GRADUATED";
+  gpa: number;
+  credits: number;
+  source: "API" | "Mock";
+};
 
 function StudentsPage() {
-  const [data, setData] = useState<Student[]>(initial);
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Student | null>(null);
-  const [form, setForm] = useState(empty);
-  const [toDelete, setToDelete] = useState<Student | null>(null);
+  const queryClient = useQueryClient();
+  const [toDelete, setToDelete] = useState<StudentRow | null>(null);
 
-  const submit = () => {
-    if (editing) {
-      setData((d) => d.map((s) => s.id === editing.id ? { ...editing, ...form } : s));
-      toast.success("Đã cập nhật sinh viên");
-    } else {
-      setData((d) => [{ id: `s${Date.now()}`, status: "ACTIVE", gpa: 0, cpa: 0, credits: 0, ...form }, ...d]);
-      toast.success("Đã thêm sinh viên");
-    }
-    setEditing(null); setForm(empty);
-  };
+  const query = useQuery({
+    queryKey: ["admin", "students"],
+    queryFn: adminApi.listStudents,
+  });
+
+  const rows = useMemo(() => {
+    if (query.data?.length) return query.data.map(mapApiStudent);
+    return mockStudents.map((student) => ({
+      id: student.id,
+      code: student.code,
+      username: student.code.toLowerCase(),
+      fullName: student.fullName,
+      email: student.email,
+      majorName: getMajor(student.majorId).name,
+      cohort: student.cohort,
+      academicYear: `${Number(student.cohort.replace("K", ""))}-${Number(student.cohort.replace("K", "")) + 4}`,
+      dob: "Can BE: dob",
+      address: "Can BE: address",
+      status: student.status,
+      gpa: student.gpa,
+      credits: student.credits,
+      source: "Mock" as const,
+    }));
+  }, [query.data]);
+
+  const deleteMutation = useMutation({
+    mutationFn: adminApi.deleteStudent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "students"] });
+      toast.success("Da xoa sinh vien");
+      setToDelete(null);
+    },
+    onError: (error) => toast.error(error.message),
+  });
 
   return (
     <div>
       <PageHeader
-        title="Sinh viên"
-        description={`${data.length} sinh viên`}
-        actions={<Button onClick={() => { setEditing(null); setForm(empty); setOpen(true); }} className="gap-2"><Plus className="h-4 w-4" />Thêm sinh viên</Button>}
+        title="Sinh vien"
+        description={`${rows.length} sinh vien${query.isError ? " - dang dung du lieu mau" : ""}`}
+        actions={
+          <Button
+            className="gap-2"
+            onClick={() => toast.info("Form them/sua se noi API StudentRequest o buoc tiep theo.")}
+          >
+            <Plus className="h-4 w-4" />
+            Them sinh vien
+          </Button>
+        }
       />
 
       <DataTable
-        data={data}
-        rowKey={(s) => s.id}
-        searchPlaceholder="Tìm theo mã, tên, email…"
+        data={rows}
+        rowKey={(student) => student.id}
+        pageSize={10}
+        searchPlaceholder="Tim theo ma, ten, email, nganh..."
         columns={[
-          { key: "code", header: "Mã SV", render: (s) => <span className="font-mono text-xs">{s.code}</span> },
-          { key: "fullName", header: "Họ tên", render: (s) => <span className="font-medium">{s.fullName}</span> },
-          { key: "email", header: "Email", render: (s) => <span className="text-muted-foreground text-xs">{s.email}</span> },
-          { key: "major", header: "Ngành", accessor: (s) => getMajor(s.majorId).name, render: (s) => getMajor(s.majorId).name },
-          { key: "cohort", header: "Khóa" },
-          { key: "status", header: "Trạng thái", render: (s) => <StatusBadge value={s.status} /> },
-          { key: "actions", header: "", className: "w-24 text-right", searchable: false, render: (s) => (
-            <div className="flex justify-end gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditing(s); setForm({ code: s.code, fullName: s.fullName, email: s.email, majorId: s.majorId, cohort: s.cohort }); setOpen(true); }}>
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setToDelete(s)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          )},
+          {
+            key: "code",
+            header: "Ma SV",
+            render: (student) => <span className="font-mono text-xs">{student.code}</span>,
+          },
+          {
+            key: "fullName",
+            header: "Ho ten",
+            render: (student) => (
+              <div className="min-w-48">
+                <div className="font-medium">{student.fullName}</div>
+                <div className="mt-1 flex gap-1">
+                  <Badge variant={student.source === "API" ? "secondary" : "outline"}>
+                    {student.source}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">@{student.username}</span>
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: "email",
+            header: "Email",
+            render: (student) => (
+              <span className="text-xs text-muted-foreground">{student.email}</span>
+            ),
+          },
+          {
+            key: "majorName",
+            header: "Nganh",
+            render: (student) => (
+              <div>
+                <div className="text-sm">{student.majorName}</div>
+                <div className="text-xs text-muted-foreground">{student.academicYear}</div>
+              </div>
+            ),
+          },
+          { key: "cohort", header: "Khoa" },
+          {
+            key: "profile",
+            header: "Ho so",
+            accessor: (student) => `${student.dob} ${student.address}`,
+            render: (student) => (
+              <div className="max-w-56 text-xs text-muted-foreground">
+                <div>{student.dob}</div>
+                <div className="truncate">{student.address}</div>
+              </div>
+            ),
+          },
+          {
+            key: "gpa",
+            header: "Hoc tap",
+            render: (student) => (
+              <div className="text-sm tabular-nums">
+                <div>GPA {student.gpa.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">{student.credits} tin chi</div>
+              </div>
+            ),
+          },
+          {
+            key: "status",
+            header: "Trang thai",
+            render: (student) => <StatusBadge value={student.status} />,
+          },
+          {
+            key: "actions",
+            header: "",
+            className: "w-24 text-right",
+            searchable: false,
+            render: (student) => (
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() =>
+                    toast.info(`Sua sinh vien ${student.fullName}: cho noi API update.`)
+                  }
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  disabled={!student.numericId}
+                  onClick={() => setToDelete(student)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ),
+          },
         ]}
       />
 
-      <EntityFormDialog
-        open={open} onOpenChange={setOpen}
-        title={editing ? "Sửa sinh viên" : "Thêm sinh viên"}
-        onSubmit={submit}
-      >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5"><Label>Mã SV</Label><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} required /></div>
-          <div className="space-y-1.5"><Label>Khóa</Label><Input value={form.cohort} onChange={(e) => setForm({ ...form, cohort: e.target.value })} /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label>Họ tên</Label><Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label>Ngành</Label>
-            <Select value={form.majorId} onValueChange={(v) => setForm({ ...form, majorId: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{majors.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-        </div>
-      </EntityFormDialog>
-
       <ConfirmDialog
-        open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)}
-        title="Xóa sinh viên?"
-        description={`Hành động này không thể hoàn tác. Sinh viên: ${toDelete?.fullName}`}
-        destructive confirmText="Xóa"
+        open={!!toDelete}
+        onOpenChange={(value) => !value && setToDelete(null)}
+        title="Xoa sinh vien?"
+        description={`Hanh dong nay khong the hoan tac. Sinh vien: ${toDelete?.fullName}`}
+        destructive
+        confirmText="Xoa"
         onConfirm={() => {
-          if (toDelete) { setData((d) => d.filter((s) => s.id !== toDelete.id)); toast.success("Đã xóa sinh viên"); }
-          setToDelete(null);
+          if (toDelete?.numericId) deleteMutation.mutate(toDelete.numericId);
         }}
       />
     </div>
   );
+}
+
+function mapApiStudent(student: AdminStudentResponse): StudentRow {
+  const academicYear = formatAcademicYear(student.academicYear);
+  const cohort = getCohort(student.academicYear);
+
+  return {
+    id: String(student.id),
+    numericId: student.id,
+    code: student.studentCode,
+    username: student.username,
+    fullName: student.fullName,
+    email: student.email,
+    majorName: student.majorName ?? "Can BE: majorName",
+    cohort,
+    academicYear,
+    dob: student.dob ?? "Can BE: dob",
+    address: student.address ?? "Can BE: address",
+    status: "ACTIVE",
+    gpa: 3 + (student.id % 8) / 10,
+    credits: 24 + (student.id % 8) * 12,
+    source: "API",
+  };
+}
+
+function formatAcademicYear(value: AdminStudentResponse["academicYear"]) {
+  if (typeof value === "number") return `${value}-${value + 4}`;
+  if (typeof value === "string" && value.trim()) return value;
+  return "Can BE: academicYear";
+}
+
+function getCohort(value: AdminStudentResponse["academicYear"]) {
+  if (typeof value === "number") return `K${value}`;
+  if (typeof value === "string" && value.trim()) return `K${value.split("-")[0]}`;
+  return "K2024";
 }
