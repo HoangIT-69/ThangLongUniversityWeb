@@ -3,10 +3,19 @@ import * as authApi from "@/lib/api/auth";
 import { getStoredAuth, setStoredAuth } from "@/lib/api/client";
 import type { Role, UserProfile } from "@/lib/api/types";
 
+/** Read localStorage synchronously (safe for SSR: returns null on server) */
+function getInitialAuth() {
+  const stored = getStoredAuth();
+  if (!stored) return { role: null as Role | null, name: null as string | null };
+  return { role: stored.role, name: stored.name ?? null };
+}
+
 interface AuthState {
   role: Role | null;
   name: string | null;
   profile: UserProfile | null;
+  /** true once the initial auth check (getMe or failure) has completed */
+  isReady: boolean;
   login: (username: string, password: string) => Promise<Role>;
   setRole: (r: Role | null) => void;
   logout: () => Promise<void>;
@@ -15,19 +24,28 @@ interface AuthState {
 const Ctx = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [role, setRoleState] = useState<Role | null>(null);
-  const [name, setName] = useState<string | null>(null);
+  // ✅ Synchronously initialize from localStorage so ProtectedOutlet
+  // sees the stored role immediately on first render (no flash to /login)
+  const [role, setRoleState] = useState<Role | null>(() => getInitialAuth().role);
+  const [name, setName] = useState<string | null>(() => getInitialAuth().name);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isReady, setIsReady] = useState(() => {
+    // If there's nothing in storage, we're immediately "ready" (unauthenticated)
+    return !getStoredAuth();
+  });
 
   useEffect(() => {
     const stored = getStoredAuth();
-    if (!stored) return;
+    if (!stored) {
+      // No stored auth — already marked ready in useState initializer
+      return;
+    }
 
-    setRoleState(stored.role);
-    setName(stored.name ?? null);
-
+    // Validate the session with the backend
+    let alive = true;
     authApi.getMe()
       .then((me) => {
+        if (!alive) return;
         const displayName = me.fullName || me.username;
         setProfile(me);
         setRoleState(me.role);
@@ -35,11 +53,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStoredAuth({ ...stored, role: me.role, name: displayName });
       })
       .catch(() => {
+        if (!alive) return;
+        // Token expired / invalid — clear everything
         setStoredAuth(null);
         setRoleState(null);
         setName(null);
         setProfile(null);
+      })
+      .finally(() => {
+        if (alive) setIsReady(true);
       });
+
+    return () => { alive = false; };
   }, []);
 
   const clearAuth = () => {
@@ -68,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoleState(me.role);
     setName(displayName);
     setStoredAuth({ ...auth, role: me.role, name: displayName });
+    setIsReady(true);
 
     return me.role;
   };
@@ -80,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return <Ctx.Provider value={{ role, name, profile, login, setRole, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ role, name, profile, isReady, login, setRole, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

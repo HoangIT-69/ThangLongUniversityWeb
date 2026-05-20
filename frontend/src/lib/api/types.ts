@@ -89,6 +89,7 @@ export interface EnrollmentRequestStatusResponse {
 
 export interface EnrollmentResponse {
   enrollmentId: number;
+  classSectionId: number;
   classCode: string;
   courseName: string;
   credits: number;

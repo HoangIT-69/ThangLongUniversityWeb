@@ -15,6 +15,12 @@ public class EnrollmentResponse {
     private Long enrollmentId;
 
     @Schema(
+            description = "ID của lớp học phần",
+            example = "1"
+    )
+    private Long classSectionId;
+
+    @Schema(
             description = "Mã lớp học",
             example = "IT001.N1"
     )

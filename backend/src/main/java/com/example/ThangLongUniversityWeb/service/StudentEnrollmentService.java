@@ -147,6 +147,7 @@ public class StudentEnrollmentService {
                     Grade grade = enrollment.getGrade();
                     return EnrollmentResponse.builder()
                             .enrollmentId(enrollment.getId())
+                            .classSectionId(enrollment.getClassSection().getId())
                             .classCode(enrollment.getClassSection().getClassCode())
                             .courseName(enrollment.getClassSection().getCourse().getName())
                             .credits(enrollment.getClassSection().getCourse().getCredits())
