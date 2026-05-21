@@ -1,75 +1,186 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { PageHeader } from "@/components/ui/page-header";
-import { classSections, enrollments, getStudent, getCourse } from "@/data/mock";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Save, Lock } from "lucide-react";
+import { CheckCircle2, Lock, Save, Send } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { PageHeader, StatCard } from "@/components/ui/page-header";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TeacherGradeTable } from "@/features/teacher/TeacherGradeTable";
+import {
+  getDefaultTeacherSemesterId,
+  getTeacherClassRows,
+  getTeacherGradeRows,
+  teacherSemesterOptions,
+  type TeacherGradeRow,
+} from "@/features/teacher/teacherData";
+import { teacherApi } from "@/lib/api/teacher";
 
-export const Route = createFileRoute("/teacher/grades")({ component: GradesPage });
+export const Route = createFileRoute("/teacher/grades")({ component: TeacherGradesPage });
 
-function GradesPage() {
-  const [csId, setCsId] = useState(classSections[0].id);
-  const enrs = enrollments.filter((e) => e.classSectionId === csId && e.status === "SUCCESS");
-  const [rows, setRows] = useState<Record<string, { att: number; mid: number; fin: number; retake: number }>>(() =>
-    Object.fromEntries(enrs.map((e, i) => [e.id, { att: 8, mid: 6 + (i % 3), fin: 7 + (i % 3), retake: 0 }])));
+function TeacherGradesPage() {
+  const queryClient = useQueryClient();
+  const [semesterId, setSemesterId] = useState(getDefaultTeacherSemesterId());
+  const [classSectionId, setClassSectionId] = useState<string>("");
+  const [draftRows, setDraftRows] = useState<TeacherGradeRow[]>([]);
+  const [submittedClassIds, setSubmittedClassIds] = useState<Set<string>>(new Set());
 
-  const calc = (r: { att: number; mid: number; fin: number }) => +(r.att * 0.1 + r.mid * 0.3 + r.fin * 0.6).toFixed(2);
-  const letter = (t: number) => t >= 8.5 ? "A" : t >= 7 ? "B" : t >= 5.5 ? "C" : t >= 4 ? "D" : "F";
-  const gpa4 = (t: number) => t >= 8.5 ? 4 : t >= 7 ? 3 : t >= 5.5 ? 2 : t >= 4 ? 1 : 0;
+  const classesQuery = useQuery({
+    queryKey: ["teacher", "classes", semesterId],
+    queryFn: () => teacherApi.listMyClasses(semesterId),
+    retry: false,
+  });
 
-  const update = (id: string, key: "att" | "mid" | "fin" | "retake", v: string) => {
-    const n = Number(v);
-    if (n < 0 || n > 10 || Number.isNaN(n)) { toast.error("Điểm phải trong khoảng 0–10"); return; }
-    setRows((r) => ({ ...r, [id]: { ...r[id], [key]: n } }));
-  };
+  const classRows = useMemo(
+    () => getTeacherClassRows(classesQuery.isError ? undefined : classesQuery.data, semesterId),
+    [classesQuery.data, classesQuery.isError, semesterId],
+  );
+
+  useEffect(() => {
+    if (!classSectionId && classRows[0]) setClassSectionId(classRows[0].id);
+    if (classSectionId && !classRows.some((row) => row.id === classSectionId)) {
+      setClassSectionId(classRows[0]?.id ?? "");
+    }
+  }, [classRows, classSectionId]);
+
+  const gradesQuery = useQuery({
+    queryKey: ["teacher", "grades", classSectionId],
+    queryFn: () => teacherApi.getClassGrades(classSectionId),
+    enabled: Boolean(classSectionId),
+    retry: false,
+  });
+
+  const rows = useMemo(() => {
+    const baseRows = getTeacherGradeRows(
+      gradesQuery.isError ? undefined : gradesQuery.data,
+      classSectionId,
+    );
+    if (baseRows.length || !gradesQuery.isError) return baseRows;
+    return getTeacherGradeRows(undefined, "api-demo");
+  }, [classSectionId, gradesQuery.data, gradesQuery.isError]);
+
+  useEffect(() => {
+    setDraftRows(rows);
+  }, [rows]);
+
+  const updateGradeMutation = useMutation({
+    mutationFn: (row: TeacherGradeRow) =>
+      teacherApi.updateGrade(row.numericEnrollmentId ?? row.enrollmentId, {
+        enrollmentId: Number(row.numericEnrollmentId ?? row.enrollmentId),
+        participationScore: row.participationScore,
+        midTermScore: row.midtermScore,
+        finalScore: row.finalScore,
+        retestScore: row.retestScore,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teacher", "grades", classSectionId] });
+      queryClient.invalidateQueries({ queryKey: ["teacher", "classes", classSectionId, "students"] });
+      toast.success("Da luu diem");
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const selectedClass = classRows.find((row) => row.id === classSectionId);
+  const lockedCount = draftRows.filter((row) => !row.canEdit || row.gradeStatus === "LOCKED").length;
+  const completedCount = draftRows.filter((row) => row.totalScore > 0).length;
+  const isSubmitted = submittedClassIds.has(classSectionId);
 
   return (
-    <div>
-      <PageHeader title="Nhập điểm" description="Bảng điểm dạng spreadsheet" actions={
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => toast.success("Đã lưu thay đổi")}><Save className="h-4 w-4" />Lưu</Button>
-          <Button className="gap-2" onClick={() => toast.success("Đã khóa điểm lớp này")}><Lock className="h-4 w-4" />Khóa điểm</Button>
+    <div className="space-y-5">
+      <PageHeader
+        title="Quan ly diem"
+        description={
+          gradesQuery.isError
+            ? "API bang diem chua san sang, dang hien spreadsheet demo co fallback"
+            : "Nhap diem thanh phan, tinh tong va gui bang diem cho admin"
+        }
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => toast.success("Da luu ban nhap demo tren giao dien")}
+            >
+              <Save className="h-4 w-4" />
+              Luu nhap
+            </Button>
+            <Button
+              className="gap-2"
+              onClick={() => {
+                setSubmittedClassIds((current) => new Set(current).add(classSectionId));
+                toast.success("Da gui bang diem demo. BE can API submit de persist.");
+              }}
+              disabled={!classSectionId || isSubmitted}
+            >
+              <Send className="h-4 w-4" />
+              {isSubmitted ? "Da gui diem" : "Gui bang diem"}
+            </Button>
+          </div>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Sinh vien" value={draftRows.length} icon={CheckCircle2} tone="primary" />
+        <StatCard label="Da co diem" value={completedCount} icon={CheckCircle2} tone="success" />
+        <StatCard label="Da khoa" value={lockedCount} icon={Lock} tone="warning" />
+        <StatCard label="Trang thai gui" value={isSubmitted ? "SUBMITTED" : "DRAFT"} icon={Send} tone="info" />
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="text-sm font-medium">{selectedClass?.courseName ?? "Chon lop hoc phan"}</div>
+          <div className="text-xs text-muted-foreground">
+            {selectedClass
+              ? `${selectedClass.classCode} - ${selectedClass.scheduleText}`
+              : "Teacher can chon hoc ky va lop de nhap diem"}
+          </div>
         </div>
-      } />
-
-      <div className="mb-4">
-        <Select value={csId} onValueChange={(v) => { setCsId(v); }}>
-          <SelectTrigger className="w-[400px]"><SelectValue /></SelectTrigger>
-          <SelectContent>{classSections.map((cs) => <SelectItem key={cs.id} value={cs.id}>{cs.code} — {getCourse(cs.courseId).name}</SelectItem>)}</SelectContent>
-        </Select>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Select value={semesterId} onValueChange={setSemesterId}>
+            <SelectTrigger className="w-full sm:w-[260px]">
+              <SelectValue placeholder="Hoc ky" />
+            </SelectTrigger>
+            <SelectContent>
+              {teacherSemesterOptions.map((semester) => (
+                <SelectItem key={semester.id} value={semester.id}>
+                  {semester.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={classSectionId} onValueChange={setClassSectionId}>
+            <SelectTrigger className="w-full sm:w-[320px]">
+              <SelectValue placeholder="Lop hoc phan" />
+            </SelectTrigger>
+            <SelectContent>
+              {classRows.map((row) => (
+                <SelectItem key={row.id} value={row.id}>
+                  {row.classCode} - {row.courseName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="rounded-xl border bg-card shadow-sm overflow-x-auto">
-        <Table>
-          <TableHeader><TableRow className="bg-muted/40">
-            <TableHead>Sinh viên</TableHead><TableHead className="w-24">Chuyên cần</TableHead><TableHead className="w-24">Giữa kỳ</TableHead><TableHead className="w-24">Cuối kỳ</TableHead><TableHead className="w-24">Thi lại</TableHead><TableHead>Tổng</TableHead><TableHead>Chữ</TableHead><TableHead>GPA4</TableHead>
-          </TableRow></TableHeader>
-          <TableBody>
-            {enrs.length === 0 ? <TableRow><TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">Không có sinh viên đăng ký lớp này.</TableCell></TableRow>
-              : enrs.map((e) => {
-                const s = getStudent(e.studentId);
-                const r = rows[e.id];
-                const t = calc(r);
-                return (
-                  <TableRow key={e.id}>
-                    <TableCell><div className="font-medium text-sm">{s.fullName}</div><div className="text-xs text-muted-foreground font-mono">{s.code}</div></TableCell>
-                    {(["att","mid","fin","retake"] as const).map((k) => (
-                      <TableCell key={k}><Input type="number" min={0} max={10} step={0.1} value={r[k]} onChange={(ev) => update(e.id, k, ev.target.value)} className={cn("h-8 w-20 tabular-nums", (r[k] < 0 || r[k] > 10) && "border-destructive")} /></TableCell>
-                    ))}
-                    <TableCell className="tabular-nums font-semibold">{t}</TableCell>
-                    <TableCell><span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{letter(t)}</span></TableCell>
-                    <TableCell className="tabular-nums">{gpa4(t).toFixed(1)}</TableCell>
-                  </TableRow>
-                );
-              })}
-          </TableBody>
-        </Table>
-      </div>
+      <TeacherGradeTable
+        rows={draftRows}
+        savingEnrollmentId={
+          updateGradeMutation.isPending ? updateGradeMutation.variables?.enrollmentId : undefined
+        }
+        onChange={(nextRow) =>
+          setDraftRows((current) =>
+            current.map((item) => (item.enrollmentId === nextRow.enrollmentId ? nextRow : item)),
+          )
+        }
+        onSave={(nextRow) => {
+          if (!nextRow.numericEnrollmentId) {
+            toast.success("Da luu diem demo tren FE. BE can API de persist mock row.");
+            return;
+          }
+          updateGradeMutation.mutate(nextRow);
+        }}
+      />
     </div>
   );
 }

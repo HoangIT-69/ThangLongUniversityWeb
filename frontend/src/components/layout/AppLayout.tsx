@@ -71,8 +71,11 @@ const teacherNavGroups: NavGroup[] = [
   {
     heading: "Giảng dạy",
     items: [
+      { to: "/teacher/timetable", label: "Thời khóa biểu", icon: CalendarDays },
       { to: "/teacher/classes", label: "Lớp học phần", icon: Layers },
+      { to: "/teacher/attendance", label: "Điểm danh", icon: CalendarCheck },
       { to: "/teacher/grades", label: "Quản lý điểm", icon: NotebookPen },
+      { to: "/teacher/notifications", label: "Thông báo", icon: Bell },
     ],
   },
 ];
