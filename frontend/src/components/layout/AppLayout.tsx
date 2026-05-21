@@ -55,7 +55,6 @@ const adminNavGroups: NavGroup[] = [
   {
     heading: "Hệ thống",
     items: [
-      { to: "/admin/chat", label: "Chat", icon: MessageSquare },
       { to: "/admin/profile", label: "Hồ sơ cá nhân", icon: User },
     ],
   },
@@ -77,12 +76,6 @@ const teacherNavGroups: NavGroup[] = [
       { to: "/teacher/attendance", label: "Điểm danh", icon: CalendarCheck },
       { to: "/teacher/grades", label: "Quản lý điểm", icon: NotebookPen },
       { to: "/teacher/notifications", label: "Thông báo", icon: Bell },
-    ],
-  },
-  {
-    heading: "Tiện ích",
-    items: [
-      { to: "/teacher/chat", label: "Chat", icon: MessageSquare },
     ],
   },
 ];

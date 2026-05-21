@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CreditCard, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { studentApi } from "@/lib/api/student";
+import { pickCurrentSemester } from "@/lib/semester";
 
 export const Route = createFileRoute("/student/tuition")({ component: TuitionPage });
 
@@ -22,7 +23,7 @@ function TuitionPage() {
   const [semesterId, setSemesterId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!semesterId && semesters.length) setSemesterId((semesters.find((s) => s.registrationOpen) ?? semesters[0]).id);
+    if (!semesterId && semesters.length) setSemesterId(pickCurrentSemester(semesters)?.id ?? null);
   }, [semesterId, semesters]);
 
   const tuitionQuery = useQuery({

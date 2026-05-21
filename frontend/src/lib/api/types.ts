@@ -14,6 +14,26 @@ export interface UserProfile {
   code?: string;
   majorOrDegree?: string | null;
   avatarUrl?: string | null;
+  // Personal info
+  gender?: string | null;
+  dateOfBirth?: string | null;
+  age?: number | null;
+  nationalId?: string | null;
+  placeOfBirth?: string | null;
+  hometown?: string | null;
+  permanentAddress?: string | null;
+  currentAddress?: string | null;
+  phone?: string | null;
+  emergencyContact?: string | null;
+  // Academic info (Student)
+  cohort?: string | null;
+  className?: string | null;
+  academicYear?: string | null;
+  advisor?: string | null;
+  status?: string | null;
+  trainingType?: string | null;
+  // Professional info (Teacher)
+  department?: string | null;
 }
 
 export interface MajorResponse {
@@ -335,6 +355,28 @@ export interface TuitionResponse {
   pricePerCredit: number;
   paid: boolean;
   items: TuitionItemResponse[];
+}
+
+export interface StudentDashboardResponse {
+  profile: UserProfile;
+  currentSemester?: StudentSemesterResponse | null;
+  learningResults?: LearningResultsResponse | null;
+  grades?: StudentGradesSummaryResponse | null;
+  tuition?: TuitionResponse | null;
+  schedule: EnrollmentResponse[];
+  todaySchedule: EnrollmentResponse[];
+  exams: StudentExamResponse[];
+  upcomingExams: StudentExamResponse[];
+  semesterGpa: number;
+  cumulativeGpa: number;
+  registeredCredits: number;
+  earnedCredits: number;
+  gradedCourseCount: number;
+  activeCourseCount: number;
+  upcomingExamCount: number;
+  tuitionRemaining: number;
+  tuitionStatus: string;
+  registrationStatus: string;
 }
 
 export interface RetakeEligibleCourseResponse {
