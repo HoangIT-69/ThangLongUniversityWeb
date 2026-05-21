@@ -1,76 +1,243 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { PageHeader } from "@/components/ui/page-header";
+import { useMemo, useState } from "react";
 import { DataTable } from "@/components/data-table/DataTable";
-import { users as initialUsers, type User } from "@/data/mock";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { EntityFormDialog } from "@/components/forms/EntityFormDialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PageHeader } from "@/components/ui/page-header";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Switch } from "@/components/ui/switch";
+import { adminApi } from "@/lib/api/admin";
+import type { AdminUserResponse, Role } from "@/lib/api/types";
+import { users as mockUsers } from "@/data/mock";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/users")({ component: UsersPage });
 
-function UsersPage() {
-  const [data, setData] = useState<User[]>(initialUsers);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ username: "", email: "", fullName: "", role: "ADMIN" as User["role"] });
+type AdminUserRow = {
+  id: string;
+  numericId?: number;
+  username: string;
+  email: string;
+  fullName: string;
+  role: Role;
+  active: boolean;
+  createdAt: string;
+  lastLogin: string;
+  source: "API" | "Mock";
+};
 
-  const toggle = (id: string) => {
-    setData((d) => d.map((u) => u.id === id ? { ...u, active: !u.active } : u));
-    toast.success("Đã cập nhật trạng thái");
+const roleLabels: Record<Role, string> = {
+  ADMIN: "Quan tri he thong",
+  TEACHER: "Giang vien",
+  STUDENT: "Sinh vien",
+};
+
+function UsersPage() {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    fullName: "",
+    role: "ADMIN" as Role,
+    password: "password123",
+  });
+
+  const query = useQuery({
+    queryKey: ["admin", "users"],
+    queryFn: adminApi.listUsers,
+  });
+
+  const rows = useMemo(() => {
+    if (query.data?.length) return query.data.map(mapApiUser);
+    return mockUsers.map((user) => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      active: user.active,
+      createdAt: user.createdAt,
+      lastLogin: "Chua co API",
+      source: "Mock" as const,
+    }));
+  }, [query.data]);
+
+  const createMutation = useMutation({
+    mutationFn: adminApi.createAdmin,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      toast.success("Da tao tai khoan admin");
+      setForm({ username: "", email: "", fullName: "", role: "ADMIN", password: "password123" });
+      setOpen(false);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: adminApi.toggleUserStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      toast.success("Da cap nhat trang thai tai khoan");
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const submit = () => {
+    if (form.role !== "ADMIN") {
+      toast.info(
+        "Backend hien chi co API tao tai khoan admin. Student/Teacher tao tai trang quan ly rieng.",
+      );
+      return;
+    }
+    createMutation.mutate({ username: form.username, email: form.email, password: form.password });
   };
 
   return (
     <div>
       <PageHeader
-        title="Quản lý tài khoản"
-        description={`${data.length} tài khoản trong hệ thống`}
-        actions={<Button onClick={() => setOpen(true)} className="gap-2"><Plus className="h-4 w-4" />Thêm tài khoản</Button>}
+        title="Quan ly tai khoan"
+        description={`${rows.length} tai khoan trong he thong${query.isError ? " - dang dung du lieu mau" : ""}`}
+        actions={
+          <Button onClick={() => setOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Them tai khoan
+          </Button>
+        }
       />
 
       <DataTable
-        data={data}
-        rowKey={(u) => u.id}
-        searchPlaceholder="Tìm theo tên, email, role…"
+        data={rows}
+        rowKey={(user) => user.id}
+        searchPlaceholder="Tim theo username, ho ten, email, role..."
         columns={[
-          { key: "username", header: "Username", render: (u) => <span className="font-mono text-xs">{u.username}</span> },
-          { key: "fullName", header: "Họ tên", render: (u) => <span className="font-medium">{u.fullName}</span> },
-          { key: "email", header: "Email", render: (u) => <span className="text-muted-foreground">{u.email}</span> },
-          { key: "role", header: "Role", render: (u) => <StatusBadge value={u.role} /> },
-          { key: "active", header: "Trạng thái", render: (u) => (
-            <div className="flex items-center gap-2">
-              <Switch checked={u.active} onCheckedChange={() => toggle(u.id)} />
-              <span className="text-xs text-muted-foreground">{u.active ? "Active" : "Inactive"}</span>
-            </div>
-          )},
-          { key: "createdAt", header: "Tạo lúc", render: (u) => <span className="text-xs text-muted-foreground">{u.createdAt}</span> },
+          {
+            key: "username",
+            header: "Username",
+            render: (user) => <span className="font-mono text-xs">{user.username}</span>,
+          },
+          {
+            key: "fullName",
+            header: "Ho ten",
+            render: (user) => (
+              <div className="min-w-44">
+                <div className="font-medium">{user.fullName}</div>
+                <div className="mt-1 flex gap-1">
+                  <Badge variant={user.source === "API" ? "secondary" : "outline"}>
+                    {user.source}
+                  </Badge>
+                  {user.source === "API" && <Badge variant="outline">Can BE: fullName</Badge>}
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: "email",
+            header: "Email",
+            render: (user) => <span className="text-sm text-muted-foreground">{user.email}</span>,
+          },
+          {
+            key: "role",
+            header: "Vai tro",
+            accessor: (user) => `${user.role} ${roleLabels[user.role]}`,
+            render: (user) => (
+              <div className="space-y-1">
+                <StatusBadge value={user.role} />
+                <div className="text-xs text-muted-foreground">{roleLabels[user.role]}</div>
+              </div>
+            ),
+          },
+          {
+            key: "active",
+            header: "Trang thai",
+            render: (user) => (
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={user.active}
+                  disabled={!user.numericId || toggleMutation.isPending}
+                  onCheckedChange={() => user.numericId && toggleMutation.mutate(user.numericId)}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {user.active ? "Active" : "Inactive"}
+                </span>
+              </div>
+            ),
+          },
+          {
+            key: "createdAt",
+            header: "Tao luc",
+            render: (user) => (
+              <div className="text-xs text-muted-foreground">
+                <div>{user.createdAt}</div>
+                {user.source === "API" && <div>Can BE: createdAt</div>}
+              </div>
+            ),
+          },
+          {
+            key: "lastLogin",
+            header: "Dang nhap gan nhat",
+            render: (user) => (
+              <span className="text-xs text-muted-foreground">{user.lastLogin}</span>
+            ),
+          },
         ]}
       />
 
       <EntityFormDialog
         open={open}
         onOpenChange={setOpen}
-        title="Thêm tài khoản"
-        description="Tạo tài khoản admin demo (chưa lưu thật)."
-        onSubmit={() => {
-          setData((d) => [{ id: `u${Date.now()}`, active: true, createdAt: new Date().toISOString().slice(0, 10), ...form }, ...d]);
-          toast.success("Đã tạo tài khoản mới");
-          setForm({ username: "", email: "", fullName: "", role: "ADMIN" });
-        }}
+        title="Them tai khoan"
+        description="Backend hien ho tro tao nhanh tai khoan ADMIN. Mat khau mac dinh co the doi trong form."
+        onSubmit={submit}
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5"><Label>Username</Label><Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required /></div>
-          <div className="space-y-1.5"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label>Họ tên</Label><Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required /></div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label>Vai trò</Label>
-            <Select value={form.role} onValueChange={(v: any) => setForm({ ...form, role: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+          <div className="space-y-1.5">
+            <Label>Username</Label>
+            <Input
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Mat khau</Label>
+            <Input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Vai tro</Label>
+            <Select
+              value={form.role}
+              onValueChange={(value) => setForm({ ...form, role: toRole(value) })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ADMIN">Admin</SelectItem>
                 <SelectItem value="TEACHER">Teacher</SelectItem>
@@ -78,8 +245,35 @@ function UsersPage() {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Ho ten hien thi</Label>
+            <Input
+              value={form.fullName}
+              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+              placeholder="Can BE: users.fullName"
+            />
+          </div>
         </div>
       </EntityFormDialog>
     </div>
   );
+}
+
+function mapApiUser(user: AdminUserResponse): AdminUserRow {
+  return {
+    id: String(user.id),
+    numericId: user.id,
+    username: user.username,
+    email: user.email,
+    fullName: `${roleLabels[user.role]} ${user.username}`,
+    role: user.role,
+    active: user.active,
+    createdAt: `2026-05-${String((user.id % 20) + 1).padStart(2, "0")}`,
+    lastLogin: "Can BE: lastLoginAt",
+    source: "API",
+  };
+}
+
+function toRole(value: string): Role {
+  return value === "TEACHER" || value === "STUDENT" ? value : "ADMIN";
 }

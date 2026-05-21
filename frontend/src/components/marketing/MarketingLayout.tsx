@@ -8,9 +8,10 @@ import { cn } from "@/lib/utils";
 const nav = [
   { to: "/", label: "Trang chủ" },
   { to: "/about", label: "Giới thiệu" },
-  { to: "/programs", label: "Chương trình" },
+  { to: "/programs", label: "Ngành học" },
   { to: "/admissions", label: "Tuyển sinh" },
-  { to: "/news", label: "Tin tức" },
+  { to: "/tuition", label: "Học phí" },
+  { to: "/articles", label: "Tin tức" },
   { to: "/contact", label: "Liên hệ" },
 ] as const;
 

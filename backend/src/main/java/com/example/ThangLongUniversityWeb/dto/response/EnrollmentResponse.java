@@ -6,10 +6,10 @@ import lombok.Data;
 
 @Data
 @Builder
-@Schema(description = "Thông tin ghi danh môn học")
+@Schema(description = "Thong tin ghi danh mon hoc")
 public class EnrollmentResponse {
     @Schema(
-            description = "ID của ghi danh",
+            description = "ID cua ghi danh",
             example = "1"
     )
     private Long enrollmentId;
@@ -27,73 +27,73 @@ public class EnrollmentResponse {
     private String courseCode;
 
     @Schema(
-            description = "Mã lớp học",
+            description = "Ma lop hoc",
             example = "IT001.N1"
     )
     private String classCode;
-    
+
     @Schema(
-            description = "Tên môn học",
+            description = "Ten mon hoc",
             example = "Java Core Programming"
     )
     private String courseName;
-    
+
     @Schema(
-            description = "Số tín chỉ",
+            description = "So tin chi",
             example = "3"
     )
     private Integer credits;
 
     @Schema(
-            description = "Phòng học",
+            description = "Phong hoc",
             example = "A301"
     )
     private String room;
-    
+
     @Schema(
-            description = "Ngày trong tuần (2-8)",
+            description = "Ngay trong tuan (2-8)",
             example = "2"
     )
     private Integer dayOfWeek;
-    
+
     @Schema(
-            description = "Tiết học bắt đầu (1-12)",
+            description = "Tiet hoc bat dau (1-12)",
             example = "1"
     )
     private Integer startPeriod;
-    
+
     @Schema(
-            description = "Tiết học kết thúc (1-12)",
+            description = "Tiet hoc ket thuc (1-12)",
             example = "4"
     )
     private Integer endPeriod;
-    
+
     @Schema(
-            description = "Tên giảng viên",
-            example = "Thầy Nguyễn Văn B"
+            description = "Ten giang vien",
+            example = "Thay Nguyen Van B"
     )
     private String teacherName;
 
     @Schema(
-            description = "Điểm giữa kỳ (0-10)",
+            description = "Diem giua ky (0-10)",
             example = "7.5"
     )
     private Float midTermScore;
-    
+
     @Schema(
-            description = "Điểm cuối kỳ (0-10)",
+            description = "Diem cuoi ky (0-10)",
             example = "8.0"
     )
     private Float finalScore;
-    
+
     @Schema(
-            description = "Điểm tổng kết",
+            description = "Diem tong ket",
             example = "7.75"
     )
     private Float totalScore;
-    
+
     @Schema(
-            description = "Trạng thái ghi danh",
+            description = "Trang thai ghi danh",
             example = "REGISTERED",
             allowableValues = {"PENDING", "REGISTERED", "PASSED", "FAILED", "CANCELED"}
     )

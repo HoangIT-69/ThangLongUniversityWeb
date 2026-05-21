@@ -1,51 +1,201 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader } from "@/components/ui/page-header";
+import { useMemo, useState } from "react";
 import { DataTable } from "@/components/data-table/DataTable";
-import { teachers as initial, type Teacher } from "@/data/mock";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { useState } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { adminApi } from "@/lib/api/admin";
+import type { AdminTeacherResponse } from "@/lib/api/types";
+import { teachers as mockTeachers } from "@/data/mock";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/teachers")({ component: TeachersPage });
 
+type TeacherRow = {
+  id: string;
+  numericId?: number;
+  code: string;
+  fullName: string;
+  email: string;
+  department: string;
+  degree: string;
+  phone: string;
+  address: string;
+  activeClasses: number;
+  status: "ACTIVE" | "INACTIVE";
+  source: "API" | "Mock";
+};
+
 function TeachersPage() {
-  const [data, setData] = useState<Teacher[]>(initial);
-  const [toDelete, setToDelete] = useState<Teacher | null>(null);
+  const queryClient = useQueryClient();
+  const [toDelete, setToDelete] = useState<TeacherRow | null>(null);
+
+  const query = useQuery({
+    queryKey: ["admin", "teachers"],
+    queryFn: adminApi.listTeachers,
+  });
+
+  const rows = useMemo(() => {
+    if (query.data?.length) return query.data.map(mapApiTeacher);
+    return mockTeachers.map((teacher) => ({
+      id: teacher.id,
+      code: teacher.code,
+      fullName: teacher.fullName,
+      email: teacher.email,
+      department: teacher.department,
+      degree: "Can BE: degree",
+      phone: "Can BE: phone",
+      address: "Can BE: address",
+      activeClasses: teacher.activeClasses,
+      status: teacher.status,
+      source: "Mock" as const,
+    }));
+  }, [query.data]);
+
+  const deleteMutation = useMutation({
+    mutationFn: adminApi.deleteTeacher,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "teachers"] });
+      toast.success("Da xoa giang vien");
+      setToDelete(null);
+    },
+    onError: (error) => toast.error(error.message),
+  });
 
   return (
     <div>
-      <PageHeader title="Giảng viên" description={`${data.length} giảng viên`} actions={
-        <Button className="gap-2" onClick={() => toast.success("Mở dialog thêm giảng viên (demo)")}>
-          <Plus className="h-4 w-4" />Thêm giảng viên
-        </Button>
-      } />
+      <PageHeader
+        title="Giang vien"
+        description={`${rows.length} giang vien${query.isError ? " - dang dung du lieu mau" : ""}`}
+        actions={
+          <Button
+            className="gap-2"
+            onClick={() => toast.info("Form them/sua se noi API TeacherRequest o buoc tiep theo.")}
+          >
+            <Plus className="h-4 w-4" />
+            Them giang vien
+          </Button>
+        }
+      />
+
       <DataTable
-        data={data}
-        rowKey={(t) => t.id}
-        searchPlaceholder="Tìm theo mã, tên, khoa…"
+        data={rows}
+        rowKey={(teacher) => teacher.id}
+        searchPlaceholder="Tim theo ma, ten, khoa, hoc vi..."
         columns={[
-          { key: "code", header: "Mã GV", render: (t) => <span className="font-mono text-xs">{t.code}</span> },
-          { key: "fullName", header: "Họ tên", render: (t) => <span className="font-medium">{t.fullName}</span> },
-          { key: "email", header: "Email", render: (t) => <span className="text-xs text-muted-foreground">{t.email}</span> },
-          { key: "department", header: "Khoa / Ngành" },
-          { key: "activeClasses", header: "Lớp đang dạy", render: (t) => <span className="tabular-nums">{t.activeClasses}</span> },
-          { key: "status", header: "Trạng thái", render: (t) => <StatusBadge value={t.status} /> },
-          { key: "actions", header: "", className: "w-24 text-right", searchable: false, render: (t) => (
-            <div className="flex justify-end gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toast.success(`Sửa giảng viên ${t.fullName} (demo)`)}><Pencil className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setToDelete(t)}><Trash2 className="h-4 w-4" /></Button>
-            </div>
-          )},
+          {
+            key: "code",
+            header: "Ma GV",
+            render: (teacher) => <span className="font-mono text-xs">{teacher.code}</span>,
+          },
+          {
+            key: "fullName",
+            header: "Ho ten",
+            render: (teacher) => (
+              <div className="min-w-48">
+                <div className="font-medium">{teacher.fullName}</div>
+                <div className="mt-1 flex gap-1">
+                  <Badge variant={teacher.source === "API" ? "secondary" : "outline"}>
+                    {teacher.source}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">{teacher.degree}</span>
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: "email",
+            header: "Email",
+            render: (teacher) => (
+              <span className="text-xs text-muted-foreground">{teacher.email}</span>
+            ),
+          },
+          { key: "department", header: "Khoa / Bo mon" },
+          {
+            key: "contact",
+            header: "Lien he",
+            accessor: (teacher) => `${teacher.phone} ${teacher.address}`,
+            render: (teacher) => (
+              <div className="max-w-56 text-xs text-muted-foreground">
+                <div>{teacher.phone}</div>
+                <div className="truncate">{teacher.address}</div>
+              </div>
+            ),
+          },
+          {
+            key: "activeClasses",
+            header: "Lop dang day",
+            render: (teacher) => <span className="tabular-nums">{teacher.activeClasses}</span>,
+          },
+          {
+            key: "status",
+            header: "Trang thai",
+            render: (teacher) => <StatusBadge value={teacher.status} />,
+          },
+          {
+            key: "actions",
+            header: "",
+            className: "w-24 text-right",
+            searchable: false,
+            render: (teacher) => (
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() =>
+                    toast.info(`Sua giang vien ${teacher.fullName}: cho noi API update.`)
+                  }
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  disabled={!teacher.numericId}
+                  onClick={() => setToDelete(teacher)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ),
+          },
         ]}
       />
-      <ConfirmDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)}
-        title="Xóa giảng viên?" description={`Hành động không thể hoàn tác: ${toDelete?.fullName}`}
-        destructive confirmText="Xóa"
-        onConfirm={() => { if (toDelete) { setData((d) => d.filter((x) => x.id !== toDelete.id)); toast.success("Đã xóa giảng viên"); } setToDelete(null); }}
+
+      <ConfirmDialog
+        open={!!toDelete}
+        onOpenChange={(value) => !value && setToDelete(null)}
+        title="Xoa giang vien?"
+        description={`Hanh dong nay khong the hoan tac: ${toDelete?.fullName}`}
+        destructive
+        confirmText="Xoa"
+        onConfirm={() => {
+          if (toDelete?.numericId) deleteMutation.mutate(toDelete.numericId);
+        }}
       />
     </div>
   );
+}
+
+function mapApiTeacher(teacher: AdminTeacherResponse): TeacherRow {
+  return {
+    id: String(teacher.id),
+    numericId: teacher.id,
+    code: teacher.teacherCode,
+    fullName: teacher.fullName,
+    email: `Can BE: email (${teacher.teacherCode.toLowerCase()}@tlu.edu.vn)`,
+    department: teacher.department ?? "Can BE: department",
+    degree: teacher.degree ?? "Can BE: degree",
+    phone: teacher.phone ?? "Can BE: phone",
+    address: teacher.address ?? "Can BE: address",
+    activeClasses: 1 + (teacher.id % 4),
+    status: "ACTIVE",
+    source: "API",
+  };
 }
