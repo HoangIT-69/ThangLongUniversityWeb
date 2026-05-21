@@ -233,20 +233,47 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Student student(String username, String email, String code, String fullName, Major major, Integer academicYear) {
-        return studentRepository.findByStudentCode(code).orElseGet(() -> {
+        return studentRepository.findByStudentCode(code).map(existing -> {
+            applyStudentProfile(existing, code, fullName, major, academicYear);
+            return studentRepository.save(existing);
+        }).orElseGet(() -> {
             User user = userRepository.findByUsername(username)
                     .orElseGet(() -> saveUser(username, email, Role.STUDENT));
 
             Student student = new Student();
             student.setUser(user);
-            student.setStudentCode(code);
-            student.setFullName(fullName);
-            student.setDob(LocalDate.of(2004, 1, code.endsWith("1") ? 10 : 18));
-            student.setAddress("Ha Noi");
-            student.setMajor(major);
-            student.setAcademicYear(academicYear);
+            applyStudentProfile(student, code, fullName, major, academicYear);
             return studentRepository.save(student);
         });
+    }
+
+    private void applyStudentProfile(Student student, String code, String fullName, Major major, Integer academicYear) {
+        boolean firstStudent = code.endsWith("1");
+        student.setStudentCode(code);
+        student.setFullName(fullName);
+        student.setDob(firstStudent ? LocalDate.of(2004, 1, 10) : LocalDate.of(2004, 8, 18));
+        student.setGender(firstStudent ? "Nam" : "Nu");
+        student.setPhone(firstStudent ? "0987654321" : "0977000002");
+        student.setNationalId(firstStudent ? "001204000789" : "001204000790");
+        student.setPlaceOfBirth(firstStudent ? "Ha Noi" : "Nam Dinh");
+        student.setHometown(firstStudent ? "Thanh Tri, Ha Noi" : "Hai Hau, Nam Dinh");
+        student.setPermanentAddress(firstStudent
+                ? "So 15, ngo 120 Nguyen Trai, Thanh Xuan, Ha Noi"
+                : "So 8 Tran Hung Dao, Hai Hau, Nam Dinh");
+        student.setCurrentAddress(firstStudent
+                ? "KTX Thang Long, Nghiem Xuan Yem, Hoang Mai, Ha Noi"
+                : "So 22 Chua Lang, Dong Da, Ha Noi");
+        student.setEmergencyContact(firstStudent
+                ? "Le Van Thanh - 0912345678"
+                : "Pham Thi Hoa - 0912000002");
+        student.setAddress(student.getCurrentAddress());
+        student.setCohort(firstStudent ? "K36" : "K36");
+        student.setClassName(firstStudent ? "CNTT-K36A" : "KT-K36A");
+        student.setAdvisor(firstStudent ? "ThS. Nguyen Minh Anh" : "TS. Tran Hoang Nam");
+        student.setStatus("Dang hoc");
+        student.setTrainingType("Dai hoc chinh quy");
+        student.setMajor(major);
+        student.setAcademicYear(academicYear);
     }
 
     private Teacher teacher(String username, String email, String code, String fullName, String department, String degree) {

@@ -10,6 +10,7 @@ import type {
   RetakeRegistrationResponse,
   RetakeRequestResponse,
   StudentExamResponse,
+  StudentDashboardResponse,
   StudentGradesSummaryResponse,
   StudentSemesterResponse,
   TuitionResponse,
@@ -17,6 +18,11 @@ import type {
 
 export const studentApi = {
   listSemesters: () => apiRequest<StudentSemesterResponse[]>("/api/student/semesters"),
+
+  getDashboard: (semesterId?: number | string | null) => {
+    const qs = semesterId ? `?semesterId=${encodeURIComponent(String(semesterId))}` : "";
+    return apiRequest<StudentDashboardResponse>(`/api/student/dashboard${qs}`);
+  },
 
   listAvailableClasses: (semesterId: number | string) =>
     apiRequest<ClassSectionResponse[]>(`/api/student/classes/semester/${semesterId}`),

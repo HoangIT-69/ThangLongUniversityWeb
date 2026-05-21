@@ -185,7 +185,7 @@ public class StudentEnrollmentService {
                 .map(e -> {
                     Grade grade = e.getGrade();
                     int credits = e.getClassSection().getCourse().getCredits();
-                    double gp = toGradePoint(grade.getTotalScore());
+                    double gp = grade.getGpa4() != null ? grade.getGpa4() : 0.0;
                     return new StudentGradeItemResponse(
                             e.getId(),
                             e.getClassSection().getSemester().getId(),
@@ -214,7 +214,7 @@ public class StudentEnrollmentService {
                                 e.getClassSection().getCourse().getName(),
                                 e.getClassSection().getCourse().getCredits(),
                                 e.getGrade().getTotalScore(),
-                                toGradePoint(e.getGrade().getTotalScore())
+                                e.getGrade().getGpa4() != null ? e.getGrade().getGpa4() : 0.0
                         ))
                         .collect(Collectors.toList())
         );
@@ -259,13 +259,6 @@ public class StudentEnrollmentService {
                 .totalScore(grade != null ? grade.getTotalScore() : null)
                 .status(enrollment.getStatus().name())
                 .build();
-    }
-
-    private double toGradePoint(float totalScore10) {
-        double gp = (totalScore10 / 10.0) * 4.0;
-        if (gp < 0) gp = 0;
-        if (gp > 4) gp = 4;
-        return gp;
     }
 
     private double computeGpa(List<StudentGradeItemResponse> items) {

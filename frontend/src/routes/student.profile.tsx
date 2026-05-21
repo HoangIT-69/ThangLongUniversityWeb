@@ -1,11 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Award,
   BookOpen,
   Building2,
   CalendarDays,
@@ -33,36 +32,13 @@ interface ProfileViewProps {
 interface DisplayField {
   label: string;
   value: string | number;
-  source: "api" | "mock";
 }
-
-const mockStudentProfile = {
-  gender: "Nam",
-  dateOfBirth: "12/09/2004",
-  age: 21,
-  nationalId: "001204000789",
-  placeOfBirth: "Ha Noi",
-  hometown: "Thanh Tri, Ha Noi",
-  permanentAddress: "So 12 ngo 45 Nguyen Trai, Thanh Xuan, Ha Noi",
-  currentAddress: "KTX Dai hoc Thang Long, Nghiem Xuan Yem, Hoang Mai",
-  phone: "0987 654 321",
-  emergencyContact: "Le Van An - 0912 345 678",
-  cohort: "K36",
-  className: "CNTT-K36A",
-  academicYear: "2022 - 2026",
-  advisor: "ThS. Nguyen Minh Hoang",
-  status: "Dang hoc",
-  trainingType: "Dai hoc chinh quy",
-  accumulatedCredits: 84,
-  gpa: 3.42,
-  scholarshipLevel: "Gioi",
-};
 
 export function ProfileView({ subtitle }: ProfileViewProps) {
   const { profile, name, role } = useAuth();
   const fullName = profile?.fullName ?? name ?? "Sinh vien";
-  const studentCode = profile?.code ?? "SV001";
-  const major = profile?.majorOrDegree ?? "Cong nghe thong tin";
+  const studentCode = profile?.code ?? "-";
+  const major = profile?.majorOrDegree ?? "-";
   const initials = fullName
     .split(" ")
     .filter(Boolean)
@@ -71,35 +47,38 @@ export function ProfileView({ subtitle }: ProfileViewProps) {
     .join("")
     .toUpperCase();
 
+  const val = (v: string | number | null | undefined) =>
+    v != null && v !== "" ? v : "-";
+
   const identityFields: DisplayField[] = [
-    field("Ho va ten", fullName, Boolean(profile?.fullName || name)),
-    field("Ten dang nhap", profile?.username, Boolean(profile?.username)),
-    field("Ma sinh vien", studentCode, Boolean(profile?.code)),
-    field("Vai tro", profile?.role ?? role ?? "STUDENT", Boolean(profile?.role || role)),
-    field("Gioi tinh", mockStudentProfile.gender, false),
-    field("Ngay sinh", mockStudentProfile.dateOfBirth, false),
-    field("Tuoi", mockStudentProfile.age, false),
-    field("CCCD", mockStudentProfile.nationalId, false),
+    { label: "Ho va ten", value: val(profile?.fullName ?? name) },
+    { label: "Ten dang nhap", value: val(profile?.username) },
+    { label: "Ma sinh vien", value: val(profile?.code) },
+    { label: "Vai tro", value: val(profile?.role ?? role) },
+    { label: "Gioi tinh", value: val(profile?.gender) },
+    { label: "Ngay sinh", value: val(profile?.dateOfBirth) },
+    { label: "Tuoi", value: val(profile?.age) },
+    { label: "CCCD", value: val(profile?.nationalId) },
   ];
 
   const contactFields: DisplayField[] = [
-    field("Email", profile?.email, Boolean(profile?.email)),
-    field("So dien thoai", mockStudentProfile.phone, false),
-    field("Noi sinh", mockStudentProfile.placeOfBirth, false),
-    field("Que quan", mockStudentProfile.hometown, false),
-    field("Dia chi thuong tru", mockStudentProfile.permanentAddress, false),
-    field("Noi o hien tai", mockStudentProfile.currentAddress, false),
-    field("Lien he khan cap", mockStudentProfile.emergencyContact, false),
+    { label: "Email", value: val(profile?.email) },
+    { label: "So dien thoai", value: val(profile?.phone) },
+    { label: "Noi sinh", value: val(profile?.placeOfBirth) },
+    { label: "Que quan", value: val(profile?.hometown) },
+    { label: "Dia chi thuong tru", value: val(profile?.permanentAddress) },
+    { label: "Noi o hien tai", value: val(profile?.currentAddress) },
+    { label: "Lien he khan cap", value: val(profile?.emergencyContact) },
   ];
 
   const academicFields: DisplayField[] = [
-    field("Nganh hoc", major, Boolean(profile?.majorOrDegree)),
-    field("Khoa", mockStudentProfile.cohort, false),
-    field("Lop hanh chinh", mockStudentProfile.className, false),
-    field("Nien khoa", mockStudentProfile.academicYear, false),
-    field("Co van hoc tap", mockStudentProfile.advisor, false),
-    field("He dao tao", mockStudentProfile.trainingType, false),
-    field("Trang thai", mockStudentProfile.status, false),
+    { label: "Nganh hoc", value: val(major) },
+    { label: "Khoa", value: val(profile?.cohort) },
+    { label: "Lop hanh chinh", value: val(profile?.className) },
+    { label: "Nien khoa", value: val(profile?.academicYear) },
+    { label: "Co van hoc tap", value: val(profile?.advisor) },
+    { label: "He dao tao", value: val(profile?.trainingType) },
+    { label: "Trang thai", value: val(profile?.status) },
   ];
 
   return (
@@ -123,28 +102,8 @@ export function ProfileView({ subtitle }: ProfileViewProps) {
 
           <div className="space-y-4 p-5">
             <div className="flex flex-wrap justify-center gap-2">
-              <Badge>{mockStudentProfile.status}</Badge>
-              <Badge variant="secondary">{major}</Badge>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <MiniMetric label="GPA" value={mockStudentProfile.gpa.toFixed(2)} icon={Award} />
-              <MiniMetric
-                label="Tin chi"
-                value={mockStudentProfile.accumulatedCredits}
-                icon={BookOpen}
-              />
-            </div>
-
-            <div className="rounded-lg border bg-muted/30 p-4 text-sm">
-              <div className="flex items-center gap-2 font-medium">
-                <ShieldCheck className="h-4 w-4 text-primary" />
-                Trang thai du lieu
-              </div>
-              <p className="mt-2 text-muted-foreground">
-                Truong co API se hien thi du lieu that; truong con thieu dang dung placeholder de BE
-                bo sung sau.
-              </p>
+              {profile?.status && <Badge>{profile.status}</Badge>}
+              {major !== "-" && <Badge variant="secondary">{major}</Badge>}
             </div>
           </div>
         </Card>
@@ -174,18 +133,6 @@ export function ProfileView({ subtitle }: ProfileViewProps) {
   );
 }
 
-function field(
-  label: string,
-  value: string | number | null | undefined,
-  fromApi: boolean,
-): DisplayField {
-  return {
-    label,
-    value: value ?? "-",
-    source: fromApi && value != null && value !== "" ? "api" : "mock",
-  };
-}
-
 function InfoSection({
   title,
   description,
@@ -199,17 +146,14 @@ function InfoSection({
 }) {
   return (
     <Card className="p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold">{title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-          </div>
+      <div className="flex items-start gap-3">
+        <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
+          <Icon className="h-5 w-5" />
         </div>
-        <Badge variant="outline">API + placeholder</Badge>
+        <div>
+          <h2 className="text-base font-semibold">{title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -229,41 +173,12 @@ function ProfileField({
   icon: ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="min-h-24 rounded-lg border bg-muted/20 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          <Icon className="h-4 w-4" />
-          {item.label}
-        </div>
-        <span
-          className={
-            item.source === "api"
-              ? "rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
-              : "rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700"
-          }
-        >
-          {item.source === "api" ? "API" : "Can BE"}
-        </span>
+    <div className="min-h-20 rounded-lg border bg-muted/20 p-4">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        {item.label}
       </div>
-      <div className="mt-3 break-words text-sm font-semibold leading-6">{item.value}</div>
-    </div>
-  );
-}
-
-function MiniMetric({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: string | number;
-  icon: ComponentType<{ className?: string }>;
-}) {
-  return (
-    <div className="rounded-lg border bg-muted/20 p-3">
-      <Icon className="mx-auto h-4 w-4 text-primary" />
-      <div className="mt-2 text-lg font-semibold tabular-nums">{value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-2 break-words text-sm font-semibold leading-6">{item.value}</div>
     </div>
   );
 }
@@ -293,6 +208,5 @@ function iconForLabel(label: string): ComponentType<{ className?: string }> {
     "He dao tao": BookOpen,
     "Trang thai": ShieldCheck,
   };
-
   return map[label] ?? UserRound;
 }

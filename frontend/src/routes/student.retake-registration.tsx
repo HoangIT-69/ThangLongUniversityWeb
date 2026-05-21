@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, Loader2, Lock, X } from "lucide-react";
 import { studentApi } from "@/lib/api/student";
+import { pickCurrentSemester } from "@/lib/semester";
 
 export const Route = createFileRoute("/student/retake-registration")({ component: RetakePage });
 
@@ -24,7 +25,7 @@ function RetakePage() {
     () => (semestersQuery.data ?? []).map((s) => ({ id: s.id, name: s.name })),
     [semestersQuery.data],
   );
-  const defaultSemester = (semestersQuery.data ?? []).find((s) => s.registrationOpen) ?? semestersQuery.data?.[0];
+  const defaultSemester = pickCurrentSemester(semestersQuery.data ?? []);
   const [semesterId, setSemesterId] = useState<number | null>(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState<Set<number>>(new Set());
   const [lastResult, setLastResult] = useState<{ count: number; totalFee: number } | null>(null);
