@@ -2,6 +2,8 @@
 
 Purpose: track UI fields that are currently displayed with placeholder/mock values because the backend API does not return them yet.
 
+Note: this BE-facing copy was moved from `frontend/docs/STUDENT_API_UI_GAPS.md` so backend documents stay under `frontend/docsforbeupdate`.
+
 ## Display Rule
 
 - If API returns a value, the UI must render the API value.

@@ -23,8 +23,19 @@ export interface MajorResponse {
   description?: string | null;
 }
 
+export interface AdminMajorRequest {
+  majorCode: string;
+  name: string;
+  description?: string;
+}
+
 export interface RoomResponse {
   id: number;
+  name: string;
+  capacity: number;
+}
+
+export interface AdminRoomRequest {
   name: string;
   capacity: number;
 }
@@ -41,6 +52,8 @@ export interface PeriodRequest {
   startTime: string;
   endTime: string;
 }
+
+export type AdminPeriodRequest = PeriodRequest;
 
 export interface AdminSemesterResponse {
   id: number;
@@ -74,8 +87,22 @@ export interface AdminStudentResponse {
   majorName?: string | null;
 }
 
+export interface AdminStudentRequest {
+  username: string;
+  password: string;
+  email: string;
+  studentCode: string;
+  fullName: string;
+  dob: string;
+  majorId: number;
+  academicYear: number;
+  address?: string;
+}
+
 export interface AdminTeacherResponse {
   id: number;
+  username?: string;
+  email?: string;
   teacherCode: string;
   fullName: string;
   dob?: string | null;
@@ -83,6 +110,29 @@ export interface AdminTeacherResponse {
   department?: string | null;
   degree?: string | null;
   address?: string | null;
+}
+
+export interface AdminTeacherRequest {
+  username: string;
+  password: string;
+  email: string;
+  teacherCode: string;
+  fullName: string;
+  dob?: string;
+  department?: string;
+  degree?: string;
+  address?: string;
+  phone?: string;
+}
+
+export interface AdminCourseRequest {
+  code: string;
+  name: string;
+  credits: number;
+  description?: string;
+  courseType?: "REQUIRED" | "ELECTIVE";
+  majorId: number;
+  prerequisiteCourseIds?: number[];
 }
 
 export interface ClassSectionScheduleResponse {
@@ -149,6 +199,57 @@ export interface ClassSectionResponse {
   maxSlots?: number | null;
   currentSlots?: number | null;
   closed?: boolean;
+  isClosed?: boolean;
+  gradeLocked?: boolean | null;
+  gradeStatus?: "DRAFT" | "SUBMITTED" | "LOCKED" | string | null;
+}
+
+export interface TeacherGradeRequest {
+  enrollmentId: number;
+  participationScore?: number | null;
+  midTermScore?: number | null;
+  finalScore?: number | null;
+  retestScore?: number | null;
+}
+
+export interface TeacherStudentGradeResponse {
+  enrollmentId: number;
+  studentCode: string;
+  fullName: string;
+  midTermScore?: number | null;
+  finalScore?: number | null;
+  totalScore?: number | null;
+  status: "REGISTERED" | "PASSED" | "FAILED" | "CANCELED" | string;
+}
+
+export interface TeacherGradeResponse {
+  id: number;
+  enrollmentId: number;
+  studentId: number;
+  studentCode: string;
+  studentName: string;
+  courseId: number;
+  courseCode: string;
+  classCode: string;
+  courseName: string;
+  credits: number;
+  semesterId: number;
+  semesterName: string;
+  participationScore?: number | null;
+  midtermScore?: number | null;
+  midTermScore?: number | null;
+  finalScore?: number | null;
+  retestScore?: number | null;
+  attemptNumber?: number | null;
+  enrollmentType?: string | null;
+  totalScore?: number | null;
+  letterGrade?: string | null;
+  gpa4?: number | null;
+  gradePoint?: number | null;
+  gradeStatus?: "DRAFT" | "SUBMITTED" | "LOCKED" | string | null;
+  canEdit?: boolean | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface StudentSemesterResponse {
@@ -287,6 +388,13 @@ export interface SemesterRequest {
   startDate?: string | null;
   endDate?: string | null;
   registrationOpen: boolean;
+}
+
+export interface AdminSemesterRequest {
+  name: string;
+  startDate: string;
+  endDate: string;
+  registrationOpen?: boolean;
 }
 
 export interface SemesterGpaSummary {
