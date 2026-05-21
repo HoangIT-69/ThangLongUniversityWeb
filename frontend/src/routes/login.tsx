@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,10 +7,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   AlertCircle,
+  BookOpen,
   CheckCircle2,
   GraduationCap,
   Loader2,
   ShieldCheck,
+  Sparkles,
   UserCog,
   WifiOff,
 } from "lucide-react";
@@ -63,6 +64,13 @@ function resolveDashboard(role: Role) {
   return "/student/dashboard";
 }
 
+/* ─── stat cards shown on the hero panel ─── */
+const HERO_STATS = [
+  { label: "Năm thành lập", value: "1988" },
+  { label: "Ngành đào tạo", value: "30+" },
+  { label: "Sinh viên", value: "10 000+" },
+] as const;
+
 function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -93,10 +101,10 @@ function LoginPage() {
 
     try {
       const role = await login(credentials.username, credentials.password);
-      toast.success(`Dang nhap thanh cong voi vai tro ${role.toLowerCase()}`);
+      toast.success(`Đăng nhập thành công với vai trò ${role.toLowerCase()}`);
       navigate({ to: resolveDashboard(role) });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Dang nhap that bai";
+      const message = error instanceof Error ? error.message : "Đăng nhập thất bại";
       console.error("[Login]", error);
       setErrorMessage(message);
       toast.error(message);
@@ -129,138 +137,223 @@ function LoginPage() {
 
   const statusText =
     backendStatus === "checking"
-      ? `Kiem tra ket noi backend (${API_BASE_URL})...`
+      ? `Đang kiểm tra kết nối...`
       : backendStatus === "online"
-        ? `Backend ket noi (${API_BASE_URL})`
-        : `Khong ket noi duoc backend tai ${API_BASE_URL}. Hay kiem tra Spring Boot, CORS va VITE_API_BASE_URL.`;
+        ? `Hệ thống sẵn sàng`
+        : `Không kết nối được hệ thống`;
 
   const statusTextClassName =
     backendStatus === "offline" ? "text-destructive" : "text-muted-foreground";
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-background to-accent/30">
-      <div className="relative mx-auto grid min-h-screen max-w-6xl grid-cols-1 items-center gap-10 px-6 py-10 lg:grid-cols-2">
-        <div className="hidden lg:block">
+    <div className="relative min-h-screen lg:grid lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_520px]">
+      {/* ════════════════════════════════════════════════
+          LEFT — Hero panel with campus image
+         ════════════════════════════════════════════════ */}
+      <div className="relative hidden lg:block">
+        {/* Campus background image */}
+        <img
+          src="/images/DHTL.jpg"
+          alt="Toàn cảnh khuôn viên Đại học Thăng Long"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+
+        {/* Content on top of image */}
+        <div className="relative flex h-full flex-col justify-between p-10">
+          {/* Top — Logo & brand */}
           <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary text-xl font-bold text-primary-foreground shadow-lg shadow-primary/30">
+            <div
+              className="grid h-12 w-12 place-items-center rounded-xl text-xl font-bold text-white shadow-lg"
+              style={{ backgroundColor: "hsl(0 72% 30%)" }}
+            >
               TL
             </div>
             <div>
-              <div className="text-sm font-medium text-muted-foreground">Thang Long University</div>
-              <div className="text-xl font-semibold">University Management System</div>
+              <div className="text-sm font-medium text-white/70">TRƯỜNG ĐẠI HỌC</div>
+              <div className="text-lg font-semibold tracking-wide text-white">THĂNG LONG</div>
             </div>
           </div>
-          <h1 className="mt-10 text-4xl font-semibold leading-tight tracking-tight">
-            Cong quan ly dao tao
-            <br />
-            <span className="text-primary">ket noi truc tiep backend</span>
-          </h1>
-          <p className="mt-4 max-w-md text-muted-foreground">
-            Dang nhap bang tai khoan backend de vao dung khong gian lam viec cua admin, giang vien
-            hoac sinh vien.
-          </p>
+
+          {/* Bottom — Brand messaging */}
+          <div>
+            <div className="mb-6 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-400" />
+              <span className="text-xs font-medium uppercase tracking-widest text-amber-400">
+                Trường đại học tư thục đầu tiên tại Việt Nam
+              </span>
+            </div>
+
+            <h1 className="max-w-lg text-4xl font-bold leading-tight text-white xl:text-5xl">
+              Cổng Quản lý
+              <br />
+              <span className="bg-gradient-to-r from-amber-300 to-amber-500 bg-clip-text text-transparent">
+                Đào tạo Trực tuyến
+              </span>
+            </h1>
+
+            <p className="mt-4 max-w-md text-base leading-relaxed text-white/70">
+              Hệ thống quản lý đào tạo toàn diện dành cho sinh viên, giảng viên và cán bộ quản lý
+              — Trường Đại học Thăng Long.
+            </p>
+
+            {/* Stats row */}
+            <div className="mt-8 flex gap-6">
+              {HERO_STATS.map((stat) => (
+                <div key={stat.label} className="border-l border-white/20 pl-4 first:border-l-0 first:pl-0">
+                  <div className="text-2xl font-bold text-white">{stat.value}</div>
+                  <div className="mt-0.5 text-xs text-white/60">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════
+          RIGHT — Login form panel
+         ════════════════════════════════════════════════ */}
+      <div className="flex min-h-screen flex-col bg-background">
+        {/* Mobile-only hero banner */}
+        <div className="relative h-48 overflow-hidden lg:hidden">
+          <img
+            src="/images/DHTL.jpg"
+            alt="Toàn cảnh khuôn viên Đại học Thăng Long"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 p-5">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="grid h-9 w-9 place-items-center rounded-lg text-sm font-bold text-white"
+                style={{ backgroundColor: "hsl(0 72% 30%)" }}
+              >
+                TL
+              </div>
+              <div>
+                <div className="text-[10px] font-medium uppercase tracking-wider text-white/70">Trường Đại học</div>
+                <div className="text-sm font-semibold text-white">Thăng Long</div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Card className="border bg-card/95 p-8 shadow-xl backdrop-blur">
-          <div className="mb-6 flex items-center gap-3 lg:hidden">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">
-              TL
-            </div>
-            <div className="font-semibold">Thang Long University</div>
-          </div>
-
-          <div className="mt-3 flex items-center gap-1.5 text-xs">
-            {statusIcon}
-            <span className={statusTextClassName}>{statusText}</span>
-          </div>
-
-          <h2 className="mt-4 text-xl font-semibold">Dang nhap</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Su dung tai khoan trong backend Spring Boot.
-          </p>
-
-          <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-            <div className="space-y-1.5">
-              <Label htmlFor="username">Ten dang nhap</Label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="admin / gv101 / sv001"
-                autoComplete="username"
-              />
+        {/* Form area */}
+        <div className="flex flex-1 items-center justify-center px-6 py-8 sm:px-10">
+          <div className="w-full max-w-sm">
+            {/* Desktop: show logo above form */}
+            <div className="mb-1 hidden items-center gap-2 lg:flex">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <span className="text-sm font-medium text-muted-foreground">Hệ thống Quản lý Đào tạo</span>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Mat khau</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-              />
+            <h2 className="text-2xl font-bold tracking-tight">Đăng nhập</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Sử dụng tài khoản được cấp để truy cập hệ thống.
+            </p>
+
+            {/* Backend status pill */}
+            <div className="mt-4 flex items-center gap-1.5 text-xs">
+              {statusIcon}
+              <span className={statusTextClassName}>{statusText}</span>
             </div>
 
-            {errorMessage && (
-              <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{errorMessage}</span>
+            <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+              <div className="space-y-1.5">
+                <Label htmlFor="username">Tên đăng nhập</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="admin / gv101 / sv001"
+                  autoComplete="username"
+                  className="h-11"
+                />
               </div>
-            )}
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting && !activeDemoRole ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Dang nhap
-            </Button>
-          </form>
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Mật khẩu</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  className="h-11"
+                />
+              </div>
 
-          <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
-            <div className="h-px flex-1 bg-border" />
-            Role sau khi dang nhap lay tu token/backend
-            <div className="h-px flex-1 bg-border" />
+              {errorMessage && (
+                <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              <Button type="submit" className="h-11 w-full text-sm font-semibold" disabled={isSubmitting}>
+                {isSubmitting && !activeDemoRole ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Đăng nhập
+              </Button>
+            </form>
+
+            {/* Divider */}
+            <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              Đăng nhập nhanh
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            {/* Quick login buttons */}
+            <div className="grid gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 justify-start"
+                onClick={() => loginAs("ADMIN")}
+                disabled={isSubmitting}
+              >
+                <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
+                Quản trị viên
+                <span className="ml-auto text-xs text-muted-foreground">admin</span>
+                {activeDemoRole === "ADMIN" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 justify-start"
+                onClick={() => loginAs("TEACHER")}
+                disabled={isSubmitting}
+              >
+                <UserCog className="mr-2 h-4 w-4 text-blue-500" />
+                Giảng viên
+                <span className="ml-auto text-xs text-muted-foreground">gv101</span>
+                {activeDemoRole === "TEACHER" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 justify-start"
+                onClick={() => loginAs("STUDENT")}
+                disabled={isSubmitting}
+              >
+                <GraduationCap className="mr-2 h-4 w-4 text-emerald-500" />
+                Sinh viên
+                <span className="ml-auto text-xs text-muted-foreground">sv001</span>
+                {activeDemoRole === "STUDENT" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+              </Button>
+            </div>
+
+            {/* Footer note */}
+            <p className="mt-8 text-center text-xs text-muted-foreground">
+              © {new Date().getFullYear()} Trường Đại học Thăng Long. Bảo lưu mọi quyền.
+            </p>
           </div>
-
-          <div className="grid gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="justify-start"
-              onClick={() => loginAs("ADMIN")}
-              disabled={isSubmitting}
-            >
-              <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
-              Dang nhap tai khoan admin
-              {activeDemoRole === "ADMIN" && <Loader2 className="ml-auto h-4 w-4 animate-spin" />}
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="justify-start"
-              onClick={() => loginAs("TEACHER")}
-              disabled={isSubmitting}
-            >
-              <UserCog className="mr-2 h-4 w-4 text-info" />
-              Dang nhap tai khoan giang vien
-              {activeDemoRole === "TEACHER" && <Loader2 className="ml-auto h-4 w-4 animate-spin" />}
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="justify-start"
-              onClick={() => loginAs("STUDENT")}
-              disabled={isSubmitting}
-            >
-              <GraduationCap className="mr-2 h-4 w-4 text-success" />
-              Dang nhap tai khoan sinh vien
-              {activeDemoRole === "STUDENT" && <Loader2 className="ml-auto h-4 w-4 animate-spin" />}
-            </Button>
-          </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

@@ -42,6 +42,49 @@ export interface PeriodRequest {
   endTime: string;
 }
 
+export interface AdminSemesterResponse {
+  id: number;
+  name: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  registrationOpen?: boolean;
+  locked?: boolean;
+}
+
+export interface AdminUserResponse {
+  id: number;
+  username: string;
+  passwordHash?: string;
+  email: string;
+  role: Role;
+  active: boolean;
+}
+
+export interface AdminStudentResponse {
+  id: number;
+  studentCode: string;
+  username: string;
+  fullName: string;
+  email: string;
+  dob?: string | null;
+  address?: string | null;
+  academicYear?: number | string | null;
+  majorId?: number | null;
+  majorCode?: string | null;
+  majorName?: string | null;
+}
+
+export interface AdminTeacherResponse {
+  id: number;
+  teacherCode: string;
+  fullName: string;
+  dob?: string | null;
+  phone?: string | null;
+  department?: string | null;
+  degree?: string | null;
+  address?: string | null;
+}
+
 export interface ClassSectionScheduleResponse {
   id: number;
   dayOfWeek: number;
@@ -51,6 +94,39 @@ export interface ClassSectionScheduleResponse {
   endPeriod: number;
   roomId?: number | null;
   roomName?: string | null;
+}
+
+export type AdminClassSectionStatus = "DRAFT" | "OPEN" | "CLOSED" | "CANCELLED";
+
+export interface ClassSectionScheduleRequest {
+  dayOfWeek: number;
+  startPeriodId: number;
+  endPeriodId: number;
+  roomId: number;
+}
+
+export interface AdminClassSectionRequest {
+  classCode: string;
+  courseId: number;
+  semesterId: number;
+  teacherId?: number | null;
+  schedules: ClassSectionScheduleRequest[];
+  maxSlots: number;
+}
+
+export interface AdminClassSectionStudentResponse {
+  enrollmentId: number;
+  studentId: number;
+  studentCode: string;
+  fullName: string;
+  email?: string | null;
+  majorId?: number | null;
+  majorCode?: string | null;
+  majorName?: string | null;
+  cohort?: string | null;
+  academicYear?: number | string | null;
+  enrolledAt?: string | null;
+  status?: string | null;
 }
 
 export interface ClassSectionResponse {
