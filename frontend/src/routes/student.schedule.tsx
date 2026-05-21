@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { studentApi } from "@/lib/api/student";
+import { pickCurrentSemester } from "@/lib/semester";
 
 export const Route = createFileRoute("/student/schedule")({ component: SchedulePage });
 
@@ -26,7 +27,7 @@ function SchedulePage() {
   const [semesterId, setSemesterId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!semesterId && semesters.length) setSemesterId((semesters.find((s) => s.registrationOpen) ?? semesters[0]).id);
+    if (!semesterId && semesters.length) setSemesterId(pickCurrentSemester(semesters)?.id ?? null);
   }, [semesterId, semesters]);
 
   const scheduleQuery = useQuery({

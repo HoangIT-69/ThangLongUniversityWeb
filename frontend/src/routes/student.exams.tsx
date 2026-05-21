@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/data-table/DataTable";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { studentApi } from "@/lib/api/student";
+import { pickCurrentSemester } from "@/lib/semester";
 
 export const Route = createFileRoute("/student/exams")({ component: ExamsPage });
 
@@ -19,7 +20,7 @@ function ExamsPage() {
   const [semesterId, setSemesterId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!semesterId && semesters.length) setSemesterId(semesters[0].id);
+    if (!semesterId && semesters.length) setSemesterId(pickCurrentSemester(semesters)?.id ?? null);
   }, [semesterId, semesters]);
 
   const examsQuery = useQuery({

@@ -28,7 +28,21 @@ public class Teacher {
 
     private LocalDate dob;
 
+    private String gender;
+
     private String phone;
+
+    private String nationalId;
+
+    private String placeOfBirth;
+
+    private String hometown;
+
+    private String permanentAddress;
+
+    private String currentAddress;
+
+    private String emergencyContact;
 
     private String department;
 

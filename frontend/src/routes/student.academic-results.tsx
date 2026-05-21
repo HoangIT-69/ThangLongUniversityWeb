@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { studentApi } from "@/lib/api/student";
+import { pickCurrentSemester } from "@/lib/semester";
 
 export const Route = createFileRoute("/student/academic-results")({ component: AcademicResultsPage });
 
@@ -34,7 +35,7 @@ function AcademicResultsPage() {
   const [viewAll, setViewAll] = useState(false);
 
   useEffect(() => {
-    if (!semesterId && semesters.length) setSemesterId(semesters[0].id);
+    if (!semesterId && semesters.length) setSemesterId(pickCurrentSemester(semesters)?.id ?? null);
   }, [semesterId, semesters]);
 
   const resultsQuery = useQuery({

@@ -8,6 +8,7 @@ import com.example.ThangLongUniversityWeb.entity.User;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
 import com.example.ThangLongUniversityWeb.repository.UserRepository;
+import com.example.ThangLongUniversityWeb.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,6 +32,7 @@ public class UserController {
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
+    private final StudentService studentService;
 
     @Operation(summary = "Xem hồ sơ của chính mình")
     @GetMapping("/me")
@@ -87,6 +89,10 @@ public class UserController {
             throw new UsernameNotFoundException("Không tìm thấy người dùng với thông tin: " + identifier);
         }
 
+        if (user.getRole() == Role.STUDENT && studentProfile != null) {
+            return studentService.getProfileByUsername(user.getUsername());
+        }
+
         // --- Đóng gói dữ liệu trả về ---
         UserProfileResponse.UserProfileResponseBuilder responseBuilder = UserProfileResponse.builder()
                 .username(user.getUsername())
@@ -95,13 +101,50 @@ public class UserController {
                 .avatarUrl("https://ui-avatars.com/api/?name=" + user.getUsername() + "&background=random");
 
         if (user.getRole() == Role.STUDENT && studentProfile != null) {
+            Integer rawYear = studentProfile.getAcademicYear();
+            String academicYearStr = rawYear != null ? rawYear + " - " + (rawYear + 4) : null;
+            Integer age = studentProfile.getDob() != null
+                    ? java.time.Period.between(studentProfile.getDob(), java.time.LocalDate.now()).getYears()
+                    : null;
+
             responseBuilder.fullName(studentProfile.getFullName())
                     .code(studentProfile.getStudentCode())
-                    .majorOrDegree(studentProfile.getMajor() != null ? studentProfile.getMajor().getName() : null);
+                    .majorOrDegree(studentProfile.getMajor() != null ? studentProfile.getMajor().getName() : null)
+                    .gender(studentProfile.getGender())
+                    .dateOfBirth(studentProfile.getDob() != null ? studentProfile.getDob().toString() : null)
+                    .age(age)
+                    .nationalId(studentProfile.getNationalId())
+                    .placeOfBirth(studentProfile.getPlaceOfBirth())
+                    .hometown(studentProfile.getHometown())
+                    .permanentAddress(studentProfile.getPermanentAddress())
+                    .currentAddress(studentProfile.getCurrentAddress())
+                    .phone(studentProfile.getPhone())
+                    .emergencyContact(studentProfile.getEmergencyContact())
+                    .cohort(studentProfile.getCohort())
+                    .className(studentProfile.getClassName())
+                    .academicYear(academicYearStr)
+                    .advisor(studentProfile.getAdvisor())
+                    .status(studentProfile.getStatus())
+                    .trainingType(studentProfile.getTrainingType());
         } else if (user.getRole() == Role.TEACHER && teacherProfile != null) {
+            Integer age = teacherProfile.getDob() != null
+                    ? java.time.Period.between(teacherProfile.getDob(), java.time.LocalDate.now()).getYears()
+                    : null;
+
             responseBuilder.fullName(teacherProfile.getFullName())
                     .code(teacherProfile.getTeacherCode())
-                    .majorOrDegree(teacherProfile.getDegree());
+                    .majorOrDegree(teacherProfile.getDegree())
+                    .gender(teacherProfile.getGender())
+                    .dateOfBirth(teacherProfile.getDob() != null ? teacherProfile.getDob().toString() : null)
+                    .age(age)
+                    .nationalId(teacherProfile.getNationalId())
+                    .placeOfBirth(teacherProfile.getPlaceOfBirth())
+                    .hometown(teacherProfile.getHometown())
+                    .permanentAddress(teacherProfile.getPermanentAddress())
+                    .currentAddress(teacherProfile.getCurrentAddress())
+                    .phone(teacherProfile.getPhone())
+                    .emergencyContact(teacherProfile.getEmergencyContact())
+                    .department(teacherProfile.getDepartment());
         } else if (user.getRole() == Role.ADMIN) {
             responseBuilder.fullName("Quản trị viên hệ thống").code("ADMIN");
         }

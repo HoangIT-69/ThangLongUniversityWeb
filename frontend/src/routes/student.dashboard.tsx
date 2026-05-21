@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader, StatCard } from "@/components/ui/page-header";
-import { Award, BookOpen, GraduationCap, Receipt } from "lucide-react";
+import { Award, BookOpen, CalendarCheck, GraduationCap, Layers, Receipt } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { studentApi } from "@/lib/api/student";
 
@@ -13,42 +13,37 @@ function formatVND(value: number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
 }
 
+function formatExamDate(examAt: string | null | undefined) {
+  if (!examAt) return "-";
+  const d = new Date(examAt);
+  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
 function StudentDashboardPage() {
   const { profile, name } = useAuth();
-  const semestersQuery = useQuery({ queryKey: ["student", "semesters"], queryFn: studentApi.listSemesters });
-  const semesters = semestersQuery.data ?? [];
-  const currentSemester = semesters.find((s) => s.registrationOpen) ?? semesters[0];
-  const semesterId = currentSemester?.id;
-
-  const gradesQuery = useQuery({
-    queryKey: ["student", "grades", semesterId],
-    queryFn: () => studentApi.getGrades(semesterId),
-    enabled: semesterId != null,
-  });
-  const scheduleQuery = useQuery({
-    queryKey: ["student", "schedule", semesterId],
-    queryFn: () => studentApi.getSchedule(semesterId as number),
-    enabled: semesterId != null,
-  });
-  const tuitionQuery = useQuery({
-    queryKey: ["student", "tuition", semesterId],
-    queryFn: () => studentApi.getTuition(semesterId as number),
-    enabled: semesterId != null,
-  });
+  const dashboardQuery = useQuery({ queryKey: ["student", "dashboard"], queryFn: () => studentApi.getDashboard() });
+  const dashboard = dashboardQuery.data;
+  const currentSemester = dashboard?.currentSemester;
 
   const today = new Date().getDay() || 7;
-  const todaySchedule = (scheduleQuery.data ?? []).filter((item) => item.dayOfWeek === today).slice(0, 4);
-  const credits = gradesQuery.data?.items.reduce((sum, item) => sum + (item.credits ?? 0), 0) ?? 0;
-  const tuitionRemaining = tuitionQuery.data?.paid ? 0 : tuitionQuery.data?.totalAmount ?? 0;
+  const todaySchedule = (dashboard?.todaySchedule ?? []).slice(0, 4);
+  const credits = dashboard?.registeredCredits ?? 0;
+  const tuitionRemaining = dashboard?.tuitionRemaining ?? 0;
   const displayName = profile?.fullName ?? name ?? "Sinh vien";
+
+  const courseCount = dashboard?.activeCourseCount ?? 0;
+  const upcomingExams = dashboard?.upcomingExams ?? [];
+  const nextExamsPanel = upcomingExams.slice(0, 4);
 
   return (
     <div>
       <PageHeader title={`Xin chao, ${displayName.split(" ").slice(-1)[0]}!`} description={profile?.code ? `Ma SV ${profile.code}` : currentSemester?.name} />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="GPA hoc ky" value={(gradesQuery.data?.semesterGpa ?? 0).toFixed(2)} icon={Award} tone="primary" />
-        <StatCard label="CPA tich luy" value={(gradesQuery.data?.cumulativeGpa ?? 0).toFixed(2)} icon={GraduationCap} tone="info" />
-        <StatCard label="Tin chi co diem" value={credits} icon={BookOpen} tone="success" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+        <StatCard label="GPA hoc ky" value={(dashboard?.semesterGpa ?? 0).toFixed(2)} icon={Award} tone="primary" />
+        <StatCard label="CPA tich luy" value={(dashboard?.cumulativeGpa ?? 0).toFixed(2)} icon={GraduationCap} tone="info" />
+        <StatCard label="Tin chi" value={credits} icon={BookOpen} tone="success" />
+        <StatCard label="Mon dang hoc" value={courseCount} icon={Layers} tone="info" />
+        <StatCard label="Lich thi sap toi" value={dashboard?.upcomingExamCount ?? upcomingExams.length} icon={CalendarCheck} tone={upcomingExams.length > 0 ? "warning" : "success"} />
         <StatCard label="Hoc phi con no" value={formatVND(tuitionRemaining)} icon={Receipt} tone={tuitionRemaining > 0 ? "warning" : "success"} />
       </div>
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -62,12 +57,23 @@ function StudentDashboardPage() {
               </li>))}</ul>}
         </div>
         <div className="rounded-xl border bg-card p-5 shadow-sm">
-          <h2 className="text-sm font-semibold">Tong quan hoc ky</h2>
-          <div className="mt-3 space-y-3 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Hoc ky</span><span className="font-medium">{currentSemester?.name ?? "-"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">So mon co diem</span><span className="font-medium tabular-nums">{gradesQuery.data?.items.length ?? 0}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Trang thai hoc phi</span><span className="font-medium">{tuitionQuery.data?.paid ? "Da thanh toan" : "Chua thanh toan"}</span></div>
-          </div>
+          <h2 className="text-sm font-semibold">Lich thi sap toi</h2>
+          {nextExamsPanel.length === 0
+            ? <p className="mt-4 text-sm text-muted-foreground">Khong co lich thi sap toi.</p>
+            : <ul className="mt-3 divide-y">{nextExamsPanel.map((exam, i) => (
+              <li key={i} className="flex items-center justify-between py-3 text-sm">
+                <div><div className="font-medium">{exam.courseName}</div><div className="font-mono text-xs text-muted-foreground">Phong {exam.examRoom ?? "-"}</div></div>
+                <span className="tabular-nums text-muted-foreground text-right">{formatExamDate(exam.examAt)}</span>
+              </li>))}</ul>}
+        </div>
+      </div>
+      <div className="mt-4 rounded-xl border bg-card p-5 shadow-sm">
+        <h2 className="text-sm font-semibold">Tong quan hoc ky</h2>
+        <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <div className="flex flex-col"><span className="text-muted-foreground">Hoc ky</span><span className="font-medium">{currentSemester?.name ?? "-"}</span></div>
+          <div className="flex flex-col"><span className="text-muted-foreground">So mon dang hoc</span><span className="font-medium tabular-nums">{courseCount}</span></div>
+          <div className="flex flex-col"><span className="text-muted-foreground">Trang thai hoc phi</span><span className="font-medium">{dashboard?.tuitionStatus ?? "-"}</span></div>
+          <div className="flex flex-col"><span className="text-muted-foreground">Dang ky hoc phan</span><span className="font-medium">{dashboard?.registrationStatus ?? "-"}</span></div>
         </div>
       </div>
     </div>

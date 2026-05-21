@@ -7,6 +7,7 @@ import { Check, ChevronDown, Loader2, Lock, X } from "lucide-react";
 import { toast } from "sonner";
 import { studentApi } from "@/lib/api/student";
 import type { ClassSectionResponse, EnrollmentResponse } from "@/lib/api/types";
+import { pickCurrentSemester } from "@/lib/semester";
 
 export const Route = createFileRoute("/student/course-registration")({ component: CourseRegistrationPage });
 
@@ -86,7 +87,7 @@ function CourseRegistrationPage() {
 
   useEffect(() => {
     if (!semesterId && semesters.length) {
-      setSemesterId((semesters.find((s) => s.registrationOpen) ?? semesters[0]).id);
+      setSemesterId(pickCurrentSemester(semesters)?.id ?? null);
     }
   }, [semesterId, semesters]);
 

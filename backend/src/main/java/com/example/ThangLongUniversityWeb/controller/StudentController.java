@@ -1,11 +1,14 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.response.StudentSemesterResponse;
+import com.example.ThangLongUniversityWeb.dto.response.StudentDashboardResponse;
+import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.service.CourseService;
 import com.example.ThangLongUniversityWeb.service.EnrollmentRequestStatusService;
 import com.example.ThangLongUniversityWeb.service.GradeService;
 import com.example.ThangLongUniversityWeb.service.StudentEnrollmentService;
+import com.example.ThangLongUniversityWeb.service.StudentService;
 import com.example.ThangLongUniversityWeb.service.StudentTuitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -13,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +26,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -38,11 +45,112 @@ public class StudentController {
     private final SemesterRepository semesterRepository;
     private final CourseService courseService;
     private final GradeService gradeService;
+    private final StudentService studentService;
+
+    @Operation(summary = "Lay ho so sinh vien dang dang nhap")
+    @GetMapping("/profile")
+    public ResponseEntity<?> getStudentProfile(Authentication authentication) {
+        return ResponseEntity.ok(studentService.getProfileByUsername(authentication.getName()));
+    }
+
+    @Operation(summary = "Du lieu tong hop cho student dashboard")
+    @GetMapping("/dashboard")
+    public ResponseEntity<?> getDashboard(Authentication authentication, @RequestParam(required = false) Long semesterId) {
+        List<StudentSemesterResponse> semesters = getStudentSemesters();
+        StudentSemesterResponse currentSemester = resolveDashboardSemester(semesters, semesterId);
+
+        if (currentSemester == null) {
+            return ResponseEntity.ok(StudentDashboardResponse.builder()
+                    .profile(studentService.getProfileByUsername(authentication.getName()))
+                    .semesterGpa(0f)
+                    .cumulativeGpa(0f)
+                    .registeredCredits(0)
+                    .earnedCredits(0)
+                    .gradedCourseCount(0)
+                    .activeCourseCount(0)
+                    .upcomingExamCount(0)
+                    .tuitionRemaining(0L)
+                    .tuitionStatus("Khong co hoc ky")
+                    .registrationStatus("Khong co hoc ky")
+                    .build());
+        }
+
+        var learningResults = gradeService.getLearningResults(authentication.getName(), currentSemester.getId());
+        var grades = studentEnrollmentService.getMyGrades(currentSemester.getId());
+        var schedule = studentEnrollmentService.getMySchedule(currentSemester.getId());
+        var tuition = studentTuitionService.getTuitionFee(currentSemester.getId());
+        var exams = studentEnrollmentService.getMyExams(currentSemester.getId());
+        int today = LocalDate.now().getDayOfWeek().getValue();
+        LocalDateTime now = LocalDateTime.now();
+
+        var todaySchedule = schedule.stream()
+                .filter(item -> Objects.equals(item.getDayOfWeek(), today))
+                .toList();
+        var upcomingExams = exams.stream()
+                .filter(exam -> exam.getExamAt() != null && !exam.getExamAt().isBefore(now))
+                .sorted(Comparator.comparing(exam -> exam.getExamAt()))
+                .toList();
+        int registeredCredits = schedule.stream()
+                .mapToInt(item -> item.getCredits() != null ? item.getCredits() : 0)
+                .sum();
+        int earnedCredits = learningResults.getCumulativeCredits() != null ? learningResults.getCumulativeCredits() : 0;
+        int gradedCourseCount = (int) learningResults.getGrades().stream()
+                .filter(grade -> grade.getTotalScore() != null && grade.getGradePoint() != null)
+                .count();
+        int activeCourseCount = (int) schedule.stream()
+                .map(item -> item.getClassCode())
+                .filter(Objects::nonNull)
+                .distinct()
+                .count();
+        long tuitionRemaining = tuition.isPaid() ? 0L : tuition.getTotalAmount();
+        Float semesterGpa = resolveDashboardSemesterGpa(learningResults);
+        Float cumulativeGpa = learningResults.getCumulativeGpa() != null ? learningResults.getCumulativeGpa() : 0f;
+
+        return ResponseEntity.ok(StudentDashboardResponse.builder()
+                .profile(studentService.getProfileByUsername(authentication.getName()))
+                .currentSemester(currentSemester)
+                .learningResults(learningResults)
+                .grades(grades)
+                .tuition(tuition)
+                .schedule(schedule)
+                .todaySchedule(todaySchedule)
+                .exams(exams)
+                .upcomingExams(upcomingExams)
+                .semesterGpa(semesterGpa)
+                .cumulativeGpa(cumulativeGpa)
+                .registeredCredits(registeredCredits)
+                .earnedCredits(earnedCredits)
+                .gradedCourseCount(gradedCourseCount)
+                .activeCourseCount(activeCourseCount)
+                .upcomingExamCount(upcomingExams.size())
+                .tuitionRemaining(tuitionRemaining)
+                .tuitionStatus(tuition.isPaid() ? "Da thanh toan" : "Chua thanh toan")
+                .registrationStatus(currentSemester.isRegistrationOpen() ? "Dang mo" : "Da dong")
+                .build());
+    }
+
+    private Float resolveDashboardSemesterGpa(LearningResultsResponse learningResults) {
+        if (learningResults.getSemesterCredits() != null
+                && learningResults.getSemesterCredits() > 0
+                && learningResults.getSemesterGpa() != null) {
+            return learningResults.getSemesterGpa();
+        }
+
+        return learningResults.getSemesterSummaries().stream()
+                .filter(summary -> summary.getTotalCredits() != null && summary.getTotalCredits() > 0)
+                .findFirst()
+                .map(LearningResultsResponse.SemesterGpaSummary::getSemesterGpa)
+                .orElse(0f);
+    }
 
     @Operation(summary = "Lay danh sach hoc ky cho sinh vien")
     @GetMapping("/semesters")
     public ResponseEntity<?> getSemesters() {
-        return ResponseEntity.ok(semesterRepository.findAll().stream()
+        return ResponseEntity.ok(getStudentSemesters());
+    }
+
+    private List<StudentSemesterResponse> getStudentSemesters() {
+        return semesterRepository.findAll().stream()
                 .sorted(Comparator.comparing(s -> s.getStartDate() == null ? LocalDate.MIN : s.getStartDate()))
                 .map(s -> new StudentSemesterResponse(
                         s.getId(),
@@ -51,7 +159,29 @@ public class StudentController {
                         s.getEndDate(),
                         s.isRegistrationOpen(),
                         s.isLocked()))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+    }
+
+    private StudentSemesterResponse resolveDashboardSemester(List<StudentSemesterResponse> semesters, Long semesterId) {
+        if (semesterId != null) {
+            return semesters.stream()
+                    .filter(semester -> Objects.equals(semester.getId(), semesterId))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        LocalDate today = LocalDate.now();
+        return semesters.stream()
+                .filter(semester -> semester.getStartDate() != null
+                        && semester.getEndDate() != null
+                        && !today.isBefore(semester.getStartDate())
+                        && !today.isAfter(semester.getEndDate()))
+                .findFirst()
+                .or(() -> semesters.stream().filter(StudentSemesterResponse::isRegistrationOpen).findFirst())
+                .or(() -> semesters.stream()
+                        .filter(semester -> semester.getStartDate() != null && !semester.getStartDate().isAfter(today))
+                        .max(Comparator.comparing(StudentSemesterResponse::getStartDate)))
+                .orElse(semesters.isEmpty() ? null : semesters.get(semesters.size() - 1));
     }
 
     @Operation(summary = "Xem danh sach lop hoc phan trong mot hoc ky")

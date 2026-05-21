@@ -57,6 +57,30 @@ public class StudentRequest {
             required = true
     )
     private LocalDate dob;
+
+    @Schema(description = "Gioi tinh", example = "Nam")
+    private String gender;
+
+    @Schema(description = "So dien thoai", example = "0987654321")
+    private String phone;
+
+    @Schema(description = "So CCCD/CMND", example = "001204000789")
+    private String nationalId;
+
+    @Schema(description = "Noi sinh", example = "Ha Noi")
+    private String placeOfBirth;
+
+    @Schema(description = "Que quan", example = "Thanh Tri, Ha Noi")
+    private String hometown;
+
+    @Schema(description = "Dia chi thuong tru")
+    private String permanentAddress;
+
+    @Schema(description = "Noi o hien tai")
+    private String currentAddress;
+
+    @Schema(description = "Lien he khan cap", example = "Nguyen Van B - 0912345678")
+    private String emergencyContact;
     
     @Schema(
             description = "ID ngành học",
@@ -71,6 +95,21 @@ public class StudentRequest {
             required = true
     )
     private Integer academicYear;
+
+    @Schema(description = "Khoa", example = "K36")
+    private String cohort;
+
+    @Schema(description = "Lop hanh chinh", example = "CNTT-K36A")
+    private String className;
+
+    @Schema(description = "Co van hoc tap", example = "ThS. Nguyen Minh Hoang")
+    private String advisor;
+
+    @Schema(description = "Trang thai sinh vien", example = "Dang hoc")
+    private String status;
+
+    @Schema(description = "He dao tao", example = "Dai hoc chinh quy")
+    private String trainingType;
     
     @Schema(
             description = "Địa chỉ",
