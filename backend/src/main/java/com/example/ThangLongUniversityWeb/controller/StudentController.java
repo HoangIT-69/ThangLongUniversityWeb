@@ -80,11 +80,12 @@ public class StudentController {
         var schedule = studentEnrollmentService.getMySchedule(currentSemester.getId());
         var tuition = studentTuitionService.getTuitionFee(currentSemester.getId());
         var exams = studentEnrollmentService.getMyExams(currentSemester.getId());
-        int today = LocalDate.now().getDayOfWeek().getValue();
+        int today = LocalDate.now().getDayOfWeek().getValue() + 1;
         LocalDateTime now = LocalDateTime.now();
 
         var todaySchedule = schedule.stream()
-                .filter(item -> Objects.equals(item.getDayOfWeek(), today))
+                .filter(item -> item.getSchedules() != null && item.getSchedules().stream()
+                        .anyMatch(slot -> Objects.equals(slot.getDayOfWeek(), today)))
                 .toList();
         var upcomingExams = exams.stream()
                 .filter(exam -> exam.getExamAt() != null && !exam.getExamAt().isBefore(now))

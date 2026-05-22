@@ -15,9 +15,9 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import {
+  type AppNotification,
   listNotifications,
   markNotificationRead,
-  type StudentNotification,
 } from "@/lib/api/notifications";
 
 type Item = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
@@ -75,7 +75,6 @@ const teacherNavGroups: NavGroup[] = [
       { to: "/teacher/classes", label: "Lớp học phần", icon: Layers },
       { to: "/teacher/attendance", label: "Điểm danh", icon: CalendarCheck },
       { to: "/teacher/grades", label: "Quản lý điểm", icon: NotebookPen },
-      { to: "/teacher/notifications", label: "Thông báo", icon: Bell },
     ],
   },
 ];
@@ -115,9 +114,9 @@ const chatByRole: Record<Role, string> = {
 
 const schoolLogo = "/images/LogoThangLongUniversity.png";
 
-function notificationTarget(item: StudentNotification) {
-  if (item.type === "CHAT") return "/student/chat";
-  return item.link || "/student/notifications";
+function notificationTarget(item: AppNotification, role: Role) {
+  if (item.type === "CHAT") return chatByRole[role];
+  return item.link || (role === "STUDENT" ? "/student/notifications" : "");
 }
 
 function NavItem({ item, pathname, onNavigate }: { item: Item; pathname: string; onNavigate?: () => void }) {
@@ -220,26 +219,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const initials = (name ?? "?").split(" ").slice(-2).map((s) => s[0]).join("").toUpperCase();
   const notificationsQuery = useQuery({
-    queryKey: ["student", "notifications"],
-    queryFn: listNotifications,
-    enabled: role === "STUDENT",
-    refetchInterval: role === "STUDENT" ? 30000 : false,
+    queryKey: [role?.toLowerCase(), "notifications"],
+    queryFn: () => listNotifications(role === "TEACHER" ? "TEACHER" : "STUDENT"),
+    enabled: role === "STUDENT" || role === "TEACHER",
+    refetchInterval: role === "STUDENT" || role === "TEACHER" ? 30000 : false,
   });
   const notificationItems = notificationsQuery.data ?? [];
   const unreadCount = notificationItems.filter((n) => !n.read).length;
 
   const markReadMutation = useMutation({
-    mutationFn: markNotificationRead,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["student", "notifications"] }),
+    mutationFn: (id: string) => markNotificationRead(id, role === "TEACHER" ? "TEACHER" : "STUDENT"),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [role?.toLowerCase(), "notifications"] }),
   });
 
-  const openNotification = async (item: StudentNotification) => {
+  const openNotification = async (item: AppNotification) => {
+    if (!role) return;
     if (!item.read) {
       await markReadMutation.mutateAsync(item.id);
     }
 
-    const target = notificationTarget(item);
-    if (target.startsWith("/student/")) {
+    const target = notificationTarget(item, role);
+    if (!target) return;
+    if (target.startsWith(`/${role.toLowerCase()}/`)) {
       navigate({ to: target as never });
       return;
     }
@@ -291,7 +292,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </Button>
               </Link>
             )}
-            {role === "STUDENT" && (
+            {(role === "STUDENT" || role === "TEACHER") && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative h-9 w-9" title="Thông báo">
@@ -323,10 +324,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       </span>
                     </DropdownMenuItem>
                   ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate({ to: "/student/notifications" })} className="cursor-pointer justify-center text-sm font-medium">
-                    Xem chi tiet
-                  </DropdownMenuItem>
+                  {role === "STUDENT" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate({ to: "/student/notifications" })} className="cursor-pointer justify-center text-sm font-medium">
+                        Xem chi tiet
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

@@ -1,8 +1,6 @@
-import { Save } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   calculateTotal,
@@ -13,14 +11,14 @@ import {
 
 interface TeacherGradeTableProps {
   rows: TeacherGradeRow[];
-  savingEnrollmentId?: string;
+  disabled?: boolean;
   onChange: (row: TeacherGradeRow) => void;
-  onSave: (row: TeacherGradeRow) => void;
+  onSave?: (row: TeacherGradeRow) => void;
 }
 
 export function TeacherGradeTable({
   rows,
-  savingEnrollmentId,
+  disabled,
   onChange,
   onSave,
 }: TeacherGradeTableProps) {
@@ -37,14 +35,12 @@ export function TeacherGradeTable({
             <TableHead>Tong</TableHead>
             <TableHead>Chu</TableHead>
             <TableHead>GPA4</TableHead>
-            <TableHead>Trang thai</TableHead>
-            <TableHead className="text-right">Luu</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={10} className="py-12 text-center text-sm text-muted-foreground">
+              <TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">
                 Chua co sinh vien trong bang diem lop nay
               </TableCell>
             </TableRow>
@@ -53,7 +49,7 @@ export function TeacherGradeTable({
               <GradeRow
                 key={row.enrollmentId}
                 row={row}
-                isSaving={savingEnrollmentId === row.enrollmentId}
+                disabled={disabled ?? (!row.canEdit)}
                 onChange={onChange}
                 onSave={onSave}
               />
@@ -67,15 +63,18 @@ export function TeacherGradeTable({
 
 function GradeRow({
   row,
-  isSaving,
+  disabled,
   onChange,
   onSave,
 }: {
   row: TeacherGradeRow;
-  isSaving: boolean;
+  disabled: boolean;
   onChange: (row: TeacherGradeRow) => void;
-  onSave: (row: TeacherGradeRow) => void;
+  onSave?: (row: TeacherGradeRow) => void;
 }) {
+  // Track the latest computed row so blur handler can save the correct value
+  const pendingRow = useRef<TeacherGradeRow | null>(null);
+
   const updateScore = (
     key: "participationScore" | "midtermScore" | "finalScore" | "retestScore",
     rawValue: string,
@@ -87,12 +86,21 @@ function GradeRow({
     }
     const next = { ...row, [key]: value };
     const totalScore = calculateTotal(next.participationScore, next.midtermScore, next.finalScore);
-    onChange({
+    const nextRow = {
       ...next,
       totalScore,
       letterGrade: getLetterGrade(totalScore),
       gpa4: getGpa4(totalScore),
-    });
+    };
+    onChange(nextRow);
+    pendingRow.current = nextRow;
+  };
+
+  const handleBlur = () => {
+    if (pendingRow.current) {
+      onSave?.(pendingRow.current);
+      pendingRow.current = null;
+    }
   };
 
   return (
@@ -107,23 +115,27 @@ function GradeRow({
       </TableCell>
       <ScoreInput
         value={row.participationScore}
-        disabled={!row.canEdit}
+        disabled={disabled}
         onChange={(value) => updateScore("participationScore", value)}
+        onBlur={handleBlur}
       />
       <ScoreInput
         value={row.midtermScore}
-        disabled={!row.canEdit}
+        disabled={disabled}
         onChange={(value) => updateScore("midtermScore", value)}
+        onBlur={handleBlur}
       />
       <ScoreInput
         value={row.finalScore}
-        disabled={!row.canEdit}
+        disabled={disabled}
         onChange={(value) => updateScore("finalScore", value)}
+        onBlur={handleBlur}
       />
       <ScoreInput
         value={row.retestScore}
-        disabled={!row.canEdit}
+        disabled={disabled}
         onChange={(value) => updateScore("retestScore", value)}
+        onBlur={handleBlur}
       />
       <TableCell className="font-semibold tabular-nums">{row.totalScore.toFixed(2)}</TableCell>
       <TableCell>
@@ -132,21 +144,6 @@ function GradeRow({
         </span>
       </TableCell>
       <TableCell className="tabular-nums">{row.gpa4.toFixed(1)}</TableCell>
-      <TableCell>
-        <StatusBadge value={row.gradeStatus} />
-      </TableCell>
-      <TableCell className="text-right">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          disabled={!row.canEdit || isSaving}
-          onClick={() => onSave(row)}
-        >
-          <Save className="h-4 w-4" />
-          Luu
-        </Button>
-      </TableCell>
     </TableRow>
   );
 }
@@ -155,11 +152,23 @@ function ScoreInput({
   value,
   disabled,
   onChange,
+  onBlur,
 }: {
   value: number;
   disabled: boolean;
   onChange: (value: string) => void;
+  onBlur?: () => void;
 }) {
+  const [local, setLocal] = useState(value === 0 ? "" : String(value));
+
+  // Sync local state when the parent value changes (e.g. after save/reset)
+  const prevValue = useRef(value);
+  if (prevValue.current !== value) {
+    prevValue.current = value;
+    const next = value === 0 ? "" : String(value);
+    if (local !== next) setLocal(next);
+  }
+
   return (
     <TableCell>
       <Input
@@ -167,9 +176,13 @@ function ScoreInput({
         min={0}
         max={10}
         step={0.1}
-        value={value}
+        value={local}
         disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(e) => setLocal(e.target.value)}
+        onBlur={() => {
+          onChange(local || "0");
+          onBlur?.();
+        }}
         className="h-8 w-20 tabular-nums"
       />
     </TableCell>

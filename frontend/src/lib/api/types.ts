@@ -162,6 +162,10 @@ export interface ClassSectionScheduleResponse {
   startPeriod: number;
   endPeriodId: number;
   endPeriod: number;
+  lessonCount?: number | null;
+  periodRange?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
   roomId?: number | null;
   roomName?: string | null;
 }
@@ -236,10 +240,18 @@ export interface TeacherStudentGradeResponse {
   enrollmentId: number;
   studentCode: string;
   fullName: string;
+  phone?: string | null;
+  email?: string | null;
+  className?: string | null;
+  advisorName?: string | null;
+  majorName?: string | null;
+  facultyName?: string | null;
   midTermScore?: number | null;
   finalScore?: number | null;
   totalScore?: number | null;
   status: "REGISTERED" | "PASSED" | "FAILED" | "CANCELED" | string;
+  courseStatus?: CourseStudyStatus | null;
+  absenceCount?: number | null;
 }
 
 export interface TeacherGradeResponse {
@@ -281,6 +293,40 @@ export interface StudentSemesterResponse {
   locked: boolean;
 }
 
+export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT";
+export type CourseStudyStatus =
+  | "IN_PROGRESS"
+  | "PASSED"
+  | "BANNED_FROM_EXAM"
+  | "REPEAT_COURSE"
+  | "RETAKE_EXAM";
+
+export interface AttendanceRecordRequest {
+  enrollmentId: number;
+  status: AttendanceStatus;
+  note?: string | null;
+}
+
+export interface AttendanceRecordResponse {
+  id: number;
+  enrollmentId: number;
+  studentCode: string;
+  studentName: string;
+  status: AttendanceStatus;
+  note?: string | null;
+}
+
+export interface AttendanceSessionResponse {
+  id: number;
+  classSectionId: number;
+  sessionNumber: number;
+  weekNumber?: number | null;
+  meetingIndex?: number | null;
+  sessionDate?: string | null;
+  locked: boolean;
+  records: AttendanceRecordResponse[];
+}
+
 export interface EnrollmentRequestResponse {
   requestId?: string | null;
   message: string;
@@ -300,10 +346,13 @@ export interface EnrollmentResponse {
   courseName: string;
   credits: number;
   room?: string | null;
+  schedules?: ClassSectionScheduleResponse[] | null;
   dayOfWeek: number;
   startPeriod: number;
   endPeriod: number;
   teacherName?: string | null;
+  teacherCode?: string | null;
+  teacherEmail?: string | null;
   midTermScore?: number | null;
   finalScore?: number | null;
   totalScore?: number | null;

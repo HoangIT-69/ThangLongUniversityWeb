@@ -26,7 +26,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArticlesIndexRouteImport } from './routes/articles.index'
 import { Route as TeacherTimetableRouteImport } from './routes/teacher.timetable'
 import { Route as TeacherProfileRouteImport } from './routes/teacher.profile'
-import { Route as TeacherNotificationsRouteImport } from './routes/teacher.notifications'
 import { Route as TeacherGradesRouteImport } from './routes/teacher.grades'
 import { Route as TeacherDashboardRouteImport } from './routes/teacher.dashboard'
 import { Route as TeacherClassesRouteImport } from './routes/teacher.classes'
@@ -154,11 +153,6 @@ const TeacherTimetableRoute = TeacherTimetableRouteImport.update({
 const TeacherProfileRoute = TeacherProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => TeacherRoute,
-} as any)
-const TeacherNotificationsRoute = TeacherNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
   getParentRoute: () => TeacherRoute,
 } as any)
 const TeacherGradesRoute = TeacherGradesRouteImport.update({
@@ -439,7 +433,6 @@ export interface FileRoutesByFullPath {
   '/teacher/classes': typeof TeacherClassesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grades': typeof TeacherGradesRoute
-  '/teacher/notifications': typeof TeacherNotificationsRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/timetable': typeof TeacherTimetableRoute
   '/articles/': typeof ArticlesIndexRoute
@@ -501,7 +494,6 @@ export interface FileRoutesByTo {
   '/teacher/classes': typeof TeacherClassesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grades': typeof TeacherGradesRoute
-  '/teacher/notifications': typeof TeacherNotificationsRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/timetable': typeof TeacherTimetableRoute
   '/articles': typeof ArticlesIndexRoute
@@ -565,7 +557,6 @@ export interface FileRoutesById {
   '/teacher/classes': typeof TeacherClassesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grades': typeof TeacherGradesRoute
-  '/teacher/notifications': typeof TeacherNotificationsRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/timetable': typeof TeacherTimetableRoute
   '/articles/': typeof ArticlesIndexRoute
@@ -630,7 +621,6 @@ export interface FileRouteTypes {
     | '/teacher/classes'
     | '/teacher/dashboard'
     | '/teacher/grades'
-    | '/teacher/notifications'
     | '/teacher/profile'
     | '/teacher/timetable'
     | '/articles/'
@@ -692,7 +682,6 @@ export interface FileRouteTypes {
     | '/teacher/classes'
     | '/teacher/dashboard'
     | '/teacher/grades'
-    | '/teacher/notifications'
     | '/teacher/profile'
     | '/teacher/timetable'
     | '/articles'
@@ -755,7 +744,6 @@ export interface FileRouteTypes {
     | '/teacher/classes'
     | '/teacher/dashboard'
     | '/teacher/grades'
-    | '/teacher/notifications'
     | '/teacher/profile'
     | '/teacher/timetable'
     | '/articles/'
@@ -898,13 +886,6 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/teacher/profile'
       preLoaderRoute: typeof TeacherProfileRouteImport
-      parentRoute: typeof TeacherRoute
-    }
-    '/teacher/notifications': {
-      id: '/teacher/notifications'
-      path: '/notifications'
-      fullPath: '/teacher/notifications'
-      preLoaderRoute: typeof TeacherNotificationsRouteImport
       parentRoute: typeof TeacherRoute
     }
     '/teacher/grades': {
@@ -1333,7 +1314,6 @@ interface TeacherRouteChildren {
   TeacherClassesRoute: typeof TeacherClassesRouteWithChildren
   TeacherDashboardRoute: typeof TeacherDashboardRoute
   TeacherGradesRoute: typeof TeacherGradesRoute
-  TeacherNotificationsRoute: typeof TeacherNotificationsRoute
   TeacherProfileRoute: typeof TeacherProfileRoute
   TeacherTimetableRoute: typeof TeacherTimetableRoute
 }
@@ -1344,7 +1324,6 @@ const TeacherRouteChildren: TeacherRouteChildren = {
   TeacherClassesRoute: TeacherClassesRouteWithChildren,
   TeacherDashboardRoute: TeacherDashboardRoute,
   TeacherGradesRoute: TeacherGradesRoute,
-  TeacherNotificationsRoute: TeacherNotificationsRoute,
   TeacherProfileRoute: TeacherProfileRoute,
   TeacherTimetableRoute: TeacherTimetableRoute,
 }

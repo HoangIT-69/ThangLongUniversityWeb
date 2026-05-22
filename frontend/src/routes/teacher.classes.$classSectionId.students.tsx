@@ -1,15 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, Mail, UserRound } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useMemo } from "react";
 import { DataTable } from "@/components/data-table/DataTable";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PageHeader, StatCard } from "@/components/ui/page-header";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { classSections, getCourse } from "@/data/mock";
+import { PageHeader } from "@/components/ui/page-header";
 import { getTeacherRosterRows } from "@/features/teacher/teacherData";
 import { teacherApi } from "@/lib/api/teacher";
+import type { ClassSectionResponse } from "@/lib/api/types";
 
 export const Route = createFileRoute("/teacher/classes/$classSectionId/students")({
   component: TeacherClassStudentsPage,
@@ -17,26 +15,29 @@ export const Route = createFileRoute("/teacher/classes/$classSectionId/students"
 
 function TeacherClassStudentsPage() {
   const { classSectionId } = Route.useParams();
-  const mockClass = classSections.find((section) => section.id === classSectionId);
-  const mockCourse = mockClass ? getCourse(mockClass.courseId) : null;
+  const queryClient = useQueryClient();
+  const cachedClass = useMemo(() => {
+    const classQueries = queryClient.getQueriesData<ClassSectionResponse[]>({ queryKey: ["teacher", "classes"] });
+    return classQueries
+      .flatMap(([, data]) => data ?? [])
+      .find((section) => String(section.id) === classSectionId);
+  }, [classSectionId, queryClient]);
+  const title = cachedClass ? `${cachedClass.courseName} - ${cachedClass.classCode}` : "Danh sach sinh vien";
 
   const rosterQuery = useQuery({
     queryKey: ["teacher", "classes", classSectionId, "students"],
     queryFn: () => teacherApi.listClassStudents(classSectionId),
+    enabled: Boolean(classSectionId),
+    refetchOnMount: "always",
     retry: false,
   });
 
   const rows = useMemo(() => {
-    const baseRows = getTeacherRosterRows(
+    return getTeacherRosterRows(
       rosterQuery.isError ? undefined : rosterQuery.data,
       classSectionId,
     );
-    if (baseRows.length || !rosterQuery.isError) return baseRows;
-    return getTeacherRosterRows(undefined, "api-demo");
   }, [classSectionId, rosterQuery.data, rosterQuery.isError]);
-
-  const gradedCount = rows.filter((row) => row.totalScore !== null && row.totalScore !== undefined).length;
-  const registeredCount = rows.filter((row) => row.status !== "CANCELLED").length;
 
   return (
     <div className="space-y-5">
@@ -48,44 +49,40 @@ function TeacherClassStudentsPage() {
       </Button>
 
       <PageHeader
-        title={mockCourse ? `${mockCourse.name} - ${mockClass?.code}` : `Lop hoc phan ${classSectionId}`}
+        title={title}
         description={
           rosterQuery.isError
-            ? "API roster chua san sang, dang hien danh sach demo de teacher xem luong"
+            ? "Chua tai duoc danh sach sinh vien tu backend"
             : "Danh sach sinh vien da chot trong lop hoc phan"
         }
       />
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Sinh vien trong lop" value={rows.length} icon={UserRound} tone="primary" />
-        <StatCard label="Dang hoc hop le" value={registeredCount} icon={UserRound} tone="success" />
-        <StatCard label="Da co diem" value={gradedCount} icon={Mail} tone="info" />
-      </div>
 
       <DataTable
         data={rows}
         rowKey={(row) => row.enrollmentId}
         pageSize={12}
-        searchPlaceholder="Tim ma sinh vien, ho ten, email..."
+        searchPlaceholder="Tim ma sinh vien, ho ten, lop, so dien thoai, email..."
         emptyMessage="Chua co sinh vien nao trong lop nay"
         columns={[
           {
             key: "studentCode",
-            header: "Ma SV",
+            header: "MSV",
             render: (row) => <span className="font-mono text-xs font-semibold">{row.studentCode}</span>,
           },
           {
             key: "fullName",
-            header: "Sinh vien",
-            render: (row) => (
-              <div className="min-w-56">
-                <div className="font-medium">{row.fullName}</div>
-                <div className="mt-1 flex gap-1">
-                  <Badge variant={row.source === "API" ? "secondary" : "outline"}>{row.source}</Badge>
-                  <span className="text-xs text-muted-foreground">{row.cohort}</span>
-                </div>
-              </div>
-            ),
+            header: "Ho ten",
+            render: (row) => <span className="min-w-48 font-medium">{row.fullName}</span>,
+          },
+          {
+            key: "className",
+            header: "Lop SH",
+            render: (row) => <span className="text-sm">{row.className}</span>,
+          },
+          {
+            key: "phone",
+            header: "SDT",
+            render: (row) => <span className="font-mono text-xs">{row.phone}</span>,
           },
           {
             key: "email",
@@ -93,43 +90,22 @@ function TeacherClassStudentsPage() {
             render: (row) => <span className="text-xs text-muted-foreground">{row.email}</span>,
           },
           {
+            key: "advisorName",
+            header: "Co van HT",
+            render: (row) => <span className="text-sm">{row.advisorName}</span>,
+          },
+          {
             key: "majorName",
             header: "Nganh",
             render: (row) => <span className="text-sm">{row.majorName}</span>,
           },
           {
-            key: "midtermScore",
-            header: "Giua ky",
-            render: (row) => <ScoreCell value={row.midtermScore} />,
-          },
-          {
-            key: "finalScore",
-            header: "Cuoi ky",
-            render: (row) => <ScoreCell value={row.finalScore} />,
-          },
-          {
-            key: "totalScore",
-            header: "Tong",
-            render: (row) => <ScoreCell value={row.totalScore} strong />,
-          },
-          {
-            key: "status",
-            header: "Trang thai",
-            render: (row) => <StatusBadge value={row.status} />,
+            key: "facultyName",
+            header: "Khoa hoc",
+            render: (row) => <span className="text-sm">{row.facultyName}</span>,
           },
         ]}
       />
     </div>
-  );
-}
-
-function ScoreCell({ value, strong = false }: { value?: number | null; strong?: boolean }) {
-  if (value === null || value === undefined) {
-    return <span className="text-xs text-muted-foreground">Can BE</span>;
-  }
-  return (
-    <span className={strong ? "font-semibold tabular-nums" : "tabular-nums"}>
-      {value.toFixed(2)}
-    </span>
   );
 }

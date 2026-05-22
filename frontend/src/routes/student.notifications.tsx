@@ -5,9 +5,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  listNotifications,
-  markAllNotificationsRead,
-  markNotificationRead,
+  listStudentNotifications,
+  markAllStudentNotificationsRead,
+  markStudentNotificationRead,
   type StudentNotification,
 } from "@/lib/api/notifications";
 
@@ -37,17 +37,17 @@ function NotificationsPage() {
 
   const notificationsQuery = useQuery({
     queryKey: ["student", "notifications"],
-    queryFn: listNotifications,
+    queryFn: listStudentNotifications,
     refetchInterval: 30000,
   });
 
   const markReadMutation = useMutation({
-    mutationFn: markNotificationRead,
+    mutationFn: markStudentNotificationRead,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["student", "notifications"] }),
   });
 
   const markAllReadMutation = useMutation({
-    mutationFn: markAllNotificationsRead,
+    mutationFn: markAllStudentNotificationsRead,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["student", "notifications"] }),
   });
 

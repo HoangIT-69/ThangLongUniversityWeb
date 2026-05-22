@@ -1,5 +1,6 @@
 package com.example.ThangLongUniversityWeb.entity;
 
+import com.example.ThangLongUniversityWeb.enums.CourseStudyStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,8 +28,14 @@ public class Enrollment {
     @JoinColumn(name = "class_section_id")
     private ClassSection classSection;
 
+    /** Trạng thái đăng ký học phần (luồng đăng ký, hủy đăng ký) */
     @Enumerated(EnumType.STRING)
     private EnrollmentStatus status;
+
+    /** Trạng thái kết quả học môn (điểm danh + điểm số) */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "course_status")
+    private CourseStudyStatus courseStatus = CourseStudyStatus.IN_PROGRESS;
 
     /**
      * Grade là nguồn sự thật duy nhất cho điểm số.

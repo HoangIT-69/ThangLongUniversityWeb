@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarClock, GraduationCap, Layers, MessageSquare, NotebookPen, Users } from "lucide-react";
+import { CalendarClock, GraduationCap, Layers, NotebookPen, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader, StatCard } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { chatRooms } from "@/data/mock";
 import { useAuth } from "@/lib/auth";
 import { teacherApi } from "@/lib/api/teacher";
 
@@ -51,7 +50,6 @@ function TeacherDashboardPage() {
 
   const totalStudents = classes.reduce((sum, c) => sum + (c.currentSlots ?? 0), 0);
   const ungradedCount = classes.filter((c) => !c.closed).length;
-  const unreadMessages = chatRooms.reduce((sum, room) => sum + room.unread, 0);
   const displayName = profile?.fullName ?? name ?? "Giang vien";
 
   return (
@@ -60,7 +58,7 @@ function TeacherDashboardPage() {
         title={`Xin chao, ${displayName.split(" ").slice(-1)[0]}!`}
         description={
           classesQuery.isError
-            ? "Chua co API dashboard summary, dang tong hop tu lop hoc phan va mock"
+            ? "Chua tai duoc du lieu dashboard tu backend"
             : profile?.code
               ? `Ma GV ${profile.code}`
               : currentSemester?.name
@@ -79,7 +77,7 @@ function TeacherDashboardPage() {
         <StatCard label="Lop dang day" value={classes.length} icon={Layers} tone="primary" />
         <StatCard label="Tong sinh vien" value={totalStudents} icon={GraduationCap} tone="info" />
         <StatCard label="Lop chua khoa diem" value={ungradedCount} icon={NotebookPen} tone={ungradedCount > 0 ? "warning" : "success"} />
-        <StatCard label="Tin nhan moi" value={unreadMessages} icon={MessageSquare} tone="success" />
+        <StatCard label="Lich hom nay" value={todaySchedule.length} icon={CalendarClock} tone="success" />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">

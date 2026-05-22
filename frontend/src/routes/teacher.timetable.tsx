@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarDays, Clock, DoorOpen, GraduationCap } from "lucide-react";
-import { useMemo, useState } from "react";
-import { DataTable } from "@/components/data-table/DataTable";
+import { createFileRoute } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeader, StatCard } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/ui/page-header";
+import { cn } from "@/lib/utils";
+import type { ClassSectionResponse } from "@/lib/api/types";
+import { teacherApi } from "@/lib/api/teacher";
+import { useTeacherSemester, type TeacherSemesterOption } from "@/features/teacher/useTeacherSemester";
 import {
   Select,
   SelectContent,
@@ -14,192 +13,235 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  getDefaultTeacherSemesterId,
-  teacherSemesterOptions,
-} from "@/features/teacher/teacherData";
-import {
-  getTeacherTimetableSlots,
-  getTodayDayOfWeek,
-  type TeacherTimetableSlot,
-} from "@/features/teacher/teacherTimetableData";
-import { teacherApi } from "@/lib/api/teacher";
 
 export const Route = createFileRoute("/teacher/timetable")({ component: TeacherTimetablePage });
 
-const timetableDays = [1, 2, 3, 4, 5, 6];
+const dayLabels: Record<number, string> = {
+  2: "Thu 2",
+  3: "Thu 3",
+  4: "Thu 4",
+  5: "Thu 5",
+  6: "Thu 6",
+  7: "Thu 7",
+  8: "CN",
+};
+
+const periods = [
+  { index: 1, start: "07:00", end: "07:50" },
+  { index: 2, start: "08:00", end: "08:50" },
+  { index: 3, start: "09:00", end: "09:50" },
+  { index: 4, start: "10:00", end: "10:50" },
+  { index: 5, start: "13:00", end: "13:50" },
+  { index: 6, start: "14:00", end: "14:50" },
+  { index: 7, start: "15:00", end: "15:50" },
+  { index: 8, start: "16:00", end: "16:50" },
+];
+
+const days = [2, 3, 4, 5, 6, 7, 8];
+
+type ScheduleCell = {
+  courseName: string;
+  courseCode: string;
+  classCode: string;
+  roomName: string;
+  lessonCount: number;
+  periodRange: string;
+  startTime: string;
+  endTime: string;
+  rowSpan: number;
+  isStart: boolean;
+};
+
+function getTodayDayOfWeek() {
+  const day = new Date().getDay();
+  return day === 0 ? 8 : day + 1;
+}
+
+function formatApiTime(value: string | null | undefined) {
+  if (!value) return "";
+  const [hour = "", minute = ""] = value.split(":");
+  return hour && minute ? `${hour}:${minute}` : value;
+}
+
+function buildScheduleCells(classes: ClassSectionResponse[]) {
+  const cells: Record<string, ScheduleCell | null> = {};
+
+  classes.forEach((section) => {
+    (section.schedules ?? []).forEach((slot) => {
+      const startPeriod = slot.startPeriod;
+      const endPeriod = slot.endPeriod;
+      if (!slot.dayOfWeek || !startPeriod || !endPeriod) return;
+
+      const rowSpan = Math.max(endPeriod - startPeriod + 1, 1);
+      for (let period = startPeriod; period <= endPeriod; period += 1) {
+        cells[`${slot.dayOfWeek}-${period}`] = {
+          courseName: section.courseName,
+          courseCode: section.courseCode,
+          classCode: section.classCode,
+          roomName: slot.roomName ?? section.room ?? "",
+          lessonCount: slot.lessonCount ?? rowSpan,
+          periodRange: slot.periodRange ?? `${startPeriod}-${endPeriod}`,
+          startTime: formatApiTime(slot.startTime),
+          endTime: formatApiTime(slot.endTime),
+          rowSpan,
+          isStart: period === startPeriod,
+        };
+      }
+    });
+  });
+
+  return cells;
+}
 
 function TeacherTimetablePage() {
-  const [semesterId, setSemesterId] = useState(getDefaultTeacherSemesterId());
+  const { semesterId, setSemesterId, semesterOptions, semestersQuery } = useTeacherSemester();
+  const todayDayOfWeek = getTodayDayOfWeek();
 
   const classesQuery = useQuery({
     queryKey: ["teacher", "classes", semesterId],
     queryFn: () => teacherApi.listMyClasses(semesterId),
+    enabled: Boolean(semesterId),
     retry: false,
   });
 
-  const slots = useMemo(
-    () =>
-      getTeacherTimetableSlots(classesQuery.isError ? undefined : classesQuery.data, semesterId),
-    [classesQuery.data, classesQuery.isError, semesterId],
-  );
-
-  const todayDayOfWeek = getTodayDayOfWeek();
-  const todaySlots = slots.filter((slot) => slot.dayOfWeek === todayDayOfWeek);
-  const roomCount = new Set(slots.map((slot) => slot.roomName)).size;
-  const studentCount = slots.reduce((sum, slot) => sum + slot.currentSlots, 0);
+  const cells = buildScheduleCells(classesQuery.data ?? []);
+  const hasSchedule = Object.keys(cells).length > 0;
 
   return (
     <div className="space-y-5">
       <PageHeader
         title="Thoi khoa bieu"
-        description={
-          classesQuery.isError
-            ? "Chua co API timetable rieng, FE dang dung mock/class-sections de demo lich day"
-            : "Lich day cua giang vien theo hoc ky, phong hoc va tiet hoc"
+        description="Lich day cua giang vien theo hoc ky, phong hoc va tiet hoc"
+        actions={
+          <SemesterFilter
+            value={semesterId}
+            options={semesterOptions}
+            disabled={semestersQuery.isLoading || semesterOptions.length === 0}
+            onValueChange={setSemesterId}
+          />
         }
-        actions={<SemesterFilter value={semesterId} onValueChange={setSemesterId} />}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Buoi day" value={slots.length} icon={CalendarDays} tone="primary" />
-        <StatCard label="Hom nay" value={todaySlots.length} icon={Clock} tone="success" />
-        <StatCard label="Phong su dung" value={roomCount} icon={DoorOpen} tone="info" />
-        <StatCard label="Tong si so" value={studentCount} icon={GraduationCap} tone="warning" />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Lich tuan</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 lg:grid-cols-6">
-            {timetableDays.map((day) => (
-              <DayColumn
-                key={day}
-                day={day}
-                slots={slots.filter((slot) => slot.dayOfWeek === day)}
-                isToday={day === todayDayOfWeek}
-              />
+      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+        <table className="w-full min-w-[900px] table-fixed border-collapse text-sm">
+          <colgroup>
+            <col style={{ width: 104 }} />
+            {days.map((day) => (
+              <col key={day} style={{ width: "calc((100% - 104px) / 7)" }} />
             ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <DataTable
-        data={slots}
-        rowKey={(row) => row.id}
-        pageSize={10}
-        searchPlaceholder="Tim lop, mon, phong..."
-        emptyMessage="Chua co lich day trong hoc ky nay"
-        columns={[
-          {
-            key: "classCode",
-            header: "Lop",
-            render: (row) => (
-              <div>
-                <div className="font-mono text-xs font-semibold">{row.classCode}</div>
-                <Badge className="mt-1" variant={row.source === "API" ? "secondary" : "outline"}>
-                  {row.source}
-                </Badge>
-              </div>
-            ),
-          },
-          {
-            key: "courseName",
-            header: "Mon hoc",
-            render: (row) => (
-              <div className="min-w-56">
-                <div className="font-medium">{row.courseName}</div>
-                <div className="text-xs text-muted-foreground">{row.courseCode}</div>
-              </div>
-            ),
-          },
-          { key: "dayLabel", header: "Thu" },
-          { key: "timeRange", header: "Tiet / Gio" },
-          { key: "roomName", header: "Phong" },
-          { key: "weekText", header: "Tuan hoc" },
-          {
-            key: "size",
-            header: "Si so",
-            accessor: (row) => `${row.currentSlots}/${row.maxSlots}`,
-            render: (row) => (
-              <span className="tabular-nums">
-                {row.currentSlots}/{row.maxSlots}
-              </span>
-            ),
-          },
-          {
-            key: "actions",
-            header: "",
-            searchable: false,
-            className: "w-24 text-right",
-            render: (row) => (
-              <Button asChild variant="outline" size="sm">
-                <Link
-                  to="/teacher/classes/$classSectionId/students"
-                  params={{ classSectionId: row.classSectionId }}
+          </colgroup>
+          <thead>
+            <tr className="bg-muted/40">
+              <th className="border-b p-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                Tiet
+              </th>
+              {days.map((day) => (
+                <th
+                  key={day}
+                  className={cn(
+                    "border-b border-l p-2 text-left text-xs uppercase tracking-wide text-muted-foreground",
+                    day === todayDayOfWeek && "bg-primary/10 text-primary",
+                  )}
                 >
-                  Roster
-                </Link>
-              </Button>
-            ),
-          },
-        ]}
-      />
-    </div>
-  );
-}
+                  <div className="flex items-center justify-between gap-2">
+                    <span>{dayLabels[day]}</span>
+                    {day === todayDayOfWeek && <Badge className="shrink-0">Hom nay</Badge>}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {periods.map((period) => (
+              <tr key={period.index}>
+                <td className="border-b p-2 align-top">
+                  <div className="font-semibold">Tiet {period.index}</div>
+                  <div className="text-[10px] tabular-nums text-muted-foreground">
+                    {period.start}-{period.end}
+                  </div>
+                </td>
+                {days.map((day) => {
+                  const cell = cells[`${day}-${period.index}`];
+                  if (cell && !cell.isStart) return null;
 
-function DayColumn({
-  day,
-  slots,
-  isToday,
-}: {
-  day: number;
-  slots: TeacherTimetableSlot[];
-  isToday: boolean;
-}) {
-  return (
-    <div className="min-h-48 rounded-lg border bg-muted/20 p-3">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-sm font-semibold">{day === 6 ? "Thu 7" : `Thu ${day + 1}`}</div>
-        {isToday && <Badge>Hom nay</Badge>}
+                  return (
+                    <td
+                      key={day}
+                      rowSpan={cell?.rowSpan ?? 1}
+                      className={cn(
+                        "h-20 border-b border-l p-1.5 align-top",
+                        day === todayDayOfWeek && "bg-primary/[0.03]",
+                        cell && "bg-primary/5",
+                      )}
+                    >
+                      {cell && (
+                        <div className="flex h-full min-h-16 w-full max-w-full flex-col overflow-hidden rounded-md border border-primary/30 bg-card p-2 text-xs leading-tight shadow-sm">
+                          <div className="truncate font-semibold text-primary">{cell.courseName}</div>
+                          <div className="font-mono text-[10px] text-muted-foreground">
+                            {cell.classCode} - {cell.courseCode}
+                          </div>
+                          <div className="mt-1 text-muted-foreground">Phòng: {cell.roomName}</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            So tiet: {cell.lessonCount}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            Tiet: {cell.periodRange}
+                          </div>
+                          {cell.startTime && (
+                            <div className="text-[10px] text-muted-foreground">
+                              {cell.startTime}
+                              {cell.endTime ? ` - ${cell.endTime}` : ""}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      <div className="space-y-2">
-        {slots.length === 0 ? (
-          <div className="rounded-md border border-dashed bg-background/60 p-3 text-xs text-muted-foreground">
-            Khong co lich
-          </div>
-        ) : (
-          slots.map((slot) => (
-            <div key={slot.id} className="rounded-md border bg-background p-3 text-xs shadow-sm">
-              <div className="font-semibold">{slot.classCode}</div>
-              <div className="mt-1 line-clamp-2 text-muted-foreground">{slot.courseName}</div>
-              <div className="mt-2 font-mono">{slot.timeRange}</div>
-              <div className="mt-1 text-muted-foreground">{slot.roomName}</div>
-            </div>
-          ))
-        )}
-      </div>
+
+      {classesQuery.isLoading && (
+        <div className="text-sm text-muted-foreground">Dang tai thoi khoa bieu...</div>
+      )}
+      {!classesQuery.isLoading && !classesQuery.isError && semesterId && !hasSchedule && (
+        <div className="text-sm text-muted-foreground">Chua co lich day trong hoc ky nay.</div>
+      )}
+      {classesQuery.isError && (
+        <div className="text-sm text-destructive">
+          {classesQuery.error instanceof Error ? classesQuery.error.message : "Khong tai duoc thoi khoa bieu"}
+        </div>
+      )}
+      {semestersQuery.isError && (
+        <div className="text-sm text-destructive">
+          {semestersQuery.error instanceof Error ? semestersQuery.error.message : "Khong tai duoc danh sach hoc ky"}
+        </div>
+      )}
     </div>
   );
 }
 
 function SemesterFilter({
   value,
+  options,
+  disabled,
   onValueChange,
 }: {
   value: string;
+  options: TeacherSemesterOption[];
+  disabled?: boolean;
   onValueChange: (value: string) => void;
 }) {
   return (
-    <Select value={value} onValueChange={onValueChange}>
+    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger className="w-[280px]">
         <SelectValue placeholder="Chon hoc ky" />
       </SelectTrigger>
       <SelectContent>
-        {teacherSemesterOptions.map((semester) => (
+        {options.map((semester) => (
           <SelectItem key={semester.id} value={semester.id}>
             {semester.name}
           </SelectItem>

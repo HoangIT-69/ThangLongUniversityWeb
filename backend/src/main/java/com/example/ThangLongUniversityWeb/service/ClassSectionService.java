@@ -271,6 +271,7 @@ public class ClassSectionService {
                 .maxSlots(section.getMaxSlots())
                 .currentSlots(activeSlots)
                 .isClosed(section.isClosed())
+                .gradeLocked(section.isGradeLocked())
                 .build();
     }
 
@@ -282,6 +283,10 @@ public class ClassSectionService {
                 .startPeriod(schedule.getStartPeriod().getPeriodNumber())
                 .endPeriodId(schedule.getEndPeriod().getId())
                 .endPeriod(schedule.getEndPeriod().getPeriodNumber())
+                .lessonCount(schedule.getEndPeriod().getPeriodNumber() - schedule.getStartPeriod().getPeriodNumber() + 1)
+                .periodRange(schedule.getStartPeriod().getPeriodNumber() + "-" + schedule.getEndPeriod().getPeriodNumber())
+                .startTime(schedule.getStartPeriod().getStartTime())
+                .endTime(schedule.getEndPeriod().getEndTime())
                 .roomId(schedule.getRoom() != null ? schedule.getRoom().getId() : null)
                 .roomName(schedule.getRoom() != null ? schedule.getRoom().getName() : null)
                 .build();

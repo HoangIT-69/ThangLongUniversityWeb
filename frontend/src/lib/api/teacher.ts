@@ -1,5 +1,7 @@
 import { apiRequest, jsonBody } from "./client";
 import type {
+  AttendanceRecordRequest,
+  AttendanceSessionResponse,
   ClassSectionResponse,
   StudentSemesterResponse,
   TeacherGradeRequest,
@@ -9,7 +11,7 @@ import type {
 
 export const teacherApi = {
   listSemesters: () =>
-    apiRequest<StudentSemesterResponse[]>("/api/student/semesters"),
+    apiRequest<StudentSemesterResponse[]>("/api/teacher/semesters"),
 
   listMyClasses: (semesterId: number | string) =>
     apiRequest<ClassSectionResponse[]>(`/api/teacher/my-classes/semester/${semesterId}`),
@@ -35,4 +37,36 @@ export const teacherApi = {
       method: "PUT",
       body: jsonBody(request),
     }),
+
+  getAttendanceSessions: (classSectionId: number | string) =>
+    apiRequest<AttendanceSessionResponse[]>(
+      `/api/teacher/classes/${classSectionId}/attendance-sessions`,
+    ),
+
+  getAttendanceSession: (classSectionId: number | string, sessionNumber: number) =>
+    apiRequest<AttendanceSessionResponse>(
+      `/api/teacher/classes/${classSectionId}/attendance-sessions/${sessionNumber}`,
+    ),
+
+  saveAttendanceRecords: (
+    classSectionId: number | string,
+    sessionNumber: number,
+    records: AttendanceRecordRequest[],
+  ) =>
+    apiRequest<AttendanceSessionResponse>(
+      `/api/teacher/classes/${classSectionId}/attendance-sessions/${sessionNumber}/records`,
+      { method: "PUT", body: jsonBody(records) },
+    ),
+
+  lockAttendanceSession: (classSectionId: number | string, sessionNumber: number) =>
+    apiRequest<AttendanceSessionResponse>(
+      `/api/teacher/classes/${classSectionId}/attendance-sessions/${sessionNumber}/lock`,
+      { method: "POST" },
+    ),
+
+  lockClassGrades: (classSectionId: number | string) =>
+    apiRequest<string>(
+      `/api/teacher/grades/class/${classSectionId}/lock`,
+      { method: "POST" },
+    ),
 };

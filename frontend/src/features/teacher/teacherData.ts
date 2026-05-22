@@ -1,25 +1,8 @@
-import {
-  classSections,
-  dayLabels,
-  enrollments,
-  getCourse,
-  getRoom,
-  getStudent,
-  grades,
-  semesters,
-  students,
-} from "@/data/mock";
 import type {
   ClassSectionResponse,
   TeacherGradeResponse,
   TeacherStudentGradeResponse,
 } from "@/lib/api/types";
-
-export interface TeacherSemesterOption {
-  id: string;
-  name: string;
-  source: "API hint" | "Mock";
-}
 
 export interface TeacherClassRow {
   id: string;
@@ -32,11 +15,12 @@ export interface TeacherClassRow {
   semesterName: string;
   scheduleText: string;
   roomText: string;
+  scheduleRoomItems: string[];
   currentSlots: number;
   maxSlots: number;
   status: string;
   gradeStatus: string;
-  source: "API" | "Mock";
+  source: "API";
 }
 
 export interface TeacherRosterRow {
@@ -44,14 +28,20 @@ export interface TeacherRosterRow {
   numericEnrollmentId?: number;
   studentCode: string;
   fullName: string;
+  phone: string;
   email: string;
   cohort: string;
+  className: string;
+  advisorName: string;
   majorName: string;
+  facultyName: string;
   midtermScore?: number | null;
   finalScore?: number | null;
   totalScore?: number | null;
   status: string;
-  source: "API" | "Mock";
+  courseStatus?: string | null;
+  absenceCount?: number | null;
+  source: "API";
 }
 
 export interface TeacherGradeRow {
@@ -70,101 +60,28 @@ export interface TeacherGradeRow {
   gpa4: number;
   canEdit: boolean;
   gradeStatus: string;
-  source: "API" | "Mock";
-}
-
-export const teacherSemesterOptions: TeacherSemesterOption[] = [
-  { id: "1", name: "API: Hoc ky 1", source: "API hint" },
-  { id: "2", name: "API: Hoc ky 2", source: "API hint" },
-  ...semesters.map((semester) => ({
-    id: semester.id,
-    name: semester.name,
-    source: "Mock" as const,
-  })),
-];
-
-export function getDefaultTeacherSemesterId() {
-  return "1";
+  source: "API";
 }
 
 export function getTeacherClassRows(
   apiRows: ClassSectionResponse[] | undefined,
-  selectedSemesterId: string,
+  _selectedSemesterId: string,
 ): TeacherClassRow[] {
-  if (apiRows) return apiRows.map(mapApiClassSection);
-  const mockSemesterId = resolveMockSemesterId(selectedSemesterId);
-  return classSections
-    .filter((section) => section.semesterId === mockSemesterId)
-    .slice(0, 8)
-    .map(mapMockClassSection);
+  return apiRows?.map(mapApiClassSection) ?? [];
 }
 
 export function getTeacherRosterRows(
   apiRows: TeacherStudentGradeResponse[] | undefined,
-  classSectionId: string,
+  _classSectionId: string,
 ): TeacherRosterRow[] {
-  if (apiRows) return apiRows.map(mapApiRosterRow);
-  return enrollments
-    .filter((enrollment) => enrollment.classSectionId === classSectionId || classSectionId === "api-demo")
-    .slice(0, 12)
-    .map((enrollment) => {
-      const student = getStudent(enrollment.studentId);
-      const grade = grades.find((item) => item.enrollmentId === enrollment.id);
-      return {
-        enrollmentId: enrollment.id,
-        studentCode: student.code,
-        fullName: student.fullName,
-        email: student.email,
-        cohort: student.cohort,
-        majorName: "Can BE: majorName",
-        midtermScore: grade?.midterm ?? null,
-        finalScore: grade?.final ?? null,
-        totalScore: grade?.total ?? null,
-        status: enrollment.status,
-        source: "Mock",
-      };
-    });
+  return apiRows?.map(mapApiRosterRow) ?? [];
 }
 
 export function getTeacherGradeRows(
   apiRows: TeacherGradeResponse[] | undefined,
-  classSectionId: string,
+  _classSectionId: string,
 ): TeacherGradeRow[] {
-  if (apiRows) return apiRows.map(mapApiGradeRow);
-  return enrollments
-    .filter(
-      (enrollment) =>
-        (enrollment.classSectionId === classSectionId || classSectionId === "api-demo") &&
-        enrollment.status === "SUCCESS",
-    )
-    .slice(0, 20)
-    .map((enrollment, index) => {
-      const student = getStudent(enrollment.studentId);
-      const classSection = classSections.find((item) => item.id === enrollment.classSectionId);
-      const course = classSection ? getCourse(classSection.courseId) : undefined;
-      const grade = grades.find((item) => item.enrollmentId === enrollment.id);
-      const participationScore = grade?.attendance ?? 8;
-      const midtermScore = grade?.midterm ?? 6 + (index % 3);
-      const finalScore = grade?.final ?? 7 + (index % 3);
-      const totalScore = calculateTotal(participationScore, midtermScore, finalScore);
-      return {
-        enrollmentId: enrollment.id,
-        studentCode: student.code,
-        studentName: student.fullName,
-        classCode: classSection?.code ?? "Can BE: classCode",
-        courseName: course?.name ?? "Can BE: courseName",
-        participationScore,
-        midtermScore,
-        finalScore,
-        retestScore: grade?.retake ?? 0,
-        totalScore,
-        letterGrade: grade?.letter ?? getLetterGrade(totalScore),
-        gpa4: grade?.gpa4 ?? getGpa4(totalScore),
-        canEdit: !(grade?.locked ?? false),
-        gradeStatus: grade?.locked ? "LOCKED" : "DRAFT",
-        source: "Mock",
-      };
-    });
+  return apiRows?.map(mapApiGradeRow) ?? [];
 }
 
 export function calculateTotal(participationScore: number, midtermScore: number, finalScore: number) {
@@ -190,6 +107,10 @@ export function getGpa4(totalScore: number) {
 function mapApiClassSection(section: ClassSectionResponse): TeacherClassRow {
   const schedules = section.schedules ?? [];
   const isClosed = section.closed ?? section.isClosed ?? false;
+  const scheduleRoomItems = schedules.map((schedule) => {
+    const roomName = schedule.roomName ?? section.room ?? "-";
+    return `Thu ${schedule.dayOfWeek}, tiet ${schedule.startPeriod}-${schedule.endPeriod} - ${roomName}`;
+  });
   return {
     id: String(section.id),
     numericId: section.id,
@@ -203,37 +124,16 @@ function mapApiClassSection(section: ClassSectionResponse): TeacherClassRow {
       ? schedules
           .map((schedule) => `Thu ${schedule.dayOfWeek}, tiet ${schedule.startPeriod}-${schedule.endPeriod}`)
           .join("; ")
-      : "Can BE: schedules",
+      : "-",
     roomText: schedules.length
-      ? schedules.map((schedule) => schedule.roomName ?? section.room ?? "Can BE: room").join(", ")
-      : section.room ?? "Can BE: room",
+      ? schedules.map((schedule) => schedule.roomName ?? section.room ?? "-").join(", ")
+      : section.room ?? "-",
+    scheduleRoomItems: schedules.length ? scheduleRoomItems : [`- - ${section.room ?? "-"}`],
     currentSlots: section.currentSlots ?? 0,
     maxSlots: section.maxSlots ?? 0,
     status: isClosed ? "CLOSED" : "OPEN",
-    gradeStatus: section.gradeStatus ?? (section.gradeLocked ? "LOCKED" : "Can BE: gradeStatus"),
+    gradeStatus: section.gradeStatus ?? (section.gradeLocked ? "LOCKED" : "DRAFT"),
     source: "API",
-  };
-}
-
-function mapMockClassSection(section: (typeof classSections)[number]): TeacherClassRow {
-  const course = getCourse(section.courseId);
-  return {
-    id: section.id,
-    classCode: section.code,
-    courseName: course.name,
-    courseCode: course.code,
-    credits: course.credits,
-    semesterId: section.semesterId,
-    semesterName: semesters.find((semester) => semester.id === section.semesterId)?.name ?? "Hoc ky demo",
-    scheduleText: section.schedule
-      .map((slot) => `${dayLabels[slot.dayOfWeek]} tiet ${slot.periods.join(", ")}`)
-      .join("; "),
-    roomText: section.schedule.map((slot) => getRoom(slot.roomId).name).join(", "),
-    currentSlots: section.enrolled,
-    maxSlots: section.capacity,
-    status: section.status,
-    gradeStatus: section.enrolled > 30 ? "PENDING" : "DRAFT",
-    source: "Mock",
   };
 }
 
@@ -243,13 +143,19 @@ function mapApiRosterRow(row: TeacherStudentGradeResponse): TeacherRosterRow {
     numericEnrollmentId: row.enrollmentId,
     studentCode: row.studentCode,
     fullName: row.fullName,
-    email: "Can BE: email",
-    cohort: "Can BE: cohort",
-    majorName: "Can BE: majorName",
+    phone: row.phone ?? "-",
+    email: row.email ?? "-",
+    cohort: row.facultyName ?? "-",
+    className: row.className ?? "-",
+    advisorName: row.advisorName ?? "-",
+    majorName: row.majorName ?? "-",
+    facultyName: row.facultyName ?? "-",
     midtermScore: row.midTermScore ?? null,
     finalScore: row.finalScore ?? null,
     totalScore: row.totalScore ?? null,
     status: row.status,
+    courseStatus: row.courseStatus ?? null,
+    absenceCount: row.absenceCount ?? null,
     source: "API",
   };
 }
@@ -274,12 +180,7 @@ function mapApiGradeRow(row: TeacherGradeResponse): TeacherGradeRow {
     letterGrade: row.letterGrade ?? getLetterGrade(totalScore),
     gpa4: row.gpa4 ?? row.gradePoint ?? getGpa4(totalScore),
     canEdit: row.canEdit ?? row.gradeStatus !== "LOCKED",
-    gradeStatus: row.gradeStatus ?? "Can BE: gradeStatus",
+    gradeStatus: row.gradeStatus ?? "DRAFT",
     source: "API",
   };
-}
-
-function resolveMockSemesterId(selectedSemesterId: string) {
-  if (selectedSemesterId.startsWith("sem")) return selectedSemesterId;
-  return semesters.find((semester) => semester.status === "OPEN")?.id ?? semesters[0]?.id ?? "sem4";
 }

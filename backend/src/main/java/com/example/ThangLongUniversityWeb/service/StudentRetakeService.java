@@ -12,6 +12,7 @@ import com.example.ThangLongUniversityWeb.entity.Grade;
 import com.example.ThangLongUniversityWeb.entity.Student;
 import com.example.ThangLongUniversityWeb.entity.SystemSettings;
 import com.example.ThangLongUniversityWeb.entity.Semester;
+import com.example.ThangLongUniversityWeb.enums.CourseStudyStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
@@ -117,8 +118,15 @@ public class StudentRetakeService {
             }
 
             Course course = latestGrade.getEnrollment().getClassSection().getCourse();
-            // Xac dinh loai dang ky
-            EnrollmentType enrollmentType = latestGrade.getTotalScore() < RETAKE_THRESHOLD
+            // Xác định loại đăng ký dựa theo courseStatus
+            CourseStudyStatus courseStatus = latestGrade.getEnrollment().getCourseStatus();
+            if (courseStatus == CourseStudyStatus.REPEAT_COURSE) {
+                throw new RuntimeException("Môn " + course.getName() + " yêu cầu học lại, không thể chỉ thi lại.");
+            }
+            if (courseStatus == CourseStudyStatus.BANNED_FROM_EXAM) {
+                throw new RuntimeException("Môn " + course.getName() + " bị cấm thi do nghỉ quá buổi, phải học lại.");
+            }
+            EnrollmentType enrollmentType = courseStatus == CourseStudyStatus.RETAKE_EXAM
                     ? EnrollmentType.RETAKE : EnrollmentType.IMPROVE;
             int nextAttempt = (latestGrade.getAttemptNumber() != null ? latestGrade.getAttemptNumber() : 1) + 1;
 
@@ -220,7 +228,12 @@ public class StudentRetakeService {
     }
 
     private boolean isEligible(Grade grade) {
-        return grade.getTotalScore() != null && grade.getTotalScore() < IMPROVE_MAX_EXCLUSIVE;
+        // Dựa vào courseStatus của enrollment thay vì totalScore thô
+        CourseStudyStatus courseStatus = grade.getEnrollment().getCourseStatus();
+        return courseStatus == CourseStudyStatus.RETAKE_EXAM
+                || (courseStatus == CourseStudyStatus.PASSED
+                    && grade.getTotalScore() != null
+                    && grade.getTotalScore() < IMPROVE_MAX_EXCLUSIVE);
     }
 
     private RetakeEligibleCourseResponse mapEligibleCourse(Grade grade, long fee) {

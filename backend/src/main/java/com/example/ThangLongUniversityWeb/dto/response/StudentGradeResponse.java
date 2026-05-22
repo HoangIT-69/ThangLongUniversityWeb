@@ -6,26 +6,44 @@ import lombok.Data;
 
 @Data
 @Builder
-@Schema(description = "Thông tin điểm số của sinh viên")
+@Schema(description = "Thong tin diem va sinh vien trong lop hoc phan")
 public class StudentGradeResponse {
     @Schema(description = "ID ghi danh", example = "1")
     private Long enrollmentId;
-    
-    @Schema(description = "Mã sinh viên", example = "SV001")
+
+    @Schema(description = "Ma sinh vien", example = "SV001")
     private String studentCode;
-    
-    @Schema(description = "Tên sinh viên", example = "Nguyễn Văn A")
+
+    @Schema(description = "Ten sinh vien", example = "Nguyen Van A")
     private String fullName;
 
-    @Schema(description = "Điểm giữa kỳ (0-10)", example = "7.5")
+    private String phone;
+
+    private String email;
+
+    private String className;
+
+    private String advisorName;
+
+    private String majorName;
+
+    private String facultyName;
+
+    @Schema(description = "Diem giua ky (0-10)", example = "7.5")
     private Float midTermScore;
-    
-    @Schema(description = "Điểm cuối kỳ (0-10)", example = "8.0")
+
+    @Schema(description = "Diem cuoi ky (0-10)", example = "8.0")
     private Float finalScore;
-    
-    @Schema(description = "Tổng điểm", example = "7.75")
+
+    @Schema(description = "Tong diem", example = "7.75")
     private Float totalScore;
-    
-    @Schema(description = "Trạng thái", example = "PASSED", allowableValues = {"REGISTERED", "PASSED", "FAILED", "CANCELED"})
+
+    @Schema(description = "Trang thai", example = "PASSED", allowableValues = {"REGISTERED", "PASSED", "FAILED", "CANCELED"})
     private String status;
+
+    @Schema(description = "Trang thai ket qua hoc mon", example = "IN_PROGRESS")
+    private String courseStatus;
+
+    @Schema(description = "So buoi vang", example = "2")
+    private Long absenceCount;
 }

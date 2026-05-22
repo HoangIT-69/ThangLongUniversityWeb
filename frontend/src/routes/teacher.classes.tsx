@@ -1,28 +1,33 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, GraduationCap, Layers } from "lucide-react";
-import { useMemo, useState } from "react";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { DataTable } from "@/components/data-table/DataTable";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PageHeader, StatCard } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
-  getDefaultTeacherSemesterId,
   getTeacherClassRows,
-  teacherSemesterOptions,
 } from "@/features/teacher/teacherData";
+import { useTeacherSemester, type TeacherSemesterOption } from "@/features/teacher/useTeacherSemester";
 import { teacherApi } from "@/lib/api/teacher";
 
-export const Route = createFileRoute("/teacher/classes")({ component: TeacherClassesPage });
+export const Route = createFileRoute("/teacher/classes")({ component: TeacherClassesRouteShell });
+
+function TeacherClassesRouteShell() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  if (pathname !== "/teacher/classes") return <Outlet />;
+  return <TeacherClassesPage />;
+}
 
 function TeacherClassesPage() {
-  const [semesterId, setSemesterId] = useState(getDefaultTeacherSemesterId());
+  const { semesterId, setSemesterId, semesterOptions } = useTeacherSemester();
+  const navigate = useNavigate();
 
   const classesQuery = useQuery({
     queryKey: ["teacher", "classes", semesterId],
     queryFn: () => teacherApi.listMyClasses(semesterId),
+    enabled: Boolean(semesterId),
     retry: false,
   });
 
@@ -31,32 +36,21 @@ function TeacherClassesPage() {
     [classesQuery.data, classesQuery.isError, semesterId],
   );
 
-  const studentCount = rows.reduce((sum, row) => sum + row.currentSlots, 0);
-  const openClassCount = rows.filter((row) => row.status === "OPEN").length;
-  const pendingGradeCount = rows.filter((row) => row.gradeStatus !== "LOCKED").length;
-
   return (
     <div className="space-y-5">
       <PageHeader
         title="Lop hoc phan dang day"
         description={
           classesQuery.isError
-            ? "API teacher classes chua san sang hoac bi tu choi, dang hien demo truc quan"
+            ? "Chua tai duoc du lieu lop hoc tu backend"
             : "Danh sach lop hoc phan duoc phan cong theo hoc ky"
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Lop phu trach" value={rows.length} icon={Layers} tone="primary" />
-        <StatCard label="Lop dang mo" value={openClassCount} icon={BookOpen} tone="success" />
-        <StatCard label="Tong sinh vien" value={studentCount} icon={GraduationCap} tone="info" />
-        <StatCard label="Bang diem can xu ly" value={pendingGradeCount} icon={CalendarDays} tone="warning" />
-      </div>
-
       <DataTable
         data={rows}
         rowKey={(row) => row.id}
-        toolbar={<SemesterFilter value={semesterId} onValueChange={setSemesterId} />}
+        toolbar={<SemesterFilter value={semesterId} options={semesterOptions} onValueChange={setSemesterId} />}
         pageSize={10}
         searchPlaceholder="Tim ma lop, mon hoc, phong..."
         emptyMessage="Chua co lop hoc phan nao trong hoc ky nay"
@@ -67,9 +61,6 @@ function TeacherClassesPage() {
             render: (row) => (
               <div>
                 <span className="font-mono text-xs font-semibold">{row.classCode}</span>
-                <div className="mt-1">
-                  <Badge variant={row.source === "API" ? "secondary" : "outline"}>{row.source}</Badge>
-                </div>
               </div>
             ),
           },
@@ -86,14 +77,18 @@ function TeacherClassesPage() {
             ),
           },
           {
-            key: "scheduleText",
-            header: "Lich hoc",
-            render: (row) => <span className="text-xs text-muted-foreground">{row.scheduleText}</span>,
-          },
-          {
-            key: "roomText",
-            header: "Phong",
-            render: (row) => <span className="font-mono text-xs">{row.roomText}</span>,
+            key: "scheduleRoomItems",
+            header: "Lich hoc / Phong",
+            accessor: (row) => row.scheduleRoomItems.join(" "),
+            render: (row) => (
+              <div className="min-w-72 space-y-1">
+                {row.scheduleRoomItems.map((item, index) => (
+                  <div key={`${row.id}-${index}-${item}`} className="text-xs text-muted-foreground">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            ),
           },
           {
             key: "size",
@@ -111,20 +106,22 @@ function TeacherClassesPage() {
             render: (row) => <StatusBadge value={row.status} />,
           },
           {
-            key: "gradeStatus",
-            header: "Diem",
-            render: (row) => <StatusBadge value={row.gradeStatus} />,
-          },
-          {
             key: "actions",
             header: "",
             className: "w-28 text-right",
             searchable: false,
             render: (row) => (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/teacher/classes/$classSectionId/students" params={{ classSectionId: row.id }}>
-                  Xem SV
-                </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  navigate({
+                    to: "/teacher/classes/$classSectionId/students",
+                    params: { classSectionId: row.id },
+                  })
+                }
+              >
+                Xem SV
               </Button>
             ),
           },
@@ -136,9 +133,11 @@ function TeacherClassesPage() {
 
 function SemesterFilter({
   value,
+  options,
   onValueChange,
 }: {
   value: string;
+  options: TeacherSemesterOption[];
   onValueChange: (value: string) => void;
 }) {
   return (
@@ -147,7 +146,7 @@ function SemesterFilter({
         <SelectValue placeholder="Chon hoc ky" />
       </SelectTrigger>
       <SelectContent>
-        {teacherSemesterOptions.map((semester) => (
+        {options.map((semester) => (
           <SelectItem key={semester.id} value={semester.id}>
             {semester.name}
           </SelectItem>

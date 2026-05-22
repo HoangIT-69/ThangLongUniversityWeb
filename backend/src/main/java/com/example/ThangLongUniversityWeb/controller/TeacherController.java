@@ -18,6 +18,12 @@ public class TeacherController {
 
     private final TeacherService teacherService;
 
+    @Operation(summary = "Lay danh sach hoc ky cho giang vien")
+    @GetMapping("/semesters")
+    public ResponseEntity<?> getSemesters() {
+        return ResponseEntity.ok(teacherService.getSemesters());
+    }
+
     @Operation(summary = "Xem danh sách các lớp được phân công dạy trong học kỳ")
     @GetMapping("/my-classes/semester/{semesterId}")
     public ResponseEntity<?> getMyClasses(@PathVariable Long semesterId) {
