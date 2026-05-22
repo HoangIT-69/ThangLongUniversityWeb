@@ -44,26 +44,17 @@ import { Route as StudentCourseRegistrationRouteImport } from './routes/student.
 import { Route as StudentChatRouteImport } from './routes/student.chat'
 import { Route as StudentAcademicResultsRouteImport } from './routes/student.academic-results'
 import { Route as ArticlesSlugRouteImport } from './routes/articles.$slug'
-import { Route as AdminWorkflowRouteImport } from './routes/admin.workflow'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminTimetablesRouteImport } from './routes/admin.timetables'
-import { Route as AdminTeachingAssignmentsRouteImport } from './routes/admin.teaching-assignments'
 import { Route as AdminTeachersRouteImport } from './routes/admin.teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin.students'
 import { Route as AdminSemestersRouteImport } from './routes/admin.semesters'
 import { Route as AdminRoomsRouteImport } from './routes/admin.rooms'
-import { Route as AdminReportsRouteImport } from './routes/admin.reports'
-import { Route as AdminRegistrationPeriodsRouteImport } from './routes/admin.registration-periods'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminPeriodsRouteImport } from './routes/admin.periods'
-import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMajorsRouteImport } from './routes/admin.majors'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
-import { Route as AdminFacultiesRouteImport } from './routes/admin.faculties'
 import { Route as AdminEnrollmentsRouteImport } from './routes/admin.enrollments'
-import { Route as AdminDepartmentsRouteImport } from './routes/admin.departments'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
-import { Route as AdminCurriculumsRouteImport } from './routes/admin.curriculums'
 import { Route as AdminCoursesRouteImport } from './routes/admin.courses'
 import { Route as AdminClassSectionsRouteImport } from './routes/admin.class-sections'
 import { Route as AdminChatRouteImport } from './routes/admin.chat'
@@ -247,27 +238,11 @@ const ArticlesSlugRoute = ArticlesSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ArticlesRoute,
 } as any)
-const AdminWorkflowRoute = AdminWorkflowRouteImport.update({
-  id: '/workflow',
-  path: '/workflow',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminTimetablesRoute = AdminTimetablesRouteImport.update({
-  id: '/timetables',
-  path: '/timetables',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminTeachingAssignmentsRoute =
-  AdminTeachingAssignmentsRouteImport.update({
-    id: '/teaching-assignments',
-    path: '/teaching-assignments',
-    getParentRoute: () => AdminRoute,
-  } as any)
 const AdminTeachersRoute = AdminTeachersRouteImport.update({
   id: '/teachers',
   path: '/teachers',
@@ -288,17 +263,6 @@ const AdminRoomsRoute = AdminRoomsRouteImport.update({
   path: '/rooms',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminRegistrationPeriodsRoute =
-  AdminRegistrationPeriodsRouteImport.update({
-    id: '/registration-periods',
-    path: '/registration-periods',
-    getParentRoute: () => AdminRoute,
-  } as any)
 const AdminProfileRoute = AdminProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -307,11 +271,6 @@ const AdminProfileRoute = AdminProfileRouteImport.update({
 const AdminPeriodsRoute = AdminPeriodsRouteImport.update({
   id: '/periods',
   path: '/periods',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMajorsRoute = AdminMajorsRouteImport.update({
@@ -324,29 +283,14 @@ const AdminLandingRoute = AdminLandingRouteImport.update({
   path: '/landing',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminFacultiesRoute = AdminFacultiesRouteImport.update({
-  id: '/faculties',
-  path: '/faculties',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminEnrollmentsRoute = AdminEnrollmentsRouteImport.update({
   id: '/enrollments',
   path: '/enrollments',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminDepartmentsRoute = AdminDepartmentsRouteImport.update({
-  id: '/departments',
-  path: '/departments',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminCurriculumsRoute = AdminCurriculumsRouteImport.update({
-  id: '/curriculums',
-  path: '/curriculums',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCoursesRoute = AdminCoursesRouteImport.update({
@@ -395,26 +339,17 @@ export interface FileRoutesByFullPath {
   '/admin/chat': typeof AdminChatRoute
   '/admin/class-sections': typeof AdminClassSectionsRoute
   '/admin/courses': typeof AdminCoursesRoute
-  '/admin/curriculums': typeof AdminCurriculumsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
-  '/admin/departments': typeof AdminDepartmentsRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
-  '/admin/faculties': typeof AdminFacultiesRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
-  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/periods': typeof AdminPeriodsRoute
   '/admin/profile': typeof AdminProfileRoute
-  '/admin/registration-periods': typeof AdminRegistrationPeriodsRoute
-  '/admin/reports': typeof AdminReportsRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/semesters': typeof AdminSemestersRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
-  '/admin/teaching-assignments': typeof AdminTeachingAssignmentsRoute
-  '/admin/timetables': typeof AdminTimetablesRoute
   '/admin/users': typeof AdminUsersRoute
-  '/admin/workflow': typeof AdminWorkflowRoute
   '/articles/$slug': typeof ArticlesSlugRoute
   '/student/academic-results': typeof StudentAcademicResultsRoute
   '/student/chat': typeof StudentChatRoute
@@ -456,26 +391,17 @@ export interface FileRoutesByTo {
   '/admin/chat': typeof AdminChatRoute
   '/admin/class-sections': typeof AdminClassSectionsRoute
   '/admin/courses': typeof AdminCoursesRoute
-  '/admin/curriculums': typeof AdminCurriculumsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
-  '/admin/departments': typeof AdminDepartmentsRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
-  '/admin/faculties': typeof AdminFacultiesRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
-  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/periods': typeof AdminPeriodsRoute
   '/admin/profile': typeof AdminProfileRoute
-  '/admin/registration-periods': typeof AdminRegistrationPeriodsRoute
-  '/admin/reports': typeof AdminReportsRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/semesters': typeof AdminSemestersRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
-  '/admin/teaching-assignments': typeof AdminTeachingAssignmentsRoute
-  '/admin/timetables': typeof AdminTimetablesRoute
   '/admin/users': typeof AdminUsersRoute
-  '/admin/workflow': typeof AdminWorkflowRoute
   '/articles/$slug': typeof ArticlesSlugRoute
   '/student/academic-results': typeof StudentAcademicResultsRoute
   '/student/chat': typeof StudentChatRoute
@@ -519,26 +445,17 @@ export interface FileRoutesById {
   '/admin/chat': typeof AdminChatRoute
   '/admin/class-sections': typeof AdminClassSectionsRoute
   '/admin/courses': typeof AdminCoursesRoute
-  '/admin/curriculums': typeof AdminCurriculumsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
-  '/admin/departments': typeof AdminDepartmentsRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
-  '/admin/faculties': typeof AdminFacultiesRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
-  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/periods': typeof AdminPeriodsRoute
   '/admin/profile': typeof AdminProfileRoute
-  '/admin/registration-periods': typeof AdminRegistrationPeriodsRoute
-  '/admin/reports': typeof AdminReportsRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/semesters': typeof AdminSemestersRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
-  '/admin/teaching-assignments': typeof AdminTeachingAssignmentsRoute
-  '/admin/timetables': typeof AdminTimetablesRoute
   '/admin/users': typeof AdminUsersRoute
-  '/admin/workflow': typeof AdminWorkflowRoute
   '/articles/$slug': typeof ArticlesSlugRoute
   '/student/academic-results': typeof StudentAcademicResultsRoute
   '/student/chat': typeof StudentChatRoute
@@ -583,26 +500,17 @@ export interface FileRouteTypes {
     | '/admin/chat'
     | '/admin/class-sections'
     | '/admin/courses'
-    | '/admin/curriculums'
     | '/admin/dashboard'
-    | '/admin/departments'
     | '/admin/enrollments'
-    | '/admin/faculties'
     | '/admin/landing'
     | '/admin/majors'
-    | '/admin/notifications'
     | '/admin/periods'
     | '/admin/profile'
-    | '/admin/registration-periods'
-    | '/admin/reports'
     | '/admin/rooms'
     | '/admin/semesters'
     | '/admin/students'
     | '/admin/teachers'
-    | '/admin/teaching-assignments'
-    | '/admin/timetables'
     | '/admin/users'
-    | '/admin/workflow'
     | '/articles/$slug'
     | '/student/academic-results'
     | '/student/chat'
@@ -644,26 +552,17 @@ export interface FileRouteTypes {
     | '/admin/chat'
     | '/admin/class-sections'
     | '/admin/courses'
-    | '/admin/curriculums'
     | '/admin/dashboard'
-    | '/admin/departments'
     | '/admin/enrollments'
-    | '/admin/faculties'
     | '/admin/landing'
     | '/admin/majors'
-    | '/admin/notifications'
     | '/admin/periods'
     | '/admin/profile'
-    | '/admin/registration-periods'
-    | '/admin/reports'
     | '/admin/rooms'
     | '/admin/semesters'
     | '/admin/students'
     | '/admin/teachers'
-    | '/admin/teaching-assignments'
-    | '/admin/timetables'
     | '/admin/users'
-    | '/admin/workflow'
     | '/articles/$slug'
     | '/student/academic-results'
     | '/student/chat'
@@ -706,26 +605,17 @@ export interface FileRouteTypes {
     | '/admin/chat'
     | '/admin/class-sections'
     | '/admin/courses'
-    | '/admin/curriculums'
     | '/admin/dashboard'
-    | '/admin/departments'
     | '/admin/enrollments'
-    | '/admin/faculties'
     | '/admin/landing'
     | '/admin/majors'
-    | '/admin/notifications'
     | '/admin/periods'
     | '/admin/profile'
-    | '/admin/registration-periods'
-    | '/admin/reports'
     | '/admin/rooms'
     | '/admin/semesters'
     | '/admin/students'
     | '/admin/teachers'
-    | '/admin/teaching-assignments'
-    | '/admin/timetables'
     | '/admin/users'
-    | '/admin/workflow'
     | '/articles/$slug'
     | '/student/academic-results'
     | '/student/chat'
@@ -1014,32 +904,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArticlesSlugRouteImport
       parentRoute: typeof ArticlesRoute
     }
-    '/admin/workflow': {
-      id: '/admin/workflow'
-      path: '/workflow'
-      fullPath: '/admin/workflow'
-      preLoaderRoute: typeof AdminWorkflowRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/timetables': {
-      id: '/admin/timetables'
-      path: '/timetables'
-      fullPath: '/admin/timetables'
-      preLoaderRoute: typeof AdminTimetablesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/teaching-assignments': {
-      id: '/admin/teaching-assignments'
-      path: '/teaching-assignments'
-      fullPath: '/admin/teaching-assignments'
-      preLoaderRoute: typeof AdminTeachingAssignmentsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/teachers': {
@@ -1070,20 +939,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRoomsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/registration-periods': {
-      id: '/admin/registration-periods'
-      path: '/registration-periods'
-      fullPath: '/admin/registration-periods'
-      preLoaderRoute: typeof AdminRegistrationPeriodsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/profile': {
       id: '/admin/profile'
       path: '/profile'
@@ -1096,13 +951,6 @@ declare module '@tanstack/react-router' {
       path: '/periods'
       fullPath: '/admin/periods'
       preLoaderRoute: typeof AdminPeriodsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/notifications': {
-      id: '/admin/notifications'
-      path: '/notifications'
-      fullPath: '/admin/notifications'
-      preLoaderRoute: typeof AdminNotificationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/majors': {
@@ -1119,13 +967,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLandingRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/faculties': {
-      id: '/admin/faculties'
-      path: '/faculties'
-      fullPath: '/admin/faculties'
-      preLoaderRoute: typeof AdminFacultiesRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/enrollments': {
       id: '/admin/enrollments'
       path: '/enrollments'
@@ -1133,25 +974,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEnrollmentsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/departments': {
-      id: '/admin/departments'
-      path: '/departments'
-      fullPath: '/admin/departments'
-      preLoaderRoute: typeof AdminDepartmentsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/dashboard': {
       id: '/admin/dashboard'
       path: '/dashboard'
       fullPath: '/admin/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/curriculums': {
-      id: '/admin/curriculums'
-      path: '/curriculums'
-      fullPath: '/admin/curriculums'
-      preLoaderRoute: typeof AdminCurriculumsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/courses': {
@@ -1197,26 +1024,17 @@ interface AdminRouteChildren {
   AdminChatRoute: typeof AdminChatRoute
   AdminClassSectionsRoute: typeof AdminClassSectionsRoute
   AdminCoursesRoute: typeof AdminCoursesRoute
-  AdminCurriculumsRoute: typeof AdminCurriculumsRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
-  AdminDepartmentsRoute: typeof AdminDepartmentsRoute
   AdminEnrollmentsRoute: typeof AdminEnrollmentsRoute
-  AdminFacultiesRoute: typeof AdminFacultiesRoute
   AdminLandingRoute: typeof AdminLandingRoute
   AdminMajorsRoute: typeof AdminMajorsRoute
-  AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminPeriodsRoute: typeof AdminPeriodsRoute
   AdminProfileRoute: typeof AdminProfileRoute
-  AdminRegistrationPeriodsRoute: typeof AdminRegistrationPeriodsRoute
-  AdminReportsRoute: typeof AdminReportsRoute
   AdminRoomsRoute: typeof AdminRoomsRoute
   AdminSemestersRoute: typeof AdminSemestersRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
-  AdminTeachingAssignmentsRoute: typeof AdminTeachingAssignmentsRoute
-  AdminTimetablesRoute: typeof AdminTimetablesRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  AdminWorkflowRoute: typeof AdminWorkflowRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1224,26 +1042,17 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminChatRoute: AdminChatRoute,
   AdminClassSectionsRoute: AdminClassSectionsRoute,
   AdminCoursesRoute: AdminCoursesRoute,
-  AdminCurriculumsRoute: AdminCurriculumsRoute,
   AdminDashboardRoute: AdminDashboardRoute,
-  AdminDepartmentsRoute: AdminDepartmentsRoute,
   AdminEnrollmentsRoute: AdminEnrollmentsRoute,
-  AdminFacultiesRoute: AdminFacultiesRoute,
   AdminLandingRoute: AdminLandingRoute,
   AdminMajorsRoute: AdminMajorsRoute,
-  AdminNotificationsRoute: AdminNotificationsRoute,
   AdminPeriodsRoute: AdminPeriodsRoute,
   AdminProfileRoute: AdminProfileRoute,
-  AdminRegistrationPeriodsRoute: AdminRegistrationPeriodsRoute,
-  AdminReportsRoute: AdminReportsRoute,
   AdminRoomsRoute: AdminRoomsRoute,
   AdminSemestersRoute: AdminSemestersRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,
-  AdminTeachingAssignmentsRoute: AdminTeachingAssignmentsRoute,
-  AdminTimetablesRoute: AdminTimetablesRoute,
   AdminUsersRoute: AdminUsersRoute,
-  AdminWorkflowRoute: AdminWorkflowRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { TeacherFormDialog } from "@/features/admin-crud/AcademicEntityFormDialogs";
 import { adminApi } from "@/lib/api/admin";
-import type { AdminTeacherRequest, AdminTeacherResponse } from "@/lib/api/types";
+import type { AdminTeacherResponse } from "@/lib/api/types";
 import { teachers as mockTeachers } from "@/data/mock";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,7 +33,6 @@ type TeacherRow = {
 function TeachersPage() {
   const queryClient = useQueryClient();
   const [toDelete, setToDelete] = useState<TeacherRow | null>(null);
-  const [editing, setEditing] = useState<{ id?: number; values: AdminTeacherRequest } | null>(null);
 
   const query = useQuery({
     queryKey: ["admin", "teachers"],
@@ -68,17 +66,6 @@ function TeachersPage() {
     onError: (error) => toast.error(error.message),
   });
 
-  const saveMutation = useMutation({
-    mutationFn: ({ id, values }: { id?: number; values: AdminTeacherRequest }) =>
-      id ? adminApi.updateTeacher(id, values) : adminApi.createTeacher(values),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "teachers"] });
-      toast.success(variables.id ? "Da cap nhat giang vien" : "Da them giang vien");
-      setEditing(null);
-    },
-    onError: (error) => toast.error(error.message),
-  });
-
   return (
     <div>
       <PageHeader
@@ -87,7 +74,7 @@ function TeachersPage() {
         actions={
           <Button
             className="gap-2"
-            onClick={() => setEditing({ values: getDefaultTeacherRequest() })}
+            onClick={() => toast.info("Form them/sua se noi API TeacherRequest o buoc tiep theo.")}
           >
             <Plus className="h-4 w-4" />
             Them giang vien
@@ -160,13 +147,9 @@ function TeachersPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  onClick={() => {
-                    if (!teacher.numericId) {
-                      toast.info("Du lieu mock chi dung de xem demo, chua the sua len backend.");
-                      return;
-                    }
-                    setEditing({ id: teacher.numericId, values: toTeacherRequest(teacher) });
-                  }}
+                  onClick={() =>
+                    toast.info(`Sua giang vien ${teacher.fullName}: cho noi API update.`)
+                  }
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -196,16 +179,6 @@ function TeachersPage() {
           if (toDelete?.numericId) deleteMutation.mutate(toDelete.numericId);
         }}
       />
-      <TeacherFormDialog
-        open={!!editing}
-        editing={editing?.values ?? null}
-        isPending={saveMutation.isPending}
-        onOpenChange={(open) => !open && setEditing(null)}
-        onSubmit={(values) => {
-          if (!editing) return;
-          saveMutation.mutate({ id: editing.id, values });
-        }}
-      />
     </div>
   );
 }
@@ -216,7 +189,7 @@ function mapApiTeacher(teacher: AdminTeacherResponse): TeacherRow {
     numericId: teacher.id,
     code: teacher.teacherCode,
     fullName: teacher.fullName,
-    email: teacher.email ?? `Can BE: email (${teacher.teacherCode.toLowerCase()}@tlu.edu.vn)`,
+    email: `Can BE: email (${teacher.teacherCode.toLowerCase()}@tlu.edu.vn)`,
     department: teacher.department ?? "Can BE: department",
     degree: teacher.degree ?? "Can BE: degree",
     phone: teacher.phone ?? "Can BE: phone",
@@ -224,35 +197,5 @@ function mapApiTeacher(teacher: AdminTeacherResponse): TeacherRow {
     activeClasses: 1 + (teacher.id % 4),
     status: "ACTIVE",
     source: "API",
-  };
-}
-
-function getDefaultTeacherRequest(): AdminTeacherRequest {
-  return {
-    username: "",
-    password: "password123",
-    email: "",
-    teacherCode: "",
-    fullName: "",
-    dob: "",
-    department: "",
-    degree: "",
-    address: "",
-    phone: "",
-  };
-}
-
-function toTeacherRequest(teacher: TeacherRow): AdminTeacherRequest {
-  return {
-    username: teacher.code.toLowerCase(),
-    password: "password123",
-    email: teacher.email.startsWith("Can BE") ? `${teacher.code.toLowerCase()}@tlu.edu.vn` : teacher.email,
-    teacherCode: teacher.code,
-    fullName: teacher.fullName,
-    dob: "",
-    department: teacher.department.startsWith("Can BE") ? "" : teacher.department,
-    degree: teacher.degree.startsWith("Can BE") ? "" : teacher.degree,
-    address: teacher.address.startsWith("Can BE") ? "" : teacher.address,
-    phone: teacher.phone.startsWith("Can BE") ? "" : teacher.phone,
   };
 }
