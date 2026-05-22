@@ -113,6 +113,8 @@ const chatByRole: Record<Role, string> = {
   STUDENT: "/student/chat",
 };
 
+const schoolLogo = "/images/LogoThangLongUniversity.png";
+
 function notificationTarget(item: StudentNotification) {
   if (item.type === "CHAT") return "/student/chat";
   return item.link || "/student/notifications";
@@ -159,13 +161,19 @@ function SidebarInner({ pathname, onNavigate }: { pathname: string; onNavigate?:
   const navGroups = role === "ADMIN" ? adminNavGroups : role === "TEACHER" ? teacherNavGroups : studentNavGroups;
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-4">
-        <div className="grid h-9 w-9 place-items-center rounded-md bg-sidebar-primary font-bold text-sidebar-primary-foreground">TL</div>
+      <Link
+        to="/"
+        onClick={onNavigate}
+        className="flex items-center gap-3 border-b border-sidebar-border px-5 py-4 transition-colors hover:bg-sidebar-accent/70"
+      >
+        <span className="grid h-12 w-12 place-items-center rounded-md bg-white/95 p-1 shadow-sm">
+          <img src={schoolLogo} alt="Logo Thang Long University" className="h-full w-full object-contain" />
+        </span>
         <div className="leading-tight">
           <div className="text-sm font-semibold">Thang Long</div>
           <div className="text-xs text-sidebar-foreground/60">University Portal</div>
         </div>
-      </div>
+      </Link>
       <div className="flex-1 overflow-y-auto">
         {role ? <GroupedNavList groups={navGroups} pathname={pathname} onNavigate={onNavigate} /> : null}
       </div>
