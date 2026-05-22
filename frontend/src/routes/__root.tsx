@@ -4,9 +4,11 @@ import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
+  useRouterState,
 } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth";
 import { LandingContentProvider } from "@/lib/landing-content";
+import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { Toaster } from "@/components/ui/sonner";
 import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
@@ -60,10 +62,27 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <LandingContentProvider>
-          <Outlet />
+          <PublicShell />
           <Toaster position="top-right" richColors />
         </LandingContentProvider>
       </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function PublicShell() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const shouldHideHeader =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/student") ||
+    pathname.startsWith("/teacher") ||
+    pathname === "/login" ||
+    pathname.endsWith(".xml");
+
+  return (
+    <>
+      {!shouldHideHeader && <SiteHeader />}
+      <Outlet />
+    </>
   );
 }

@@ -1,75 +1,313 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { PageHeader } from "@/components/ui/page-header";
-import { classSections, enrollments, getStudent, getCourse } from "@/data/mock";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Save, Lock } from "lucide-react";
+import { Lock, LockOpen, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TeacherGradeTable } from "@/features/teacher/TeacherGradeTable";
+import {
+  getTeacherClassRows,
+  getTeacherGradeRows,
+  type TeacherGradeRow,
+} from "@/features/teacher/teacherData";
+import { useTeacherSemester } from "@/features/teacher/useTeacherSemester";
+import { teacherApi } from "@/lib/api/teacher";
 
-export const Route = createFileRoute("/teacher/grades")({ component: GradesPage });
+export const Route = createFileRoute("/teacher/grades")({ component: TeacherGradesPage });
 
-function GradesPage() {
-  const [csId, setCsId] = useState(classSections[0].id);
-  const enrs = enrollments.filter((e) => e.classSectionId === csId && e.status === "SUCCESS");
-  const [rows, setRows] = useState<Record<string, { att: number; mid: number; fin: number; retake: number }>>(() =>
-    Object.fromEntries(enrs.map((e, i) => [e.id, { att: 8, mid: 6 + (i % 3), fin: 7 + (i % 3), retake: 0 }])));
+const ALL_COURSES = "__all__";
 
-  const calc = (r: { att: number; mid: number; fin: number }) => +(r.att * 0.1 + r.mid * 0.3 + r.fin * 0.6).toFixed(2);
-  const letter = (t: number) => t >= 8.5 ? "A" : t >= 7 ? "B" : t >= 5.5 ? "C" : t >= 4 ? "D" : "F";
-  const gpa4 = (t: number) => t >= 8.5 ? 4 : t >= 7 ? 3 : t >= 5.5 ? 2 : t >= 4 ? 1 : 0;
+function TeacherGradesPage() {
+  const queryClient = useQueryClient();
+  const { semesterId, setSemesterId, semesterOptions } = useTeacherSemester();
+  const [classSectionId, setClassSectionId] = useState<string>("");
+  const [draftRows, setDraftRows] = useState<TeacherGradeRow[]>([]);
+  const [classSearch, setClassSearch] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
+  const [gradeLocked, setGradeLocked] = useState(false);
 
-  const update = (id: string, key: "att" | "mid" | "fin" | "retake", v: string) => {
-    const n = Number(v);
-    if (n < 0 || n > 10 || Number.isNaN(n)) { toast.error("Điểm phải trong khoảng 0–10"); return; }
-    setRows((r) => ({ ...r, [id]: { ...r[id], [key]: n } }));
+  const classesQuery = useQuery({
+    queryKey: ["teacher", "classes", semesterId],
+    queryFn: () => teacherApi.listMyClasses(semesterId),
+    enabled: Boolean(semesterId),
+    retry: false,
+  });
+
+  const classRows = useMemo(
+    () => getTeacherClassRows(classesQuery.isError ? undefined : classesQuery.data, semesterId),
+    [classesQuery.data, classesQuery.isError, semesterId],
+  );
+
+  const uniqueCourses = useMemo(() => {
+    const map = new Map<string, string>();
+    classRows.forEach((row) => map.set(row.courseCode, row.courseName));
+    return Array.from(map.entries()).map(([code, name]) => ({ code, name }));
+  }, [classRows]);
+
+  const filteredClasses = useMemo(() => {
+    let rows = classRows;
+    if (courseFilter && courseFilter !== ALL_COURSES)
+      rows = rows.filter((r) => r.courseCode === courseFilter);
+    if (classSearch.trim()) {
+      const kw = classSearch.toLowerCase();
+      rows = rows.filter(
+        (r) => r.classCode.toLowerCase().includes(kw) || r.courseName.toLowerCase().includes(kw),
+      );
+    }
+    return rows;
+  }, [classRows, courseFilter, classSearch]);
+
+  const gradesQuery = useQuery({
+    queryKey: ["teacher", "grades", classSectionId],
+    queryFn: () => teacherApi.getClassGrades(classSectionId),
+    enabled: Boolean(classSectionId),
+    retry: false,
+  });
+
+  const rows = useMemo(
+    () => getTeacherGradeRows(gradesQuery.isError ? undefined : gradesQuery.data, classSectionId),
+    [classSectionId, gradesQuery.data, gradesQuery.isError],
+  );
+
+  useEffect(() => {
+    setDraftRows(rows);
+  }, [rows]);
+
+  // Sync gradeLocked from class data
+  useEffect(() => {
+    if (!classSectionId) return;
+    const apiClass = classesQuery.data?.find((c) => String(c.id) === classSectionId);
+    setGradeLocked(apiClass?.gradeLocked ?? false);
+  }, [classSectionId, classesQuery.data]);
+
+  const selectedClass = classRows.find((row) => row.id === classSectionId);
+
+  const updateGradeMutation = useMutation({
+    mutationFn: (row: TeacherGradeRow) =>
+      teacherApi.updateGrade(row.numericEnrollmentId ?? row.enrollmentId, {
+        enrollmentId: Number(row.numericEnrollmentId ?? row.enrollmentId),
+        participationScore: row.participationScore,
+        midTermScore: row.midtermScore,
+        finalScore: row.finalScore,
+        retestScore: row.retestScore,
+      }),
+    onSuccess: () => toast.success("Da luu diem"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Luu diem that bai"),
+  });
+
+  const lockMutation = useMutation({
+    mutationFn: async () => {
+      // Save all editable rows first
+      const editableRows = draftRows.filter((r) => r.canEdit && r.numericEnrollmentId);
+      for (const row of editableRows) {
+        await teacherApi.updateGrade(row.numericEnrollmentId!, {
+          enrollmentId: Number(row.numericEnrollmentId),
+          participationScore: row.participationScore,
+          midTermScore: row.midtermScore,
+          finalScore: row.finalScore,
+          retestScore: row.retestScore,
+        });
+      }
+      await teacherApi.lockClassGrades(classSectionId);
+    },
+    onSuccess: () => {
+      toast.success("Đã lưu và khóa điểm toàn bộ lớp.");
+      setGradeLocked(true);
+      void queryClient.invalidateQueries({ queryKey: ["teacher", "grades", classSectionId] });
+      void queryClient.invalidateQueries({ queryKey: ["teacher", "classes", semesterId] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Khóa điểm thất bại"),
+  });
+
+  const selectClass = (id: string) => {
+    setClassSectionId(id);
+    setDraftRows([]);
+    setGradeLocked(false);
+  };
+
+  const clearClass = () => {
+    setClassSectionId("");
+    setDraftRows([]);
+    setGradeLocked(false);
   };
 
   return (
-    <div>
-      <PageHeader title="Nhập điểm" description="Bảng điểm dạng spreadsheet" actions={
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => toast.success("Đã lưu thay đổi")}><Save className="h-4 w-4" />Lưu</Button>
-          <Button className="gap-2" onClick={() => toast.success("Đã khóa điểm lớp này")}><Lock className="h-4 w-4" />Khóa điểm</Button>
-        </div>
-      } />
+    <div className="space-y-5">
+      <PageHeader
+        title="Quan ly diem"
+        description="Nhap diem thanh phan, tinh tong va khoa bang diem"
+        actions={
+          classSectionId ? (
+            gradeLocked ? (
+              <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-sm">
+                <Lock className="h-3.5 w-3.5" /> Bang diem da khoa
+              </Badge>
+            ) : (
+              <Button
+                className="gap-2"
+                disabled={lockMutation.isPending || draftRows.length === 0}
+                onClick={() => lockMutation.mutate()}
+              >
+                <LockOpen className="h-4 w-4" />
+                {lockMutation.isPending ? "Dang khoa..." : "Khoa diem"}
+              </Button>
+            )
+          ) : undefined
+        }
+      />
 
-      <div className="mb-4">
-        <Select value={csId} onValueChange={(v) => { setCsId(v); }}>
-          <SelectTrigger className="w-[400px]"><SelectValue /></SelectTrigger>
-          <SelectContent>{classSections.map((cs) => <SelectItem key={cs.id} value={cs.id}>{cs.code} — {getCourse(cs.courseId).name}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
+      <section className="rounded-xl border bg-card p-4 shadow-sm">
+        {!classSectionId ? (
+          /* ── Class list picker ── */
+          <>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+              <Select
+                value={semesterId}
+                onValueChange={setSemesterId}
+                disabled={semesterOptions.length === 0}
+              >
+                <SelectTrigger className="sm:w-52">
+                  <SelectValue placeholder="Chon hoc ky" />
+                </SelectTrigger>
+                <SelectContent>
+                  {semesterOptions.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  className="pl-8"
+                  placeholder="Tim lop hoc phan..."
+                  value={classSearch}
+                  onChange={(e) => setClassSearch(e.target.value)}
+                />
+              </div>
+              <Select
+                value={courseFilter || ALL_COURSES}
+                onValueChange={(v) => setCourseFilter(v === ALL_COURSES ? "" : v)}
+                disabled={uniqueCourses.length === 0}
+              >
+                <SelectTrigger className="sm:w-56">
+                  <SelectValue placeholder="Tat ca mon hoc" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_COURSES}>Tat ca mon hoc</SelectItem>
+                  {uniqueCourses.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <div className="rounded-xl border bg-card shadow-sm overflow-x-auto">
-        <Table>
-          <TableHeader><TableRow className="bg-muted/40">
-            <TableHead>Sinh viên</TableHead><TableHead className="w-24">Chuyên cần</TableHead><TableHead className="w-24">Giữa kỳ</TableHead><TableHead className="w-24">Cuối kỳ</TableHead><TableHead className="w-24">Thi lại</TableHead><TableHead>Tổng</TableHead><TableHead>Chữ</TableHead><TableHead>GPA4</TableHead>
-          </TableRow></TableHeader>
-          <TableBody>
-            {enrs.length === 0 ? <TableRow><TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">Không có sinh viên đăng ký lớp này.</TableCell></TableRow>
-              : enrs.map((e) => {
-                const s = getStudent(e.studentId);
-                const r = rows[e.id];
-                const t = calc(r);
+            {!semesterId && (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                Hay chon hoc ky de xem danh sach lop hoc phan.
+              </div>
+            )}
+            {classesQuery.isLoading && (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                Dang tai danh sach lop...
+              </div>
+            )}
+            {classesQuery.isError && (
+              <div className="py-4 text-sm text-destructive">
+                {classesQuery.error instanceof Error
+                  ? classesQuery.error.message
+                  : "Khong tai duoc danh sach lop"}
+              </div>
+            )}
+            {semesterId &&
+              !classesQuery.isLoading &&
+              !classesQuery.isError &&
+              filteredClasses.length === 0 && (
+                <div className="py-10 text-center text-sm text-muted-foreground">
+                  Khong tim thay lop hoc phan phu hop.
+                </div>
+              )}
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              {filteredClasses.map((row) => {
+                const isLocked =
+                  classesQuery.data?.find((c) => String(c.id) === row.id)?.gradeLocked ?? false;
                 return (
-                  <TableRow key={e.id}>
-                    <TableCell><div className="font-medium text-sm">{s.fullName}</div><div className="text-xs text-muted-foreground font-mono">{s.code}</div></TableCell>
-                    {(["att","mid","fin","retake"] as const).map((k) => (
-                      <TableCell key={k}><Input type="number" min={0} max={10} step={0.1} value={r[k]} onChange={(ev) => update(e.id, k, ev.target.value)} className={cn("h-8 w-20 tabular-nums", (r[k] < 0 || r[k] > 10) && "border-destructive")} /></TableCell>
-                    ))}
-                    <TableCell className="tabular-nums font-semibold">{t}</TableCell>
-                    <TableCell><span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{letter(t)}</span></TableCell>
-                    <TableCell className="tabular-nums">{gpa4(t).toFixed(1)}</TableCell>
-                  </TableRow>
+                  <div
+                    key={row.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/40"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-semibold">{row.courseName}</span>
+                        <Badge variant={isLocked ? "secondary" : "outline"} className="shrink-0 gap-1 text-xs">
+                          {isLocked ? <Lock className="h-3 w-3" /> : <LockOpen className="h-3 w-3" />}
+                          {isLocked ? "Da khoa" : "Chua khoa"}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">{row.classCode}</div>
+                      {row.scheduleText && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          {row.scheduleText}
+                        </div>
+                      )}
+                    </div>
+                    <Button size="sm" onClick={() => selectClass(row.id)}>
+                      Quan ly diem
+                    </Button>
+                  </div>
                 );
               })}
-          </TableBody>
-        </Table>
-      </div>
+            </div>
+          </>
+        ) : (
+          /* ── Selected class header ── */
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">{selectedClass?.courseName}</span>
+                <Badge variant={gradeLocked ? "secondary" : "outline"} className="gap-1 text-xs">
+                  {gradeLocked ? <Lock className="h-3 w-3" /> : <LockOpen className="h-3 w-3" />}
+                  {gradeLocked ? "Da khoa" : "Chua khoa"}
+                </Badge>
+              </div>
+              <div className="mt-0.5 text-sm text-muted-foreground">
+                {selectedClass?.classCode}
+                {selectedClass?.scheduleText ? ` · ${selectedClass.scheduleText}` : ""}
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={clearClass} className="shrink-0">
+              ← Doi lop
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {classSectionId && (
+        <TeacherGradeTable
+          rows={draftRows}
+          disabled={gradeLocked}
+          onChange={(nextRow) =>
+            setDraftRows((current) =>
+              current.map((item) =>
+                item.enrollmentId === nextRow.enrollmentId ? nextRow : item,
+              ),
+            )
+          }
+          onSave={(row) => {
+            if (!row.numericEnrollmentId) return;
+            updateGradeMutation.mutate(row);
+          }}
+        />
+      )}
     </div>
   );
 }

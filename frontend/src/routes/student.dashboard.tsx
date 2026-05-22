@@ -4,6 +4,7 @@ import { PageHeader, StatCard } from "@/components/ui/page-header";
 import { Award, BookOpen, CalendarCheck, GraduationCap, Layers, Receipt } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { studentApi } from "@/lib/api/student";
+import type { EnrollmentResponse } from "@/lib/api/types";
 
 export const Route = createFileRoute("/student/dashboard")({ component: StudentDashboardPage });
 
@@ -19,14 +20,33 @@ function formatExamDate(examAt: string | null | undefined) {
   return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+function getTodaySlots(items: EnrollmentResponse[], apiDayOfWeek: number) {
+  return items.flatMap((item) => {
+    const schedules = item.schedules?.length
+      ? item.schedules
+      : [{ dayOfWeek: item.dayOfWeek, startPeriod: item.startPeriod, endPeriod: item.endPeriod, roomName: item.room }];
+
+    return schedules
+      .filter((schedule) => schedule.dayOfWeek === apiDayOfWeek)
+      .map((schedule) => ({
+        ...item,
+        room: schedule.roomName ?? item.room,
+        startPeriod: schedule.startPeriod,
+        endPeriod: schedule.endPeriod,
+      }));
+  });
+}
+
 function StudentDashboardPage() {
   const { profile, name } = useAuth();
   const dashboardQuery = useQuery({ queryKey: ["student", "dashboard"], queryFn: () => studentApi.getDashboard() });
   const dashboard = dashboardQuery.data;
   const currentSemester = dashboard?.currentSemester;
 
-  const today = new Date().getDay() || 7;
-  const todaySchedule = (dashboard?.todaySchedule ?? []).slice(0, 4);
+  const jsToday = new Date().getDay();
+  const today = jsToday || 7;
+  const apiToday = jsToday === 0 ? 8 : jsToday + 1;
+  const todaySchedule = getTodaySlots(dashboard?.todaySchedule ?? [], apiToday).slice(0, 4);
   const credits = dashboard?.registeredCredits ?? 0;
   const tuitionRemaining = dashboard?.tuitionRemaining ?? 0;
   const displayName = profile?.fullName ?? name ?? "Sinh vien";

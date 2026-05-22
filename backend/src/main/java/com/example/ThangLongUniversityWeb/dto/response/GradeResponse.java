@@ -80,4 +80,10 @@ public class GradeResponse {
     
     @Schema(description = "Thời gian cập nhật", example = "2025-12-20T10:30:00")
     private LocalDateTime updatedAt;
+
+    @Schema(description = "Trạng thái kết quả học môn", example = "IN_PROGRESS")
+    private String courseStatus;
+
+    @Schema(description = "Số buổi vắng", example = "2")
+    private Long absenceCount;
 }

@@ -71,4 +71,7 @@ public class ClassSectionResponse {
     
     @Schema(description = "Trạng thái đóng ghi danh", example = "false")
     private boolean isClosed;
+
+    @Schema(description = "Trạng thái khóa điểm", example = "false")
+    private boolean gradeLocked;
 }

@@ -1,12 +1,14 @@
 package com.example.ThangLongUniversityWeb.service;
 
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionResponse;
+import com.example.ThangLongUniversityWeb.dto.response.ClassSectionScheduleResponse;
 import com.example.ThangLongUniversityWeb.dto.response.EnrollmentRequestResponse;
 import com.example.ThangLongUniversityWeb.dto.response.EnrollmentResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentExamResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentGradeItemResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentGradesSummaryResponse;
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
+import com.example.ThangLongUniversityWeb.entity.ClassSectionSchedule;
 import com.example.ThangLongUniversityWeb.entity.Course;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.entity.Grade;
@@ -240,24 +242,51 @@ public class StudentEnrollmentService {
 
     private EnrollmentResponse mapToEnrollmentResponse(Enrollment enrollment) {
         Grade grade = enrollment.getGrade();
+        ClassSection section = enrollment.getClassSection();
+        List<ClassSectionScheduleResponse> schedules = section.getSchedules().stream()
+                .map(this::mapScheduleToResponse)
+                .collect(Collectors.toList());
+        ClassSectionSchedule firstSchedule = section.getSchedules().isEmpty() ? null : section.getSchedules().get(0);
         return EnrollmentResponse.builder()
                 .enrollmentId(enrollment.getId())
-                .classSectionId(enrollment.getClassSection().getId())
-                .classCode(enrollment.getClassSection().getClassCode())
-                .courseCode(enrollment.getClassSection().getCourse().getCode())
-                .courseName(enrollment.getClassSection().getCourse().getName())
-                .credits(enrollment.getClassSection().getCourse().getCredits())
-                .room(enrollment.getClassSection().getRoom() != null ? enrollment.getClassSection().getRoom().getName() : null)
-                .dayOfWeek(enrollment.getClassSection().getDayOfWeek())
-                .startPeriod(enrollment.getClassSection().getStartPeriod().getPeriodNumber())
-                .endPeriod(enrollment.getClassSection().getEndPeriod().getPeriodNumber())
-                .teacherName(enrollment.getClassSection().getTeacher() != null
-                        ? enrollment.getClassSection().getTeacher().getFullName()
+                .classSectionId(section.getId())
+                .classCode(section.getClassCode())
+                .courseCode(section.getCourse().getCode())
+                .courseName(section.getCourse().getName())
+                .credits(section.getCourse().getCredits())
+                .room(firstSchedule != null && firstSchedule.getRoom() != null ? firstSchedule.getRoom().getName() : null)
+                .schedules(schedules)
+                .dayOfWeek(firstSchedule != null ? firstSchedule.getDayOfWeek() : section.getDayOfWeek())
+                .startPeriod(firstSchedule != null ? firstSchedule.getStartPeriod().getPeriodNumber() : section.getStartPeriod().getPeriodNumber())
+                .endPeriod(firstSchedule != null ? firstSchedule.getEndPeriod().getPeriodNumber() : section.getEndPeriod().getPeriodNumber())
+                .teacherName(section.getTeacher() != null
+                        ? section.getTeacher().getFullName()
                         : "Chua co")
+                .teacherCode(section.getTeacher() != null ? section.getTeacher().getTeacherCode() : null)
+                .teacherEmail(section.getTeacher() != null && section.getTeacher().getUser() != null
+                        ? section.getTeacher().getUser().getEmail()
+                        : null)
                 .midTermScore(grade != null ? grade.getMidtermScore() : null)
                 .finalScore(grade != null ? grade.getFinalScore() : null)
                 .totalScore(grade != null ? grade.getTotalScore() : null)
                 .status(enrollment.getStatus().name())
+                .build();
+    }
+
+    private ClassSectionScheduleResponse mapScheduleToResponse(ClassSectionSchedule schedule) {
+        return ClassSectionScheduleResponse.builder()
+                .id(schedule.getId())
+                .dayOfWeek(schedule.getDayOfWeek())
+                .startPeriodId(schedule.getStartPeriod().getId())
+                .startPeriod(schedule.getStartPeriod().getPeriodNumber())
+                .endPeriodId(schedule.getEndPeriod().getId())
+                .endPeriod(schedule.getEndPeriod().getPeriodNumber())
+                .lessonCount(schedule.getEndPeriod().getPeriodNumber() - schedule.getStartPeriod().getPeriodNumber() + 1)
+                .periodRange(schedule.getStartPeriod().getPeriodNumber() + "-" + schedule.getEndPeriod().getPeriodNumber())
+                .startTime(schedule.getStartPeriod().getStartTime())
+                .endTime(schedule.getEndPeriod().getEndTime())
+                .roomId(schedule.getRoom() != null ? schedule.getRoom().getId() : null)
+                .roomName(schedule.getRoom() != null ? schedule.getRoom().getName() : null)
                 .build();
     }
 

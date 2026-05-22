@@ -151,6 +151,7 @@ public class DataInitializer implements CommandLineRunner {
                 LocalDateTime.of(2026, 1, 10, 8, 0), "B202");
         ClassSection web02 = classSection("INT2208-02", web, hk2, gv101, a101, 2, p1, p3, 60,
                 LocalDateTime.of(2026, 6, 1, 8, 0), "A101");
+        addSchedule(web02, 6, p1, p3, a101);
         ClassSection db02 = classSection("INT2207-02", db, hk2, gv101, lab301, 4, p4, p6, 35,
                 LocalDateTime.of(2026, 6, 4, 13, 30), "LAB301");
         ClassSection math02 = classSection("MATH1101-02", math, hk2, gv101, b202, 5, p1, p3, 60,
@@ -449,6 +450,26 @@ public class DataInitializer implements CommandLineRunner {
 
             return classSectionRepository.save(section);
         });
+    }
+
+    private void addSchedule(ClassSection section, Integer dayOfWeek, Period startPeriod, Period endPeriod, Room room) {
+        boolean exists = section.getSchedules().stream().anyMatch(schedule ->
+                dayOfWeek.equals(schedule.getDayOfWeek())
+                        && startPeriod.getId().equals(schedule.getStartPeriod().getId())
+                        && endPeriod.getId().equals(schedule.getEndPeriod().getId())
+                        && room.getId().equals(schedule.getRoom().getId()));
+        if (exists) {
+            return;
+        }
+
+        ClassSectionSchedule schedule = new ClassSectionSchedule();
+        schedule.setClassSection(section);
+        schedule.setDayOfWeek(dayOfWeek);
+        schedule.setStartPeriod(startPeriod);
+        schedule.setEndPeriod(endPeriod);
+        schedule.setRoom(room);
+        section.getSchedules().add(schedule);
+        classSectionRepository.save(section);
     }
 
     private Enrollment enrollment(Student student, ClassSection section, EnrollmentStatus status) {

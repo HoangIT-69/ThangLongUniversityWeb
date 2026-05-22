@@ -129,4 +129,32 @@ public class TeacherGradeController {
         List<GradeResponse> grades = gradeService.getClassSectionGrades(classSectionId);
         return ResponseEntity.ok(grades);
     }
+
+    /**
+     * Khóa toàn bộ điểm của một lớp học phần
+     */
+    @Operation(summary = "Khóa điểm toàn bộ lớp học phần")
+    @PostMapping("/class/{classSectionId}/lock")
+    public ResponseEntity<?> lockClassGrades(@PathVariable Long classSectionId) {
+        ClassSection classSection = classSectionRepository.findById(classSectionId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp!"));
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = auth.getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user!"));
+        Teacher currentTeacher = currentUser.getTeacher();
+
+        if (currentTeacher == null) {
+            return ResponseEntity.status(403).body("Bạn không phải là giảng viên!");
+        }
+
+        if (!classSection.getTeacher().getId().equals(currentTeacher.getId())) {
+            return ResponseEntity.status(403).body("Bạn không phải là giảng viên dạy lớp này!");
+        }
+
+        classSection.setGradeLocked(true);
+        classSectionRepository.save(classSection);
+        return ResponseEntity.ok("Đã khóa điểm lớp " + classSectionId);
+    }
 }

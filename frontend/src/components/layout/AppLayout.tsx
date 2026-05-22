@@ -15,9 +15,9 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import {
+  type AppNotification,
   listNotifications,
   markNotificationRead,
-  type StudentNotification,
 } from "@/lib/api/notifications";
 
 type Item = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
@@ -110,9 +110,11 @@ const chatByRole: Record<Role, string> = {
   STUDENT: "/student/chat",
 };
 
-function notificationTarget(item: StudentNotification) {
-  if (item.type === "CHAT") return "/student/chat";
-  return item.link || "/student/notifications";
+const schoolLogo = "/images/LogoThangLongUniversity.png";
+
+function notificationTarget(item: AppNotification, role: Role) {
+  if (item.type === "CHAT") return chatByRole[role];
+  return item.link || (role === "STUDENT" ? "/student/notifications" : "");
 }
 
 function NavItem({ item, pathname, onNavigate }: { item: Item; pathname: string; onNavigate?: () => void }) {
@@ -156,13 +158,19 @@ function SidebarInner({ pathname, onNavigate }: { pathname: string; onNavigate?:
   const navGroups = role === "ADMIN" ? adminNavGroups : role === "TEACHER" ? teacherNavGroups : studentNavGroups;
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-4">
-        <div className="grid h-9 w-9 place-items-center rounded-md bg-sidebar-primary font-bold text-sidebar-primary-foreground">TL</div>
+      <Link
+        to="/"
+        onClick={onNavigate}
+        className="flex items-center gap-3 border-b border-sidebar-border px-5 py-4 transition-colors hover:bg-sidebar-accent/70"
+      >
+        <span className="grid h-12 w-12 place-items-center rounded-md bg-white/95 p-1 shadow-sm">
+          <img src={schoolLogo} alt="Logo Thang Long University" className="h-full w-full object-contain" />
+        </span>
         <div className="leading-tight">
           <div className="text-sm font-semibold">Thang Long</div>
           <div className="text-xs text-sidebar-foreground/60">University Portal</div>
         </div>
-      </div>
+      </Link>
       <div className="flex-1 overflow-y-auto">
         {role ? <GroupedNavList groups={navGroups} pathname={pathname} onNavigate={onNavigate} /> : null}
       </div>
@@ -209,26 +217,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const initials = (name ?? "?").split(" ").slice(-2).map((s) => s[0]).join("").toUpperCase();
   const notificationsQuery = useQuery({
-    queryKey: ["student", "notifications"],
-    queryFn: listNotifications,
-    enabled: role === "STUDENT",
-    refetchInterval: role === "STUDENT" ? 30000 : false,
+    queryKey: [role?.toLowerCase(), "notifications"],
+    queryFn: () => listNotifications(role === "TEACHER" ? "TEACHER" : "STUDENT"),
+    enabled: role === "STUDENT" || role === "TEACHER",
+    refetchInterval: role === "STUDENT" || role === "TEACHER" ? 30000 : false,
   });
   const notificationItems = notificationsQuery.data ?? [];
   const unreadCount = notificationItems.filter((n) => !n.read).length;
 
   const markReadMutation = useMutation({
-    mutationFn: markNotificationRead,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["student", "notifications"] }),
+    mutationFn: (id: string) => markNotificationRead(id, role === "TEACHER" ? "TEACHER" : "STUDENT"),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [role?.toLowerCase(), "notifications"] }),
   });
 
-  const openNotification = async (item: StudentNotification) => {
+  const openNotification = async (item: AppNotification) => {
+    if (!role) return;
     if (!item.read) {
       await markReadMutation.mutateAsync(item.id);
     }
 
-    const target = notificationTarget(item);
-    if (target.startsWith("/student/")) {
+    const target = notificationTarget(item, role);
+    if (!target) return;
+    if (target.startsWith(`/${role.toLowerCase()}/`)) {
       navigate({ to: target as never });
       return;
     }
@@ -280,7 +290,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </Button>
               </Link>
             )}
-            {role === "STUDENT" && (
+            {(role === "STUDENT" || role === "TEACHER") && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative h-9 w-9" title="Thông báo">
@@ -312,10 +322,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       </span>
                     </DropdownMenuItem>
                   ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate({ to: "/student/notifications" })} className="cursor-pointer justify-center text-sm font-medium">
-                    Xem chi tiet
-                  </DropdownMenuItem>
+                  {role === "STUDENT" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate({ to: "/student/notifications" })} className="cursor-pointer justify-center text-sm font-medium">
+                        Xem chi tiet
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

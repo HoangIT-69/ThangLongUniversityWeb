@@ -7,12 +7,14 @@ import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse.S
 import com.example.ThangLongUniversityWeb.entity.*;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.AcademicResultRepository;
+import com.example.ThangLongUniversityWeb.repository.AttendanceRecordRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.GradeRepository;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,8 @@ public class GradeService {
     private final StudentRepository studentRepository;
     private final SemesterRepository semesterRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
+    private final CourseOutcomeService courseOutcomeService;
+    private final AttendanceRecordRepository attendanceRecordRepository;
 
     /**
      * Tạo hoặc cập nhật điểm cho sinh viên
@@ -52,6 +56,11 @@ public class GradeService {
         grade.setRetestScore(request.getRetestScore());
 
         Grade savedGrade = gradeRepository.save(grade);
+
+        // Đồng bộ lại grade vào enrollment rồi tính courseStatus
+        enrollment.setGrade(savedGrade);
+        courseOutcomeService.recalculate(enrollment);
+
         return mapToResponse(savedGrade);
     }
 
@@ -245,6 +254,9 @@ public class GradeService {
         Course course = classSection.getCourse();
         Semester semester = classSection.getSemester();
 
+        long absences = attendanceRecordRepository.countByEnrollmentIdAndStatus(
+                enrollment.getId(), com.example.ThangLongUniversityWeb.enums.AttendanceStatus.ABSENT);
+
         return GradeResponse.builder()
                 .id(grade.getId())
                 .enrollmentId(enrollment.getId())
@@ -268,6 +280,8 @@ public class GradeService {
                 .letterGrade(grade.getLetterGrade())
                 .gpa4(grade.getGpa4())
                 .gradePoint(grade.getGpa4())
+                .courseStatus(enrollment.getCourseStatus() != null ? enrollment.getCourseStatus().name() : null)
+                .absenceCount(absences)
                 .createdAt(grade.getCreatedAt())
                 .updatedAt(grade.getUpdatedAt())
                 .build();

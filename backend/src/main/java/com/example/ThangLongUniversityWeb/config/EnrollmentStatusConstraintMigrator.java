@@ -17,6 +17,15 @@ public class EnrollmentStatusConstraintMigrator implements CommandLineRunner {
     public void run(String... args) {
         migrateEnrollmentStatusConstraint();
         migrateExamRegistrationStatusConstraint();
+        migrateCourseStatusColumn();
+    }
+
+    private void migrateCourseStatusColumn() {
+        // Thêm cột course_status nếu chưa tồn tại (ddl-auto=update có thể đã thêm, câu lệnh này safe)
+        jdbcTemplate.execute("""
+                ALTER TABLE enrollments
+                ADD COLUMN IF NOT EXISTS course_status VARCHAR(30) DEFAULT 'IN_PROGRESS'
+                """);
     }
 
     private void migrateEnrollmentStatusConstraint() {

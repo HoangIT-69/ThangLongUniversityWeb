@@ -4,10 +4,12 @@ import com.example.ThangLongUniversityWeb.dto.request.GradeRequest;
 import com.example.ThangLongUniversityWeb.dto.request.TeacherRequest;
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentGradeResponse;
+import com.example.ThangLongUniversityWeb.dto.response.StudentSemesterResponse;
 import com.example.ThangLongUniversityWeb.audit.Audit;
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.entity.Grade;
+import com.example.ThangLongUniversityWeb.entity.Student;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.enums.Role;
@@ -16,6 +18,7 @@ import com.example.ThangLongUniversityWeb.entity.User;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.GradeRepository;
+import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
 import com.example.ThangLongUniversityWeb.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,6 +42,7 @@ public class TeacherService {
     private final EnrollmentRepository enrollmentRepository;
     private final GradeRepository gradeRepository;
     private final ClassSectionService classSectionService;
+    private final SemesterRepository semesterRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -109,7 +115,19 @@ public class TeacherService {
                 .collect(Collectors.toList());
     }
 
-    // 2. Xem danh sách sinh viên trong 1 lớp cụ thể
+    public List<StudentSemesterResponse> getSemesters() {
+        return semesterRepository.findAll().stream()
+                .sorted(Comparator.comparing(semester -> semester.getStartDate() == null ? LocalDate.MIN : semester.getStartDate()))
+                .map(semester -> new StudentSemesterResponse(
+                        semester.getId(),
+                        semester.getName(),
+                        semester.getStartDate(),
+                        semester.getEndDate(),
+                        semester.isRegistrationOpen(),
+                        semester.isLocked()))
+                .collect(Collectors.toList());
+    }
+
     public List<StudentGradeResponse> getStudentsInClass(Long classSectionId) {
         Teacher teacher = getCurrentTeacher();
         ClassSection classSection = classSectionRepository.findById(classSectionId)
@@ -123,18 +141,7 @@ public class TeacherService {
         return enrollmentRepository.findByClassSectionId(classSectionId)
                 .stream()
                 .filter(enrollment -> enrollment.getStatus() != EnrollmentStatus.PENDING)
-                .map(enrollment -> {
-                    Grade grade = enrollment.getGrade();
-                    return StudentGradeResponse.builder()
-                            .enrollmentId(enrollment.getId())
-                            .studentCode(enrollment.getStudent().getStudentCode())
-                            .fullName(enrollment.getStudent().getFullName())
-                            .midTermScore(grade != null ? grade.getMidtermScore() : null)
-                            .finalScore(grade != null ? grade.getFinalScore() : null)
-                            .totalScore(grade != null ? grade.getTotalScore() : null)
-                            .status(enrollment.getStatus().name())
-                            .build();
-                })
+                .map(enrollment -> buildStudentGradeResponse(enrollment, enrollment.getGrade()))
                 .collect(Collectors.toList());
     }
 
@@ -172,22 +179,30 @@ public class TeacherService {
             grade.setRetestScore(request.getRetestScore());
         }
 
-        // Cập nhật trạng thái Enrollment dựa trên totalScore (tính trong @PreUpdate của Grade)
         Grade savedGrade = gradeRepository.save(grade);
 
-        if (savedGrade.getTotalScore() != null) {
-            enrollment.setStatus(savedGrade.getTotalScore() >= 4.0f ? EnrollmentStatus.PASSED : EnrollmentStatus.FAILED);
-            enrollmentRepository.save(enrollment);
-        }
+        // courseStatus được cập nhật tập trung qua CourseOutcomeService (gọi từ GradeService.updateGrade)
+        // Đây là endpoint cũ – không tự cập nhật EnrollmentStatus để tránh lặp logic
+        return buildStudentGradeResponse(enrollment, savedGrade);
+    }
 
+    private StudentGradeResponse buildStudentGradeResponse(Enrollment enrollment, Grade grade) {
+        Student student = enrollment.getStudent();
         return StudentGradeResponse.builder()
                 .enrollmentId(enrollment.getId())
-                .studentCode(enrollment.getStudent().getStudentCode())
-                .fullName(enrollment.getStudent().getFullName())
-                .midTermScore(savedGrade.getMidtermScore())
-                .finalScore(savedGrade.getFinalScore())
-                .totalScore(savedGrade.getTotalScore())
+                .studentCode(student.getStudentCode())
+                .fullName(student.getFullName())
+                .phone(student.getPhone())
+                .email(student.getUser() != null ? student.getUser().getEmail() : null)
+                .className(student.getClassName())
+                .advisorName(student.getAdvisor())
+                .majorName(student.getMajor() != null ? student.getMajor().getName() : null)
+                .facultyName(student.getCohort())
+                .midTermScore(grade != null ? grade.getMidtermScore() : null)
+                .finalScore(grade != null ? grade.getFinalScore() : null)
+                .totalScore(grade != null ? grade.getTotalScore() : null)
                 .status(enrollment.getStatus().name())
+                .courseStatus(enrollment.getCourseStatus() != null ? enrollment.getCourseStatus().name() : null)
                 .build();
     }
 

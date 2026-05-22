@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Builder
 @Schema(description = "Thong tin ghi danh mon hoc")
@@ -50,6 +52,9 @@ public class EnrollmentResponse {
     )
     private String room;
 
+    @Schema(description = "Danh sach lich hoc cua lop hoc phan")
+    private List<ClassSectionScheduleResponse> schedules;
+
     @Schema(
             description = "Ngay trong tuan (2-8)",
             example = "2"
@@ -73,6 +78,18 @@ public class EnrollmentResponse {
             example = "Thay Nguyen Van B"
     )
     private String teacherName;
+
+    @Schema(
+            description = "Ma giang vien",
+            example = "GV101"
+    )
+    private String teacherCode;
+
+    @Schema(
+            description = "Email giang vien",
+            example = "teacher1@tlu.edu.vn"
+    )
+    private String teacherEmail;
 
     @Schema(
             description = "Diem giua ky (0-10)",

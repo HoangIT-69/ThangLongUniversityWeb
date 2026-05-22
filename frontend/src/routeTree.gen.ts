@@ -24,11 +24,13 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArticlesIndexRouteImport } from './routes/articles.index'
+import { Route as TeacherTimetableRouteImport } from './routes/teacher.timetable'
 import { Route as TeacherProfileRouteImport } from './routes/teacher.profile'
 import { Route as TeacherGradesRouteImport } from './routes/teacher.grades'
 import { Route as TeacherDashboardRouteImport } from './routes/teacher.dashboard'
 import { Route as TeacherClassesRouteImport } from './routes/teacher.classes'
 import { Route as TeacherChatRouteImport } from './routes/teacher.chat'
+import { Route as TeacherAttendanceRouteImport } from './routes/teacher.attendance'
 import { Route as StudentTuitionRouteImport } from './routes/student.tuition'
 import { Route as StudentScheduleRouteImport } from './routes/student.schedule'
 import { Route as StudentRetakeRegistrationRouteImport } from './routes/student.retake-registration'
@@ -134,6 +136,11 @@ const ArticlesIndexRoute = ArticlesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ArticlesRoute,
 } as any)
+const TeacherTimetableRoute = TeacherTimetableRouteImport.update({
+  id: '/timetable',
+  path: '/timetable',
+  getParentRoute: () => TeacherRoute,
+} as any)
 const TeacherProfileRoute = TeacherProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -157,6 +164,11 @@ const TeacherClassesRoute = TeacherClassesRouteImport.update({
 const TeacherChatRoute = TeacherChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => TeacherRoute,
+} as any)
+const TeacherAttendanceRoute = TeacherAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
   getParentRoute: () => TeacherRoute,
 } as any)
 const StudentTuitionRoute = StudentTuitionRouteImport.update({
@@ -351,11 +363,13 @@ export interface FileRoutesByFullPath {
   '/student/retake-registration': typeof StudentRetakeRegistrationRoute
   '/student/schedule': typeof StudentScheduleRoute
   '/student/tuition': typeof StudentTuitionRoute
+  '/teacher/attendance': typeof TeacherAttendanceRoute
   '/teacher/chat': typeof TeacherChatRoute
   '/teacher/classes': typeof TeacherClassesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grades': typeof TeacherGradesRoute
   '/teacher/profile': typeof TeacherProfileRoute
+  '/teacher/timetable': typeof TeacherTimetableRoute
   '/articles/': typeof ArticlesIndexRoute
   '/teacher/classes/$classSectionId/students': typeof TeacherClassesClassSectionIdStudentsRoute
 }
@@ -401,11 +415,13 @@ export interface FileRoutesByTo {
   '/student/retake-registration': typeof StudentRetakeRegistrationRoute
   '/student/schedule': typeof StudentScheduleRoute
   '/student/tuition': typeof StudentTuitionRoute
+  '/teacher/attendance': typeof TeacherAttendanceRoute
   '/teacher/chat': typeof TeacherChatRoute
   '/teacher/classes': typeof TeacherClassesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grades': typeof TeacherGradesRoute
   '/teacher/profile': typeof TeacherProfileRoute
+  '/teacher/timetable': typeof TeacherTimetableRoute
   '/articles': typeof ArticlesIndexRoute
   '/teacher/classes/$classSectionId/students': typeof TeacherClassesClassSectionIdStudentsRoute
 }
@@ -453,11 +469,13 @@ export interface FileRoutesById {
   '/student/retake-registration': typeof StudentRetakeRegistrationRoute
   '/student/schedule': typeof StudentScheduleRoute
   '/student/tuition': typeof StudentTuitionRoute
+  '/teacher/attendance': typeof TeacherAttendanceRoute
   '/teacher/chat': typeof TeacherChatRoute
   '/teacher/classes': typeof TeacherClassesRouteWithChildren
   '/teacher/dashboard': typeof TeacherDashboardRoute
   '/teacher/grades': typeof TeacherGradesRoute
   '/teacher/profile': typeof TeacherProfileRoute
+  '/teacher/timetable': typeof TeacherTimetableRoute
   '/articles/': typeof ArticlesIndexRoute
   '/teacher/classes/$classSectionId/students': typeof TeacherClassesClassSectionIdStudentsRoute
 }
@@ -506,11 +524,13 @@ export interface FileRouteTypes {
     | '/student/retake-registration'
     | '/student/schedule'
     | '/student/tuition'
+    | '/teacher/attendance'
     | '/teacher/chat'
     | '/teacher/classes'
     | '/teacher/dashboard'
     | '/teacher/grades'
     | '/teacher/profile'
+    | '/teacher/timetable'
     | '/articles/'
     | '/teacher/classes/$classSectionId/students'
   fileRoutesByTo: FileRoutesByTo
@@ -556,11 +576,13 @@ export interface FileRouteTypes {
     | '/student/retake-registration'
     | '/student/schedule'
     | '/student/tuition'
+    | '/teacher/attendance'
     | '/teacher/chat'
     | '/teacher/classes'
     | '/teacher/dashboard'
     | '/teacher/grades'
     | '/teacher/profile'
+    | '/teacher/timetable'
     | '/articles'
     | '/teacher/classes/$classSectionId/students'
   id:
@@ -607,11 +629,13 @@ export interface FileRouteTypes {
     | '/student/retake-registration'
     | '/student/schedule'
     | '/student/tuition'
+    | '/teacher/attendance'
     | '/teacher/chat'
     | '/teacher/classes'
     | '/teacher/dashboard'
     | '/teacher/grades'
     | '/teacher/profile'
+    | '/teacher/timetable'
     | '/articles/'
     | '/teacher/classes/$classSectionId/students'
   fileRoutesById: FileRoutesById
@@ -740,6 +764,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArticlesIndexRouteImport
       parentRoute: typeof ArticlesRoute
     }
+    '/teacher/timetable': {
+      id: '/teacher/timetable'
+      path: '/timetable'
+      fullPath: '/teacher/timetable'
+      preLoaderRoute: typeof TeacherTimetableRouteImport
+      parentRoute: typeof TeacherRoute
+    }
     '/teacher/profile': {
       id: '/teacher/profile'
       path: '/profile'
@@ -773,6 +804,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/teacher/chat'
       preLoaderRoute: typeof TeacherChatRouteImport
+      parentRoute: typeof TeacherRoute
+    }
+    '/teacher/attendance': {
+      id: '/teacher/attendance'
+      path: '/attendance'
+      fullPath: '/teacher/attendance'
+      preLoaderRoute: typeof TeacherAttendanceRouteImport
       parentRoute: typeof TeacherRoute
     }
     '/student/tuition': {
@@ -1080,19 +1118,23 @@ const TeacherClassesRouteWithChildren = TeacherClassesRoute._addFileChildren(
 )
 
 interface TeacherRouteChildren {
+  TeacherAttendanceRoute: typeof TeacherAttendanceRoute
   TeacherChatRoute: typeof TeacherChatRoute
   TeacherClassesRoute: typeof TeacherClassesRouteWithChildren
   TeacherDashboardRoute: typeof TeacherDashboardRoute
   TeacherGradesRoute: typeof TeacherGradesRoute
   TeacherProfileRoute: typeof TeacherProfileRoute
+  TeacherTimetableRoute: typeof TeacherTimetableRoute
 }
 
 const TeacherRouteChildren: TeacherRouteChildren = {
+  TeacherAttendanceRoute: TeacherAttendanceRoute,
   TeacherChatRoute: TeacherChatRoute,
   TeacherClassesRoute: TeacherClassesRouteWithChildren,
   TeacherDashboardRoute: TeacherDashboardRoute,
   TeacherGradesRoute: TeacherGradesRoute,
   TeacherProfileRoute: TeacherProfileRoute,
+  TeacherTimetableRoute: TeacherTimetableRoute,
 }
 
 const TeacherRouteWithChildren =

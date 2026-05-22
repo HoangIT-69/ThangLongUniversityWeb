@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -30,6 +32,18 @@ public class ClassSectionScheduleResponse {
 
     @Schema(description = "Số thứ tự tiết kết thúc", example = "4")
     private Integer endPeriod;
+
+    @Schema(description = "So tiet hoc cua lich nay", example = "3")
+    private Integer lessonCount;
+
+    @Schema(description = "Khoang tiet hoc dang text", example = "1-3")
+    private String periodRange;
+
+    @Schema(description = "Gio bat dau tiet dau", example = "07:00:00")
+    private LocalTime startTime;
+
+    @Schema(description = "Gio ket thuc tiet cuoi", example = "09:50:00")
+    private LocalTime endTime;
 
     @Schema(description = "ID phòng học cho lịch này", example = "1")
     private Long roomId;

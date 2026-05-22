@@ -46,12 +46,32 @@ function isPeriodOverlap(startA: number, endA: number, startB: number, endB: num
   return startA <= endA && startB <= endB && startA <= endB && startB <= endA;
 }
 
+function getEnrollmentSchedules(item: EnrollmentResponse) {
+  if (item.schedules?.length) return item.schedules;
+  return [{
+    dayOfWeek: item.dayOfWeek,
+    startPeriod: item.startPeriod,
+    endPeriod: item.endPeriod,
+    roomName: item.room,
+  }];
+}
+
+function formatEnrollmentSchedule(item: EnrollmentResponse) {
+  return getEnrollmentSchedules(item)
+    .map((schedule) =>
+      `${dayLabels[schedule.dayOfWeek] ?? `Thu ${schedule.dayOfWeek}`} tiet ${schedule.startPeriod}-${schedule.endPeriod}${schedule.roomName ? `, ${schedule.roomName}` : ""}`
+    )
+    .join(" | ");
+}
+
 function overlapsSelectedSchedule(section: ClassSectionResponse, selected: EnrollmentResponse[]) {
   return section.schedules.some((schedule) =>
     selected.some((item) =>
       item.classSectionId !== section.id &&
-      item.dayOfWeek === schedule.dayOfWeek &&
-      isPeriodOverlap(schedule.startPeriod, schedule.endPeriod, item.startPeriod, item.endPeriod)
+      getEnrollmentSchedules(item).some((selectedSchedule) =>
+        selectedSchedule.dayOfWeek === schedule.dayOfWeek &&
+        isPeriodOverlap(schedule.startPeriod, schedule.endPeriod, selectedSchedule.startPeriod, selectedSchedule.endPeriod)
+      )
     )
   );
 }
@@ -287,7 +307,7 @@ function CourseRegistrationPage() {
                     {item.courseCode ? `${item.courseCode} - ` : ""}{item.credits} TC - {item.teacherName ?? "Chua phan cong"}
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
-                    {dayLabels[item.dayOfWeek] ?? `Thu ${item.dayOfWeek}`} tiet {item.startPeriod}-{item.endPeriod}{item.room ? `, ${item.room}` : ""}
+                    {formatEnrollmentSchedule(item)}
                   </div>
                   <Button
                     variant="outline"
