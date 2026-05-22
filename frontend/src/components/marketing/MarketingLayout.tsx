@@ -20,7 +20,7 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
   const { content } = useLanding();
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
+      <header className="hidden">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2">
             <div className="grid h-9 w-9 place-items-center rounded-md bg-primary font-bold text-primary-foreground shadow-sm">TL</div>

@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/api/types";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   AlertCircle,
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 const BACKEND_PROBE_TIMEOUT_MS = 3000;
+const schoolLogo = "/images/LogoThangLongUniversity.png";
 
 type BackendStatus = "checking" | "online" | "offline";
 type Credentials = {
@@ -163,18 +164,11 @@ function LoginPage() {
         {/* Content on top of image */}
         <div className="relative flex h-full flex-col justify-between p-10">
           {/* Top — Logo & brand */}
-          <div className="flex items-center gap-3">
-            <div
-              className="grid h-12 w-12 place-items-center rounded-xl text-xl font-bold text-white shadow-lg"
-              style={{ backgroundColor: "hsl(0 72% 30%)" }}
-            >
-              TL
+          <Link to="/" className="inline-flex items-center" aria-label="Về trang chính">
+            <div className="grid h-24 w-40 place-items-center rounded-2xl bg-white/95 p-3 shadow-xl transition-transform hover:scale-[1.02]">
+              <img src={schoolLogo} alt="Logo Đại học Thăng Long" className="h-full w-full object-contain" />
             </div>
-            <div>
-              <div className="text-sm font-medium text-white/70">TRƯỜNG ĐẠI HỌC</div>
-              <div className="text-lg font-semibold tracking-wide text-white">THĂNG LONG</div>
-            </div>
-          </div>
+          </Link>
 
           {/* Bottom — Brand messaging */}
           <div>
@@ -224,18 +218,13 @@ function LoginPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 p-5">
-            <div className="flex items-center gap-2.5">
-              <div
-                className="grid h-9 w-9 place-items-center rounded-lg text-sm font-bold text-white"
-                style={{ backgroundColor: "hsl(0 72% 30%)" }}
-              >
-                TL
-              </div>
-              <div>
-                <div className="text-[10px] font-medium uppercase tracking-wider text-white/70">Trường Đại học</div>
-                <div className="text-sm font-semibold text-white">Thăng Long</div>
-              </div>
-            </div>
+            <Link
+              to="/"
+              className="grid h-20 w-36 place-items-center rounded-2xl bg-white/95 p-2 shadow-xl transition-transform hover:scale-[1.02]"
+              aria-label="Về trang chính"
+            >
+              <img src={schoolLogo} alt="Logo Đại học Thăng Long" className="h-full w-full object-contain" />
+            </Link>
           </div>
         </div>
 
