@@ -1,4 +1,10 @@
 export type Role = "ADMIN" | "TEACHER" | "STUDENT";
+export type CourseType = "REQUIRED" | "ELECTIVE";
+export type EnrollmentStatus = "PENDING" | "REGISTERED" | "CANCELED" | "PASSED" | "FAILED";
+export type EnrollmentType = "ORDINARY" | "RETAKE" | "IMPROVE";
+export type RetakeRegistrationType = "RETAKE" | "IMPROVE";
+export type EnrollmentRequestStatus = "PENDING" | "PROCESSING" | "SUCCESS" | "FAILED";
+export type NotificationType = "SCHOOL" | "CHAT";
 
 export interface AuthResponse {
   accessToken: string;
@@ -209,7 +215,7 @@ export interface ClassSectionResponse {
   courseId: number;
   courseCode: string;
   courseName: string;
-  courseType?: "REQUIRED" | "ELECTIVE" | null;
+  courseType?: CourseType | null;
   courseTypeLabel?: string | null;
   credits: number;
   semesterId: number;
@@ -254,35 +260,7 @@ export interface TeacherStudentGradeResponse {
   absenceCount?: number | null;
 }
 
-export interface TeacherGradeResponse {
-  id: number;
-  enrollmentId: number;
-  studentId: number;
-  studentCode: string;
-  studentName: string;
-  courseId: number;
-  courseCode: string;
-  classCode: string;
-  courseName: string;
-  credits: number;
-  semesterId: number;
-  semesterName: string;
-  participationScore?: number | null;
-  midtermScore?: number | null;
-  midTermScore?: number | null;
-  finalScore?: number | null;
-  retestScore?: number | null;
-  attemptNumber?: number | null;
-  enrollmentType?: string | null;
-  totalScore?: number | null;
-  letterGrade?: string | null;
-  gpa4?: number | null;
-  gradePoint?: number | null;
-  gradeStatus?: "DRAFT" | "SUBMITTED" | "LOCKED" | string | null;
-  canEdit?: boolean | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-}
+export type TeacherGradeResponse = GradeResponse;
 
 export interface StudentSemesterResponse {
   id: number;
@@ -334,7 +312,7 @@ export interface EnrollmentRequestResponse {
 
 export interface EnrollmentRequestStatusResponse {
   requestId: string;
-  status: string;
+  status: EnrollmentRequestStatus | string;
   message?: string | null;
 }
 
@@ -356,7 +334,7 @@ export interface EnrollmentResponse {
   midTermScore?: number | null;
   finalScore?: number | null;
   totalScore?: number | null;
-  status?: string | null;
+  status?: EnrollmentStatus | string | null;
 }
 
 export interface StudentExamResponse {
@@ -374,9 +352,6 @@ export interface StudentGradeItemResponse {
   classCode: string;
   courseName: string;
   credits: number;
-  participationScore?: number | null;
-  midtermScore?: number | null;
-  finalScore?: number | null;
   totalScore?: number | null;
   gradePoint?: number | null;
 }
@@ -386,6 +361,35 @@ export interface StudentGradesSummaryResponse {
   semesterGpa: number;
   cumulativeGpa: number;
   items: StudentGradeItemResponse[];
+}
+
+export interface GradeResponse {
+  id: number;
+  enrollmentId: number;
+  studentId: number;
+  studentCode: string;
+  studentName: string;
+  courseId: number;
+  courseCode: string;
+  classCode: string;
+  courseName: string;
+  credits: number;
+  semesterId: number;
+  semesterName: string;
+  participationScore?: number | null;
+  midtermScore?: number | null;
+  finalScore?: number | null;
+  retestScore?: number | null;
+  attemptNumber?: number | null;
+  enrollmentType?: EnrollmentType | string | null;
+  totalScore?: number | null;
+  letterGrade?: string | null;
+  gpa4?: number | null;
+  gradePoint?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  courseStatus?: CourseStudyStatus | string | null;
+  absenceCount?: number | null;
 }
 
 export interface TuitionItemResponse {
@@ -412,10 +416,10 @@ export interface StudentDashboardResponse {
   learningResults?: LearningResultsResponse | null;
   grades?: StudentGradesSummaryResponse | null;
   tuition?: TuitionResponse | null;
-  schedule: EnrollmentResponse[];
-  todaySchedule: EnrollmentResponse[];
-  exams: StudentExamResponse[];
-  upcomingExams: StudentExamResponse[];
+  schedule?: EnrollmentResponse[];
+  todaySchedule?: EnrollmentResponse[];
+  exams?: StudentExamResponse[];
+  upcomingExams?: StudentExamResponse[];
   semesterGpa: number;
   cumulativeGpa: number;
   registeredCredits: number;
@@ -428,6 +432,48 @@ export interface StudentDashboardResponse {
   registrationStatus: string;
 }
 
+export interface AcademicResultStudentRef {
+  id: number;
+  studentCode: string;
+  fullName: string;
+  dob?: string | null;
+  gender?: string | null;
+  phone?: string | null;
+  nationalId?: string | null;
+  placeOfBirth?: string | null;
+  hometown?: string | null;
+  permanentAddress?: string | null;
+  currentAddress?: string | null;
+  emergencyContact?: string | null;
+  address?: string | null;
+  cohort?: string | null;
+  className?: string | null;
+  advisor?: string | null;
+  status?: string | null;
+  trainingType?: string | null;
+  academicYear?: number | null;
+}
+
+export interface AcademicResultSemesterRef {
+  id: number;
+  name: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  registrationOpen?: boolean;
+  locked?: boolean;
+}
+
+export interface AcademicResultResponse {
+  id: number;
+  student?: AcademicResultStudentRef | null;
+  semester?: AcademicResultSemesterRef | null;
+  semesterGpa?: number | null;
+  cumulativeGpa?: number | null;
+  totalCredits?: number | null;
+  cumulativeCredits?: number | null;
+  calculatedAt?: string | null;
+}
+
 export interface RetakeEligibleCourseResponse {
   gradeId: number;
   enrollmentId: number;
@@ -437,8 +483,13 @@ export interface RetakeEligibleCourseResponse {
   credits: number;
   previousTotalScore: number;
   previousAttemptNumber?: number | null;
-  registrationType: "RETAKE" | "IMPROVE";
+  registrationType: RetakeRegistrationType | string;
   retakeFee: number;
+}
+
+export interface RetakeRegistrationRequest {
+  semesterId?: number | null;
+  courseIds: number[];
 }
 
 export interface RetakeRegisteredItemResponse {
@@ -446,7 +497,7 @@ export interface RetakeRegisteredItemResponse {
   courseCode: string;
   courseName: string;
   credits: number;
-  registrationType: string;
+  registrationType: RetakeRegistrationType | string;
   attemptNumber: number;
   feeCharged: number;
   examAt?: string | null;
@@ -469,7 +520,7 @@ export interface RetakeRequestResponse {
   semesterId: number;
   semesterName: string;
   status?: string | null;
-  enrollmentType?: "RETAKE" | "IMPROVE" | string | null;
+  enrollmentType?: EnrollmentType | string | null;
   attemptNumber?: number | null;
   totalScore?: number | null;
 }
@@ -504,7 +555,7 @@ export interface LearningResultsResponse {
   cumulativeGpa?: number | null;
   semesterCredits?: number | null;
   cumulativeCredits?: number | null;
-  grades: StudentGradeItemResponse[];
+  grades: GradeResponse[];
   semesterSummaries: SemesterGpaSummary[];
 }
 
@@ -514,10 +565,18 @@ export interface CourseResponse {
   name: string;
   credits: number;
   description?: string | null;
-  courseType?: "REQUIRED" | "ELECTIVE" | null;
+  courseType?: CourseType | null;
   courseTypeLabel?: string | null;
-  majorId?: number | null;
   majorName?: string | null;
-  prerequisiteIds?: number[];
   prerequisiteNames?: string[];
+}
+
+export interface NotificationResponse {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  link?: string | null;
+  read: boolean;
+  createdAt: string;
 }

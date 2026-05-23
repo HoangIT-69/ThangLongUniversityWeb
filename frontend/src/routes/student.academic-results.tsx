@@ -2,23 +2,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { studentApi } from "@/lib/api/student";
 import { pickCurrentSemester } from "@/lib/semester";
+import type { StudentSemesterResponse } from "@/lib/api/types";
 
-export const Route = createFileRoute("/student/academic-results")({ component: AcademicResultsPage });
+export const Route = createFileRoute("/student/academic-results")({
+  component: AcademicResultsPage,
+});
 
-function letterGrade(score?: number | null) {
-  if (score == null) return "-";
-  if (score >= 8.5) return "A+";
-  if (score >= 8.0) return "A";
-  if (score >= 7.0) return "B+";
-  if (score >= 6.5) return "B";
-  if (score >= 5.5) return "C+";
-  if (score >= 5.0) return "C";
-  if (score >= 4.0) return "D";
-  return "F";
-}
+const emptySemesters: StudentSemesterResponse[] = [];
 
 function classify(cpa: number) {
   if (cpa >= 3.6) return { label: "Xuất sắc", color: "text-green-600" };
@@ -29,8 +29,11 @@ function classify(cpa: number) {
 }
 
 function AcademicResultsPage() {
-  const semestersQuery = useQuery({ queryKey: ["student", "semesters"], queryFn: studentApi.listSemesters });
-  const semesters = semestersQuery.data ?? [];
+  const semestersQuery = useQuery({
+    queryKey: ["student", "semesters"],
+    queryFn: studentApi.listSemesters,
+  });
+  const semesters = semestersQuery.data ?? emptySemesters;
   const [semesterId, setSemesterId] = useState<number | null>(null);
   const [viewAll, setViewAll] = useState(false);
 
@@ -69,7 +72,11 @@ function AcademicResultsPage() {
                 value={semesterId ?? ""}
                 onChange={(e) => setSemesterId(Number(e.target.value))}
               >
-                {semesters.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {semesters.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
               </select>
             )}
           </div>
@@ -79,21 +86,29 @@ function AcademicResultsPage() {
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="rounded-xl border bg-card p-4">
           <div className="text-xs text-muted-foreground">CPA tích lũy</div>
-          <div className="mt-1 text-2xl font-semibold text-primary tabular-nums">{cpa.toFixed(2)}</div>
+          <div className="mt-1 text-2xl font-semibold text-primary tabular-nums">
+            {cpa.toFixed(2)}
+          </div>
         </div>
         {!viewAll && (
           <div className="rounded-xl border bg-card p-4">
             <div className="text-xs text-muted-foreground">GPA học kỳ</div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums">{(data?.semesterGpa ?? 0).toFixed(2)}</div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums">
+              {(data?.semesterGpa ?? 0).toFixed(2)}
+            </div>
           </div>
         )}
         <div className="rounded-xl border bg-card p-4">
           <div className="text-xs text-muted-foreground">Tín chỉ tích lũy</div>
-          <div className="mt-1 text-2xl font-semibold tabular-nums">{data?.cumulativeCredits ?? 0}</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">
+            {data?.cumulativeCredits ?? 0}
+          </div>
         </div>
         <div className="rounded-xl border bg-card p-4">
           <div className="text-xs text-muted-foreground">Xếp loại</div>
-          <div className={`mt-1 text-xl font-semibold ${classification.color}`}>{classification.label}</div>
+          <div className={`mt-1 text-xl font-semibold ${classification.color}`}>
+            {classification.label}
+          </div>
         </div>
       </div>
 
@@ -106,12 +121,25 @@ function AcademicResultsPage() {
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">{s.semesterName}</span>
                   <div className="flex gap-4 tabular-nums">
-                    <span className="text-muted-foreground">GPA: <span className="font-semibold text-foreground">{s.semesterGpa != null ? s.semesterGpa.toFixed(2) : "-"}</span></span>
-                    <span className="text-muted-foreground">CPA: <span className="font-semibold text-primary">{s.cumulativeGpa != null ? s.cumulativeGpa.toFixed(2) : "-"}</span></span>
+                    <span className="text-muted-foreground">
+                      GPA:{" "}
+                      <span className="font-semibold text-foreground">
+                        {s.semesterGpa != null ? s.semesterGpa.toFixed(2) : "-"}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      CPA:{" "}
+                      <span className="font-semibold text-primary">
+                        {s.cumulativeGpa != null ? s.cumulativeGpa.toFixed(2) : "-"}
+                      </span>
+                    </span>
                   </div>
                 </div>
                 <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(((s.semesterGpa ?? 0) / 4) * 100, 100)}%` }} />
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${Math.min(((s.semesterGpa ?? 0) / 4) * 100, 100)}%` }}
+                  />
                 </div>
               </div>
             ))}
@@ -139,12 +167,19 @@ function AcademicResultsPage() {
           </TableHeader>
           <TableBody>
             {resultsQuery.isLoading ? (
-              <TableRow><TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">Đang tải bảng điểm...</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
+                  Đang tải bảng điểm...
+                </TableCell>
+              </TableRow>
             ) : grades.length === 0 ? (
-              <TableRow><TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">Chưa có điểm.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
+                  Chưa có điểm.
+                </TableCell>
+              </TableRow>
             ) : (
               grades.map((r) => {
-                const letter = letterGrade(r.totalScore);
                 const isFailed = r.totalScore != null && r.totalScore < 4;
                 return (
                   <TableRow key={r.enrollmentId}>
@@ -152,22 +187,36 @@ function AcademicResultsPage() {
                       <div className="font-medium">{r.courseName}</div>
                       <div className="text-xs text-muted-foreground font-mono">{r.classCode}</div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{r.semesterName}</TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                      {r.semesterName}
+                    </TableCell>
                     <TableCell className="text-center tabular-nums">{r.credits}</TableCell>
-                    <TableCell className="text-center tabular-nums hidden sm:table-cell">{r.participationScore != null ? r.participationScore.toFixed(1) : "-"}</TableCell>
-                    <TableCell className="text-center tabular-nums hidden sm:table-cell">{r.midtermScore != null ? r.midtermScore.toFixed(1) : "-"}</TableCell>
-                    <TableCell className="text-center tabular-nums hidden sm:table-cell">{r.finalScore != null ? r.finalScore.toFixed(1) : "-"}</TableCell>
+                    <TableCell className="text-center tabular-nums hidden sm:table-cell">
+                      {r.participationScore != null ? r.participationScore.toFixed(1) : "-"}
+                    </TableCell>
+                    <TableCell className="text-center tabular-nums hidden sm:table-cell">
+                      {r.midtermScore != null ? r.midtermScore.toFixed(1) : "-"}
+                    </TableCell>
+                    <TableCell className="text-center tabular-nums hidden sm:table-cell">
+                      {r.finalScore != null ? r.finalScore.toFixed(1) : "-"}
+                    </TableCell>
                     <TableCell className="text-center">
-                      <span className={`font-bold tabular-nums ${isFailed ? "text-destructive" : ""}`}>
+                      <span
+                        className={`font-bold tabular-nums ${isFailed ? "text-destructive" : ""}`}
+                      >
                         {r.totalScore != null ? r.totalScore.toFixed(1) : "-"}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
-                      <span className={`rounded px-2 py-0.5 text-xs font-bold ${isFailed ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-                        {letter}
+                      <span
+                        className={`rounded px-2 py-0.5 text-xs font-bold ${isFailed ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}
+                      >
+                        {r.letterGrade ?? "-"}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center tabular-nums">{r.gradePoint != null ? r.gradePoint.toFixed(2) : "-"}</TableCell>
+                    <TableCell className="text-center tabular-nums">
+                      {r.gradePoint != null ? r.gradePoint.toFixed(2) : "-"}
+                    </TableCell>
                   </TableRow>
                 );
               })
@@ -178,7 +227,9 @@ function AcademicResultsPage() {
 
       {resultsQuery.isError && (
         <div className="mt-4 text-sm text-destructive">
-          {resultsQuery.error instanceof Error ? resultsQuery.error.message : "Không tải được kết quả học tập"}
+          {resultsQuery.error instanceof Error
+            ? resultsQuery.error.message
+            : "Không tải được kết quả học tập"}
         </div>
       )}
     </div>

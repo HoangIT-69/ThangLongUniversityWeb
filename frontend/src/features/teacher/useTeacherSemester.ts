@@ -6,14 +6,14 @@ import { pickCurrentSemester } from "@/lib/semester";
 export interface TeacherSemesterOption {
   id: string;
   name: string;
-  source: "API";
 }
 
-function mapApiSemesterOptions(data: Awaited<ReturnType<typeof teacherApi.listSemesters>>): TeacherSemesterOption[] {
+function mapApiSemesterOptions(
+  data: Awaited<ReturnType<typeof teacherApi.listSemesters>>,
+): TeacherSemesterOption[] {
   return data.map((semester) => ({
     id: String(semester.id),
     name: semester.name,
-    source: "API",
   }));
 }
 

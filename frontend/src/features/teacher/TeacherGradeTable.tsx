@@ -1,13 +1,15 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  calculateTotal,
-  getGpa4,
-  getLetterGrade,
-  type TeacherGradeRow,
-} from "./teacherData";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { TeacherGradeRow } from "./teacherMappers";
 
 interface TeacherGradeTableProps {
   rows: TeacherGradeRow[];
@@ -16,24 +18,19 @@ interface TeacherGradeTableProps {
   onSave?: (row: TeacherGradeRow) => void;
 }
 
-export function TeacherGradeTable({
-  rows,
-  disabled,
-  onChange,
-  onSave,
-}: TeacherGradeTableProps) {
+export function TeacherGradeTable({ rows, disabled, onChange, onSave }: TeacherGradeTableProps) {
   return (
     <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/40 hover:bg-muted/40">
-            <TableHead>Sinh vien</TableHead>
-            <TableHead className="w-28">Chuyen can</TableHead>
-            <TableHead className="w-28">Giua ky</TableHead>
-            <TableHead className="w-28">Cuoi ky</TableHead>
-            <TableHead className="w-28">Thi lai</TableHead>
-            <TableHead>Tong</TableHead>
-            <TableHead>Chu</TableHead>
+            <TableHead>Sinh viên</TableHead>
+            <TableHead className="w-28">Chuyên cần</TableHead>
+            <TableHead className="w-28">Giữa kỳ</TableHead>
+            <TableHead className="w-28">Cuối kỳ</TableHead>
+            <TableHead className="w-28">Thi lại</TableHead>
+            <TableHead>Tổng</TableHead>
+            <TableHead>Chữ</TableHead>
             <TableHead>GPA4</TableHead>
           </TableRow>
         </TableHeader>
@@ -41,7 +38,7 @@ export function TeacherGradeTable({
           {rows.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">
-                Chua co sinh vien trong bang diem lop nay
+                Chưa có sinh viên trong bảng điểm lớp này
               </TableCell>
             </TableRow>
           ) : (
@@ -49,7 +46,7 @@ export function TeacherGradeTable({
               <GradeRow
                 key={row.enrollmentId}
                 row={row}
-                disabled={disabled ?? (!row.canEdit)}
+                disabled={disabled ?? !row.canEdit}
                 onChange={onChange}
                 onSave={onSave}
               />
@@ -79,21 +76,20 @@ function GradeRow({
     key: "participationScore" | "midtermScore" | "finalScore" | "retestScore",
     rawValue: string,
   ) => {
+    if (rawValue.trim() === "") {
+      const next = { ...row, [key]: null };
+      onChange(next);
+      pendingRow.current = next;
+      return;
+    }
     const value = Number(rawValue);
     if (Number.isNaN(value) || value < 0 || value > 10) {
-      toast.error("Diem phai trong khoang 0-10");
+      toast.error("Điểm phải trong khoảng 0-10");
       return;
     }
     const next = { ...row, [key]: value };
-    const totalScore = calculateTotal(next.participationScore, next.midtermScore, next.finalScore);
-    const nextRow = {
-      ...next,
-      totalScore,
-      letterGrade: getLetterGrade(totalScore),
-      gpa4: getGpa4(totalScore),
-    };
-    onChange(nextRow);
-    pendingRow.current = nextRow;
+    onChange(next);
+    pendingRow.current = next;
   };
 
   const handleBlur = () => {
@@ -109,7 +105,7 @@ function GradeRow({
         <div className="min-w-52">
           <div className="font-medium">{row.studentName}</div>
           <div className="text-xs text-muted-foreground">
-            <span className="font-mono">{row.studentCode}</span> - {row.source}
+            <span className="font-mono">{row.studentCode}</span>
           </div>
         </div>
       </TableCell>
@@ -137,13 +133,15 @@ function GradeRow({
         onChange={(value) => updateScore("retestScore", value)}
         onBlur={handleBlur}
       />
-      <TableCell className="font-semibold tabular-nums">{row.totalScore.toFixed(2)}</TableCell>
+      <TableCell className="font-semibold tabular-nums">
+        {row.totalScore != null ? row.totalScore.toFixed(2) : "-"}
+      </TableCell>
       <TableCell>
         <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-          {row.letterGrade}
+          {row.letterGrade ?? "-"}
         </span>
       </TableCell>
-      <TableCell className="tabular-nums">{row.gpa4.toFixed(1)}</TableCell>
+      <TableCell className="tabular-nums">{row.gpa4 != null ? row.gpa4.toFixed(1) : "-"}</TableCell>
     </TableRow>
   );
 }
@@ -154,18 +152,18 @@ function ScoreInput({
   onChange,
   onBlur,
 }: {
-  value: number;
+  value: number | null;
   disabled: boolean;
   onChange: (value: string) => void;
   onBlur?: () => void;
 }) {
-  const [local, setLocal] = useState(value === 0 ? "" : String(value));
+  const [local, setLocal] = useState(value == null ? "" : String(value));
 
   // Sync local state when the parent value changes (e.g. after save/reset)
   const prevValue = useRef(value);
   if (prevValue.current !== value) {
     prevValue.current = value;
-    const next = value === 0 ? "" : String(value);
+    const next = value == null ? "" : String(value);
     if (local !== next) setLocal(next);
   }
 
@@ -180,7 +178,7 @@ function ScoreInput({
         disabled={disabled}
         onChange={(e) => setLocal(e.target.value)}
         onBlur={() => {
-          onChange(local || "0");
+          onChange(local);
           onBlur?.();
         }}
         className="h-8 w-20 tabular-nums"

@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth";
+import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { teacherApi } from "@/lib/api/teacher";
 import {
   BookOpen,
   Building2,
@@ -30,8 +32,31 @@ interface DisplayField {
 }
 
 function TeacherProfilePage() {
-  const { profile, name, role } = useAuth();
-  const fullName = profile?.fullName ?? name ?? "Giảng viên";
+  const profileQuery = useQuery({
+    queryKey: ["teacher", "profile"],
+    queryFn: teacherApi.getProfile,
+    retry: false,
+  });
+
+  if (profileQuery.isPending) {
+    return <ProfileSkeleton />;
+  }
+
+  if (profileQuery.isError) {
+    return (
+      <div>
+        <PageHeader title="Thông tin cá nhân" description="Thông tin giảng viên và liên hệ" />
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {profileQuery.error instanceof Error
+            ? profileQuery.error.message
+            : "Không tải được hồ sơ giảng viên"}
+        </div>
+      </div>
+    );
+  }
+
+  const profile = profileQuery.data;
+  const fullName = profile.fullName ?? profile.username;
   const teacherCode = profile?.code ?? "-";
   const degree = profile?.majorOrDegree ?? "-";
   const initials = fullName
@@ -42,38 +67,37 @@ function TeacherProfilePage() {
     .join("")
     .toUpperCase();
 
-  const val = (v: string | number | null | undefined) =>
-    v != null && v !== "" ? v : "-";
+  const val = (v: string | number | null | undefined) => (v != null && v !== "" ? v : "-");
 
   const identityFields: DisplayField[] = [
-    { label: "Ho va ten", value: val(profile?.fullName ?? name) },
-    { label: "Ten dang nhap", value: val(profile?.username) },
-    { label: "Ma giang vien", value: val(profile?.code) },
-    { label: "Vai tro", value: val(profile?.role ?? role) },
-    { label: "Gioi tinh", value: val(profile?.gender) },
-    { label: "Ngay sinh", value: val(profile?.dateOfBirth) },
-    { label: "Tuoi", value: val(profile?.age) },
+    { label: "Họ và tên", value: val(profile?.fullName) },
+    { label: "Tên đăng nhập", value: val(profile?.username) },
+    { label: "Mã giảng viên", value: val(profile?.code) },
+    { label: "Vai trò", value: val(profile?.role) },
+    { label: "Giới tính", value: val(profile?.gender) },
+    { label: "Ngày sinh", value: val(profile?.dateOfBirth) },
+    { label: "Tuổi", value: val(profile?.age) },
     { label: "CCCD", value: val(profile?.nationalId) },
   ];
 
   const contactFields: DisplayField[] = [
     { label: "Email", value: val(profile?.email) },
-    { label: "So dien thoai", value: val(profile?.phone) },
-    { label: "Noi sinh", value: val(profile?.placeOfBirth) },
-    { label: "Que quan", value: val(profile?.hometown) },
-    { label: "Dia chi thuong tru", value: val(profile?.permanentAddress) },
-    { label: "Noi o hien tai", value: val(profile?.currentAddress) },
-    { label: "Lien he khan cap", value: val(profile?.emergencyContact) },
+    { label: "Số điện thoại", value: val(profile?.phone) },
+    { label: "Nơi sinh", value: val(profile?.placeOfBirth) },
+    { label: "Quê quán", value: val(profile?.hometown) },
+    { label: "Địa chỉ thường trú", value: val(profile?.permanentAddress) },
+    { label: "Nơi ở hiện tại", value: val(profile?.currentAddress) },
+    { label: "Liên hệ khẩn cấp", value: val(profile?.emergencyContact) },
   ];
 
   const professionalFields: DisplayField[] = [
-    { label: "Khoa/Bo mon", value: val(profile?.department) },
-    { label: "Hoc vi", value: val(degree) },
+    { label: "Khoa/Bộ môn", value: val(profile?.department) },
+    { label: "Học vị", value: val(degree) },
   ];
 
   return (
     <div>
-      <PageHeader title="Thong tin ca nhan" description="Thong tin giang vien va lien he" />
+      <PageHeader title="Thông tin cá nhân" description="Thông tin giảng viên và liên hệ" />
 
       <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="overflow-hidden">
@@ -100,20 +124,20 @@ function TeacherProfilePage() {
 
         <div className="space-y-5">
           <InfoSection
-            title="Thong tin dinh danh"
-            description="Thong tin ho so ca nhan va giay to giang vien"
+            title="Thông tin định danh"
+            description="Thông tin hồ sơ cá nhân và giấy tờ giảng viên"
             icon={IdCard}
             fields={identityFields}
           />
           <InfoSection
-            title="Lien he va cu tru"
-            description="Thong tin lien lac, que quan va dia chi hien tai"
+            title="Liên hệ và cư trú"
+            description="Thông tin liên lạc, quê quán và địa chỉ hiện tại"
             icon={MapPin}
             fields={contactFields}
           />
           <InfoSection
-            title="Thong tin chuyen mon"
-            description="Hoc vi, khoa bo mon va chuyen nganh giang day"
+            title="Thông tin chuyên môn"
+            description="Học vị, khoa bộ môn và chuyên ngành giảng dạy"
             icon={BookOpen}
             fields={professionalFields}
           />
@@ -155,6 +179,33 @@ function InfoSection({
   );
 }
 
+function ProfileSkeleton() {
+  return (
+    <div>
+      <PageHeader title="Thông tin cá nhân" description="Đang tải hồ sơ giảng viên" />
+      <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <Card className="p-5">
+          <Skeleton className="mx-auto h-24 w-24 rounded-full" />
+          <Skeleton className="mx-auto mt-4 h-5 w-40" />
+          <Skeleton className="mx-auto mt-2 h-4 w-24" />
+        </Card>
+        <div className="space-y-5">
+          {[0, 1, 2].map((section) => (
+            <Card key={section} className="p-5">
+              <Skeleton className="h-5 w-48" />
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                {[0, 1, 2, 3].map((field) => (
+                  <Skeleton key={field} className="h-20" />
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProfileField({
   field: item,
   icon: Icon,
@@ -175,24 +226,23 @@ function ProfileField({
 
 function iconForLabel(label: string): ComponentType<{ className?: string }> {
   const map: Record<string, ComponentType<{ className?: string }>> = {
-    "Ho va ten": UserRound,
-    "Ten dang nhap": Contact,
-    "Ma giang vien": IdCard,
-    "Vai tro": ShieldCheck,
-    "Gioi tinh": Users,
-    "Ngay sinh": CalendarDays,
-    Tuoi: CalendarDays,
+    "Họ và tên": UserRound,
+    "Tên đăng nhập": Contact,
+    "Mã giảng viên": IdCard,
+    "Vai trò": ShieldCheck,
+    "Giới tính": Users,
+    "Ngày sinh": CalendarDays,
+    Tuổi: CalendarDays,
     CCCD: IdCard,
     Email: Mail,
-    "So dien thoai": Phone,
-    "Noi sinh": MapPin,
-    "Que quan": Home,
-    "Dia chi thuong tru": Home,
-    "Noi o hien tai": MapPin,
-    "Lien he khan cap": Phone,
-    "Khoa/Bo mon": Building2,
-    "Hoc vi": BookOpen,
+    "Số điện thoại": Phone,
+    "Nơi sinh": MapPin,
+    "Quê quán": Home,
+    "Địa chỉ thường trú": Home,
+    "Nơi ở hiện tại": MapPin,
+    "Liên hệ khẩn cấp": Phone,
+    "Khoa/Bộ môn": Building2,
+    "Học vị": BookOpen,
   };
   return map[label] ?? UserRound;
 }
-
