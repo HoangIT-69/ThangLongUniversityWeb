@@ -3,20 +3,27 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/data-table/DataTable";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { studentApi } from "@/lib/api/student";
 import { pickCurrentSemester } from "@/lib/semester";
+import type { StudentSemesterResponse } from "@/lib/api/types";
 
 export const Route = createFileRoute("/student/exams")({ component: ExamsPage });
 
+const emptySemesters: StudentSemesterResponse[] = [];
+
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(
+    new Date(value),
+  );
 }
 
 function ExamsPage() {
-  const semestersQuery = useQuery({ queryKey: ["student", "semesters"], queryFn: studentApi.listSemesters });
-  const semesters = semestersQuery.data ?? [];
+  const semestersQuery = useQuery({
+    queryKey: ["student", "semesters"],
+    queryFn: studentApi.listSemesters,
+  });
+  const semesters = semestersQuery.data ?? emptySemesters;
   const [semesterId, setSemesterId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -34,25 +41,55 @@ function ExamsPage() {
   return (
     <div>
       <PageHeader
-        title="Lich thi"
-        description={`${exams.length} ky thi`}
+        title="Lịch thi"
+        description={`${exams.length} kỳ thi`}
         actions={
-          <select className="h-9 rounded-md border bg-background px-3 text-sm" value={semesterId ?? ""} onChange={(e) => setSemesterId(Number(e.target.value))}>
-            {semesters.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          <select
+            className="h-9 rounded-md border bg-background px-3 text-sm"
+            value={semesterId ?? ""}
+            onChange={(e) => setSemesterId(Number(e.target.value))}
+          >
+            {semesters.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
           </select>
         }
       />
-      <DataTable data={exams} rowKey={(e) => `${e.classCode}-${e.examAt ?? ""}`}
-        emptyMessage={examsQuery.isLoading ? "Dang tai du lieu..." : "Chua co lich thi"}
+      <DataTable
+        data={exams}
+        rowKey={(e) => `${e.classCode}-${e.examAt ?? ""}`}
+        emptyMessage={examsQuery.isLoading ? "Đang tải dữ liệu..." : "Chưa có lịch thi"}
         columns={[
-          { key: "course", header: "Mon hoc", accessor: (e) => e.courseName, render: (e) => <span className="font-medium">{e.courseName}</span> },
-          { key: "classCode", header: "Lop", render: (e) => <span className="font-mono text-xs">{e.classCode}</span> },
-          { key: "examAt", header: "Thoi gian", render: (e) => <span className="tabular-nums">{formatDateTime(e.examAt)}</span> },
-          { key: "room", header: "Phong", render: (e) => <span className="font-mono">{e.examRoom ?? "-"}</span> },
-          { key: "format", header: "Hinh thuc", render: () => <StatusBadge value="OFFLINE" /> },
+          {
+            key: "course",
+            header: "Môn học",
+            accessor: (e) => e.courseName,
+            render: (e) => <span className="font-medium">{e.courseName}</span>,
+          },
+          {
+            key: "classCode",
+            header: "Lớp",
+            render: (e) => <span className="font-mono text-xs">{e.classCode}</span>,
+          },
+          {
+            key: "examAt",
+            header: "Thời gian",
+            render: (e) => <span className="tabular-nums">{formatDateTime(e.examAt)}</span>,
+          },
+          {
+            key: "room",
+            header: "Phòng",
+            render: (e) => <span className="font-mono">{e.examRoom ?? "-"}</span>,
+          },
         ]}
       />
-      {examsQuery.isError && <div className="mt-4 text-sm text-destructive">{examsQuery.error instanceof Error ? examsQuery.error.message : "Khong tai duoc lich thi"}</div>}
+      {examsQuery.isError && (
+        <div className="mt-4 text-sm text-destructive">
+          {examsQuery.error instanceof Error ? examsQuery.error.message : "Không tải được lịch thi"}
+        </div>
+      )}
     </div>
   );
 }

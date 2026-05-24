@@ -3,15 +3,18 @@ import type {
   AttendanceRecordRequest,
   AttendanceSessionResponse,
   ClassSectionResponse,
+  GradeResponse,
+  NotificationResponse,
   StudentSemesterResponse,
   TeacherGradeRequest,
-  TeacherGradeResponse,
   TeacherStudentGradeResponse,
+  UserProfile,
 } from "./types";
 
 export const teacherApi = {
-  listSemesters: () =>
-    apiRequest<StudentSemesterResponse[]>("/api/teacher/semesters"),
+  getProfile: () => apiRequest<UserProfile>("/api/users/me"),
+
+  listSemesters: () => apiRequest<StudentSemesterResponse[]>("/api/teacher/semesters"),
 
   listMyClasses: (semesterId: number | string) =>
     apiRequest<ClassSectionResponse[]>(`/api/teacher/my-classes/semester/${semesterId}`),
@@ -20,20 +23,22 @@ export const teacherApi = {
     apiRequest<ClassSectionResponse[]>(`/api/teacher/my-classes/semester/${semesterId}`),
 
   listClassStudents: (classSectionId: number | string) =>
-    apiRequest<TeacherStudentGradeResponse[]>(
-      `/api/teacher/classes/${classSectionId}/students`,
-    ),
+    apiRequest<TeacherStudentGradeResponse[]>(`/api/teacher/classes/${classSectionId}/students`),
 
   getClassStudents: (classSectionId: number | string) =>
-    apiRequest<TeacherStudentGradeResponse[]>(
-      `/api/teacher/classes/${classSectionId}/students`,
-    ),
+    apiRequest<TeacherStudentGradeResponse[]>(`/api/teacher/classes/${classSectionId}/students`),
 
   getClassGrades: (classSectionId: number | string) =>
-    apiRequest<TeacherGradeResponse[]>(`/api/teacher/grades/class/${classSectionId}`),
+    apiRequest<GradeResponse[]>(`/api/teacher/grades/class/${classSectionId}`),
 
   updateGrade: (enrollmentId: number | string, request: TeacherGradeRequest) =>
-    apiRequest<TeacherGradeResponse>(`/api/teacher/grades/${enrollmentId}`, {
+    apiRequest<GradeResponse>(`/api/teacher/grades/${enrollmentId}`, {
+      method: "PUT",
+      body: jsonBody(request),
+    }),
+
+  updateStudentGradeLegacy: (enrollmentId: number | string, request: TeacherGradeRequest) =>
+    apiRequest<TeacherStudentGradeResponse>(`/api/teacher/enrollments/${enrollmentId}/grade`, {
       method: "PUT",
       body: jsonBody(request),
     }),
@@ -65,8 +70,17 @@ export const teacherApi = {
     ),
 
   lockClassGrades: (classSectionId: number | string) =>
-    apiRequest<string>(
-      `/api/teacher/grades/class/${classSectionId}/lock`,
-      { method: "POST" },
-    ),
+    apiRequest<string>(`/api/teacher/grades/class/${classSectionId}/lock`, { method: "POST" }),
+
+  listNotifications: () => apiRequest<NotificationResponse[]>("/api/teacher/notifications"),
+
+  markNotificationAsRead: (notificationId: string) =>
+    apiRequest<void>(`/api/teacher/notifications/${notificationId}/read`, {
+      method: "POST",
+    }),
+
+  markAllNotificationsAsRead: () =>
+    apiRequest<void>("/api/teacher/notifications/read-all", {
+      method: "POST",
+    }),
 };

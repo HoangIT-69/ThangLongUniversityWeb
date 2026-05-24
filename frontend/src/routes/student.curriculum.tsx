@@ -67,8 +67,9 @@ function CurriculumPage() {
     const map = new Map<string, typeof filtered>();
     filtered.forEach((c) => {
       const key = c.majorName ?? "Môn học chung";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(c);
+      const coursesByMajor = map.get(key) ?? [];
+      coursesByMajor.push(c);
+      map.set(key, coursesByMajor);
     });
     return Array.from(map.entries());
   }, [filtered]);

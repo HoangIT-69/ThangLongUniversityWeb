@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { DataTable } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { getTeacherRosterRows } from "@/features/teacher/teacherData";
+import { getTeacherRosterRows } from "@/features/teacher/teacherMappers";
 import { teacherApi } from "@/lib/api/teacher";
 import type { ClassSectionResponse } from "@/lib/api/types";
 
@@ -17,12 +17,16 @@ function TeacherClassStudentsPage() {
   const { classSectionId } = Route.useParams();
   const queryClient = useQueryClient();
   const cachedClass = useMemo(() => {
-    const classQueries = queryClient.getQueriesData<ClassSectionResponse[]>({ queryKey: ["teacher", "classes"] });
+    const classQueries = queryClient.getQueriesData<ClassSectionResponse[]>({
+      queryKey: ["teacher", "classes"],
+    });
     return classQueries
       .flatMap(([, data]) => data ?? [])
       .find((section) => String(section.id) === classSectionId);
   }, [classSectionId, queryClient]);
-  const title = cachedClass ? `${cachedClass.courseName} - ${cachedClass.classCode}` : "Danh sach sinh vien";
+  const title = cachedClass
+    ? `${cachedClass.courseName} - ${cachedClass.classCode}`
+    : "Danh sách sinh viên";
 
   const rosterQuery = useQuery({
     queryKey: ["teacher", "classes", classSectionId, "students"],
@@ -33,18 +37,15 @@ function TeacherClassStudentsPage() {
   });
 
   const rows = useMemo(() => {
-    return getTeacherRosterRows(
-      rosterQuery.isError ? undefined : rosterQuery.data,
-      classSectionId,
-    );
-  }, [classSectionId, rosterQuery.data, rosterQuery.isError]);
+    return getTeacherRosterRows(rosterQuery.isError ? undefined : rosterQuery.data);
+  }, [rosterQuery.data, rosterQuery.isError]);
 
   return (
     <div className="space-y-5">
       <Button asChild variant="ghost" size="sm" className="-ml-2 gap-1">
         <Link to="/teacher/classes">
           <ChevronLeft className="h-4 w-4" />
-          Quay lai
+          Quay lại
         </Link>
       </Button>
 
@@ -52,57 +53,75 @@ function TeacherClassStudentsPage() {
         title={title}
         description={
           rosterQuery.isError
-            ? "Chua tai duoc danh sach sinh vien tu backend"
-            : "Danh sach sinh vien da chot trong lop hoc phan"
+            ? "Chưa tải được danh sách sinh viên từ backend"
+            : "Danh sách sinh viên đã chốt trong lớp học phần"
         }
       />
+
+      {rosterQuery.isLoading && (
+        <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          Đang tải danh sách sinh viên...
+        </div>
+      )}
+
+      {rosterQuery.isError && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {rosterQuery.error instanceof Error
+            ? rosterQuery.error.message
+            : "Không tải được danh sách sinh viên"}
+        </div>
+      )}
 
       <DataTable
         data={rows}
         rowKey={(row) => row.enrollmentId}
         pageSize={12}
-        searchPlaceholder="Tim ma sinh vien, ho ten, lop, so dien thoai, email..."
-        emptyMessage="Chua co sinh vien nao trong lop nay"
+        searchPlaceholder="Tìm mã sinh viên, họ tên, lớp, số điện thoại, email..."
+        emptyMessage="Chưa có sinh viên nào trong lớp này"
         columns={[
           {
             key: "studentCode",
             header: "MSV",
-            render: (row) => <span className="font-mono text-xs font-semibold">{row.studentCode}</span>,
+            render: (row) => (
+              <span className="font-mono text-xs font-semibold">{row.studentCode}</span>
+            ),
           },
           {
             key: "fullName",
-            header: "Ho ten",
+            header: "Họ tên",
             render: (row) => <span className="min-w-48 font-medium">{row.fullName}</span>,
           },
           {
             key: "className",
-            header: "Lop SH",
-            render: (row) => <span className="text-sm">{row.className}</span>,
+            header: "Lớp SH",
+            render: (row) => <span className="text-sm">{row.className ?? "-"}</span>,
           },
           {
             key: "phone",
-            header: "SDT",
-            render: (row) => <span className="font-mono text-xs">{row.phone}</span>,
+            header: "SĐT",
+            render: (row) => <span className="font-mono text-xs">{row.phone ?? "-"}</span>,
           },
           {
             key: "email",
             header: "Email",
-            render: (row) => <span className="text-xs text-muted-foreground">{row.email}</span>,
+            render: (row) => (
+              <span className="text-xs text-muted-foreground">{row.email ?? "-"}</span>
+            ),
           },
           {
             key: "advisorName",
-            header: "Co van HT",
-            render: (row) => <span className="text-sm">{row.advisorName}</span>,
+            header: "Cố vấn HT",
+            render: (row) => <span className="text-sm">{row.advisorName ?? "-"}</span>,
           },
           {
             key: "majorName",
-            header: "Nganh",
-            render: (row) => <span className="text-sm">{row.majorName}</span>,
+            header: "Ngành",
+            render: (row) => <span className="text-sm">{row.majorName ?? "-"}</span>,
           },
           {
             key: "facultyName",
-            header: "Khoa hoc",
-            render: (row) => <span className="text-sm">{row.facultyName}</span>,
+            header: "Khóa học",
+            render: (row) => <span className="text-sm">{row.facultyName ?? "-"}</span>,
           },
         ]}
       />

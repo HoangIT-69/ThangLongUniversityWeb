@@ -165,7 +165,7 @@ function LoginPage() {
         <div className="relative flex h-full flex-col justify-between p-10">
           {/* Top — Logo & brand */}
           <Link to="/" className="inline-flex items-center" aria-label="Về trang chính">
-            <div className="grid h-24 w-40 place-items-center rounded-2xl bg-white/95 p-3 shadow-xl transition-transform hover:scale-[1.02]">
+            <div className="grid h-24 w-40 place-items-center rounded-2xl p-3 shadow-xl transition-transform hover:scale-[1.02]">
               <img src={schoolLogo} alt="Logo Đại học Thăng Long" className="h-full w-full object-contain" />
             </div>
           </Link>

@@ -4,12 +4,19 @@ import { useMemo } from "react";
 import { DataTable } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { StatusBadge } from "@/components/ui/status-badge";
 import {
-  getTeacherClassRows,
-} from "@/features/teacher/teacherData";
-import { useTeacherSemester, type TeacherSemesterOption } from "@/features/teacher/useTeacherSemester";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { getTeacherClassRows } from "@/features/teacher/teacherMappers";
+import {
+  useTeacherSemester,
+  type TeacherSemesterOption,
+} from "@/features/teacher/useTeacherSemester";
 import { teacherApi } from "@/lib/api/teacher";
 
 export const Route = createFileRoute("/teacher/classes")({ component: TeacherClassesRouteShell });
@@ -32,32 +39,52 @@ function TeacherClassesPage() {
   });
 
   const rows = useMemo(
-    () => getTeacherClassRows(classesQuery.isError ? undefined : classesQuery.data, semesterId),
-    [classesQuery.data, classesQuery.isError, semesterId],
+    () => getTeacherClassRows(classesQuery.isError ? undefined : classesQuery.data),
+    [classesQuery.data, classesQuery.isError],
   );
 
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Lop hoc phan dang day"
+        title="Lớp học phần đang dạy"
         description={
           classesQuery.isError
-            ? "Chua tai duoc du lieu lop hoc tu backend"
-            : "Danh sach lop hoc phan duoc phan cong theo hoc ky"
+            ? "Chưa tải được dữ liệu lớp học từ backend"
+            : "Danh sách lớp học phần được phân công theo học kỳ"
         }
       />
+
+      {classesQuery.isLoading && (
+        <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          Đang tải danh sách lớp học phần...
+        </div>
+      )}
+
+      {classesQuery.isError && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {classesQuery.error instanceof Error
+            ? classesQuery.error.message
+            : "Không tải được danh sách lớp học phần"}
+        </div>
+      )}
 
       <DataTable
         data={rows}
         rowKey={(row) => row.id}
-        toolbar={<SemesterFilter value={semesterId} options={semesterOptions} onValueChange={setSemesterId} />}
+        toolbar={
+          <SemesterFilter
+            value={semesterId}
+            options={semesterOptions}
+            onValueChange={setSemesterId}
+          />
+        }
         pageSize={10}
-        searchPlaceholder="Tim ma lop, mon hoc, phong..."
-        emptyMessage="Chua co lop hoc phan nao trong hoc ky nay"
+        searchPlaceholder="Tìm mã lớp, môn học, phòng..."
+        emptyMessage="Chưa có lớp học phần nào trong học kỳ này"
         columns={[
           {
             key: "classCode",
-            header: "Ma lop",
+            header: "Mã lớp",
             render: (row) => (
               <div>
                 <span className="font-mono text-xs font-semibold">{row.classCode}</span>
@@ -66,19 +93,19 @@ function TeacherClassesPage() {
           },
           {
             key: "courseName",
-            header: "Mon hoc",
+            header: "Môn học",
             render: (row) => (
               <div className="min-w-56">
                 <div className="font-medium">{row.courseName}</div>
                 <div className="text-xs text-muted-foreground">
-                  {row.courseCode} - {row.credits} tin chi
+                  {row.courseCode} - {row.credits} tín chỉ
                 </div>
               </div>
             ),
           },
           {
             key: "scheduleRoomItems",
-            header: "Lich hoc / Phong",
+            header: "Lịch học / Phòng",
             accessor: (row) => row.scheduleRoomItems.join(" "),
             render: (row) => (
               <div className="min-w-72 space-y-1">
@@ -92,17 +119,17 @@ function TeacherClassesPage() {
           },
           {
             key: "size",
-            header: "Si so",
+            header: "Sĩ số",
             accessor: (row) => `${row.currentSlots}/${row.maxSlots}`,
             render: (row) => (
               <span className="tabular-nums">
-                {row.currentSlots}/{row.maxSlots}
+                {row.currentSlots ?? "-"}/{row.maxSlots ?? "-"}
               </span>
             ),
           },
           {
             key: "status",
-            header: "Lop",
+            header: "Lớp",
             render: (row) => <StatusBadge value={row.status} />,
           },
           {
@@ -121,7 +148,7 @@ function TeacherClassesPage() {
                   })
                 }
               >
-                Xem SV
+                Xem sinh viên
               </Button>
             ),
           },
@@ -143,7 +170,7 @@ function SemesterFilter({
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className="w-[280px]">
-        <SelectValue placeholder="Chon hoc ky" />
+        <SelectValue placeholder="Chọn học kỳ" />
       </SelectTrigger>
       <SelectContent>
         {options.map((semester) => (

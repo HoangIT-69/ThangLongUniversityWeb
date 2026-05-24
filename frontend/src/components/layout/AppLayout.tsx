@@ -1,24 +1,54 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Award,
+  BarChart3,
+  Bell,
+  BookCheck,
+  BookMarked,
+  BookOpen,
+  CalendarCheck,
+  CalendarDays,
+  ClipboardList,
+  Clock,
+  DoorOpen,
+  Globe,
+  GraduationCap,
+  Layers,
+  LayoutDashboard,
+  Library,
+  LogOut,
+  Menu,
+  MessageSquare,
+  NotebookPen,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Receipt,
+  Repeat,
+  User,
+  UserCog,
+  Users,
+} from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/api/types";
-import {
-  LayoutDashboard, Users, GraduationCap, UserCog, BookOpen, Library, CalendarDays, DoorOpen,
-  Clock, Layers, ClipboardList, BarChart3, MessageSquare, LogOut,
-  CalendarCheck, Receipt, Award, NotebookPen, BookCheck, User, Globe, Repeat, BookMarked,
-  Bell, Menu, PanelLeftClose, PanelLeftOpen,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState, type ReactNode } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
 import {
   type AppNotification,
   listNotifications,
   markNotificationRead,
 } from "@/lib/api/notifications";
+import { cn } from "@/lib/utils";
 
 type Item = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 type NavGroup = { heading: string; items: Item[] };
@@ -27,8 +57,8 @@ const adminNavGroups: NavGroup[] = [
   {
     heading: "Tổng quan",
     items: [
-      { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/admin/landing", label: "Landing Page", icon: Globe },
+      { to: "/admin/dashboard", label: "Bảng điều khiển", icon: LayoutDashboard },
+      { to: "/admin/landing", label: "Trang giới thiệu", icon: Globe },
     ],
   },
   {
@@ -54,9 +84,7 @@ const adminNavGroups: NavGroup[] = [
   },
   {
     heading: "Hệ thống",
-    items: [
-      { to: "/admin/profile", label: "Hồ sơ cá nhân", icon: User },
-    ],
+    items: [{ to: "/admin/profile", label: "Hồ sơ cá nhân", icon: User }],
   },
 ];
 
@@ -64,7 +92,7 @@ const teacherNavGroups: NavGroup[] = [
   {
     heading: "Tổng quan",
     items: [
-      { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/teacher/dashboard", label: "Bảng điều khiển", icon: LayoutDashboard },
       { to: "/teacher/profile", label: "Hồ sơ cá nhân", icon: User },
     ],
   },
@@ -81,7 +109,7 @@ const studentNavGroups: NavGroup[] = [
   {
     heading: "Tổng quan",
     items: [
-      { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/student/dashboard", label: "Bảng điều khiển", icon: LayoutDashboard },
       { to: "/student/profile", label: "Hồ sơ cá nhân", icon: User },
     ],
   },
@@ -117,8 +145,16 @@ function notificationTarget(item: AppNotification, role: Role) {
   return item.link || (role === "STUDENT" ? "/student/notifications" : "");
 }
 
-function NavItem({ item, pathname, onNavigate }: { item: Item; pathname: string; onNavigate?: () => void }) {
-  const active = pathname === item.to || pathname.startsWith(item.to + "/");
+function NavItem({
+  item,
+  pathname,
+  onNavigate,
+}: {
+  item: Item;
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
   return (
     <Link
       to={item.to}
@@ -136,7 +172,15 @@ function NavItem({ item, pathname, onNavigate }: { item: Item; pathname: string;
   );
 }
 
-function GroupedNavList({ groups, pathname, onNavigate }: { groups: NavGroup[]; pathname: string; onNavigate?: () => void }) {
+function GroupedNavList({
+  groups,
+  pathname,
+  onNavigate,
+}: {
+  groups: NavGroup[];
+  pathname: string;
+  onNavigate?: () => void;
+}) {
   return (
     <nav className="flex flex-col gap-4 px-3 py-3">
       {groups.map((group) => (
@@ -145,7 +189,9 @@ function GroupedNavList({ groups, pathname, onNavigate }: { groups: NavGroup[]; 
             {group.heading}
           </div>
           <div className="flex flex-col gap-0.5">
-            {group.items.map((it) => <NavItem key={it.to} item={it} pathname={pathname} onNavigate={onNavigate} />)}
+            {group.items.map((item) => (
+              <NavItem key={item.to} item={item} pathname={pathname} onNavigate={onNavigate} />
+            ))}
           </div>
         </div>
       ))}
@@ -155,7 +201,9 @@ function GroupedNavList({ groups, pathname, onNavigate }: { groups: NavGroup[]; 
 
 function SidebarInner({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   const { role } = useAuth();
-  const navGroups = role === "ADMIN" ? adminNavGroups : role === "TEACHER" ? teacherNavGroups : studentNavGroups;
+  const navGroups =
+    role === "ADMIN" ? adminNavGroups : role === "TEACHER" ? teacherNavGroups : studentNavGroups;
+
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <Link
@@ -164,18 +212,24 @@ function SidebarInner({ pathname, onNavigate }: { pathname: string; onNavigate?:
         className="flex items-center gap-3 border-b border-sidebar-border px-5 py-4 transition-colors hover:bg-sidebar-accent/70"
       >
         <span className="grid h-12 w-12 place-items-center rounded-md bg-white/95 p-1 shadow-sm">
-          <img src={schoolLogo} alt="Logo Thang Long University" className="h-full w-full object-contain" />
+          <img
+            src={schoolLogo}
+            alt="Logo Đại học Thăng Long"
+            className="h-full w-full object-contain"
+          />
         </span>
         <div className="leading-tight">
-          <div className="text-sm font-semibold">Thang Long</div>
-          <div className="text-xs text-sidebar-foreground/60">University Portal</div>
+          <div className="text-sm font-semibold">Thăng Long</div>
+          <div className="text-xs text-sidebar-foreground/60">Cổng thông tin</div>
         </div>
       </Link>
       <div className="flex-1 overflow-y-auto">
-        {role ? <GroupedNavList groups={navGroups} pathname={pathname} onNavigate={onNavigate} /> : null}
+        {role ? (
+          <GroupedNavList groups={navGroups} pathname={pathname} onNavigate={onNavigate} />
+        ) : null}
       </div>
       <div className="border-t border-sidebar-border px-4 py-3 text-[11px] text-sidebar-foreground/50">
-        © {new Date().getFullYear()} Thang Long University
+        © {new Date().getFullYear()} Đại học Thăng Long
       </div>
     </div>
   );
@@ -185,7 +239,7 @@ function RoleSwitcher() {
   const { role } = useAuth();
   return (
     <Button variant="outline" size="sm" className="gap-2" disabled>
-      <span className="hidden sm:inline">Role:</span>
+      <span className="hidden sm:inline">Vai trò:</span>
       <span className="font-semibold capitalize">{role?.toLowerCase()}</span>
     </Button>
   );
@@ -195,11 +249,11 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
   const parts = pathname.split("/").filter(Boolean);
   return (
     <div className="hidden items-center gap-1 text-sm text-muted-foreground md:flex">
-      {parts.map((p, i) => (
-        <span key={i} className="flex items-center gap-1">
-          {i > 0 && <span className="text-muted-foreground/40">/</span>}
-          <span className={cn(i === parts.length - 1 && "font-medium text-foreground")}>
-            {p.replace(/-/g, " ")}
+      {parts.map((part, index) => (
+        <span key={index} className="flex items-center gap-1">
+          {index > 0 && <span className="text-muted-foreground/40">/</span>}
+          <span className={cn(index === parts.length - 1 && "font-medium text-foreground")}>
+            {part.replace(/-/g, " ")}
           </span>
         </span>
       ))}
@@ -208,14 +262,20 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
 }
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { name, role, logout } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
 
-  const initials = (name ?? "?").split(" ").slice(-2).map((s) => s[0]).join("").toUpperCase();
+  const initials = (name ?? "?")
+    .split(" ")
+    .slice(-2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
   const notificationsQuery = useQuery({
     queryKey: [role?.toLowerCase(), "notifications"],
     queryFn: () => listNotifications(role === "TEACHER" ? "TEACHER" : "STUDENT"),
@@ -223,11 +283,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
     refetchInterval: role === "STUDENT" || role === "TEACHER" ? 30000 : false,
   });
   const notificationItems = notificationsQuery.data ?? [];
-  const unreadCount = notificationItems.filter((n) => !n.read).length;
+  const unreadCount = notificationItems.filter((item) => !item.read).length;
 
   const markReadMutation = useMutation({
-    mutationFn: (id: string) => markNotificationRead(id, role === "TEACHER" ? "TEACHER" : "STUDENT"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [role?.toLowerCase(), "notifications"] }),
+    mutationFn: (id: string) =>
+      markNotificationRead(id, role === "TEACHER" ? "TEACHER" : "STUDENT"),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [role?.toLowerCase(), "notifications"] }),
   });
 
   const openNotification = async (item: AppNotification) => {
@@ -253,7 +315,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full bg-muted/30">
-      <aside className={cn("sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border lg:block", !desktopSidebarOpen && "lg:hidden")}>
+      <aside
+        className={cn(
+          "sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border lg:block",
+          !desktopSidebarOpen && "lg:hidden",
+        )}
+      >
         <SidebarInner pathname={pathname} />
       </aside>
 
@@ -261,7 +328,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur md:px-6">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden">
+              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Mở menu">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
@@ -275,9 +342,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
             size="icon"
             className="hidden h-9 w-9 lg:inline-flex"
             onClick={() => setDesktopSidebarOpen((value) => !value)}
-            title={desktopSidebarOpen ? "An sidebar" : "Hien sidebar"}
+            title={desktopSidebarOpen ? "Ẩn thanh bên" : "Hiện thanh bên"}
           >
-            {desktopSidebarOpen ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+            {desktopSidebarOpen ? (
+              <PanelLeftClose className="h-5 w-5" />
+            ) : (
+              <PanelLeftOpen className="h-5 w-5" />
+            )}
           </Button>
 
           <Breadcrumbs pathname={pathname} />
@@ -285,62 +356,92 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <div className="ml-auto flex items-center gap-2">
             {role && (
               <Link to={chatByRole[role]}>
-                <Button variant="ghost" size="icon" className="h-9 w-9" title="Chat">
+                <Button variant="ghost" size="icon" className="h-9 w-9" title="Trò chuyện">
                   <MessageSquare className="h-5 w-5" />
                 </Button>
               </Link>
             )}
+
             {(role === "STUDENT" || role === "TEACHER") && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative h-9 w-9" title="Thông báo">
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-9 w-9"
+                    title="Thông báo"
+                  >
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
-                  <DropdownMenuLabel>Thong bao</DropdownMenuLabel>
+                  <DropdownMenuLabel>Thông báo</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {notificationsQuery.isLoading ? (
-                    <div className="px-3 py-4 text-sm text-muted-foreground">Dang tai thong bao...</div>
+                    <div className="px-3 py-4 text-sm text-muted-foreground">
+                      Đang tải thông báo...
+                    </div>
                   ) : notificationItems.length === 0 ? (
-                    <div className="px-3 py-4 text-sm text-muted-foreground">Khong co thong bao moi.</div>
-                  ) : notificationItems.slice(0, 4).map((item) => (
-                    <DropdownMenuItem
-                      key={item.id}
-                      className="flex cursor-pointer items-start gap-3 py-3"
-                      onClick={() => void openNotification(item)}
-                    >
-                      <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", item.read ? "bg-muted-foreground/30" : "bg-primary")} />
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium">{item.title}</span>
-                        <span className="line-clamp-2 text-xs text-muted-foreground">{item.body}</span>
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
+                    <div className="px-3 py-4 text-sm text-muted-foreground">
+                      Không có thông báo mới.
+                    </div>
+                  ) : (
+                    notificationItems.slice(0, 4).map((item) => (
+                      <DropdownMenuItem
+                        key={item.id}
+                        className="flex cursor-pointer items-start gap-3 py-3"
+                        onClick={() => void openNotification(item)}
+                      >
+                        <span
+                          className={cn(
+                            "mt-1 h-2 w-2 shrink-0 rounded-full",
+                            item.read ? "bg-muted-foreground/30" : "bg-primary",
+                          )}
+                        />
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium">{item.title}</span>
+                          <span className="line-clamp-2 text-xs text-muted-foreground">
+                            {item.body}
+                          </span>
+                        </span>
+                      </DropdownMenuItem>
+                    ))
+                  )}
                   {role === "STUDENT" && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate({ to: "/student/notifications" })} className="cursor-pointer justify-center text-sm font-medium">
-                        Xem chi tiet
+                      <DropdownMenuItem
+                        onClick={() => navigate({ to: "/student/notifications" })}
+                        className="cursor-pointer justify-center text-sm font-medium"
+                      >
+                        Xem chi tiết
                       </DropdownMenuItem>
                     </>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+
             <RoleSwitcher />
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 gap-2 px-2">
-                  <Avatar className="h-7 w-7"><AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback></Avatar>
+                  <Avatar className="h-7 w-7">
+                    <AvatarFallback className="bg-primary text-xs text-primary-foreground">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="hidden text-left leading-tight md:block">
                     <div className="text-xs font-medium">{name}</div>
-                    <div className="text-[10px] text-muted-foreground capitalize">{role?.toLowerCase()}</div>
+                    <div className="text-[10px] text-muted-foreground capitalize">
+                      {role?.toLowerCase()}
+                    </div>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
@@ -348,7 +449,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuLabel>{name}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" /> Đăng xuất
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Đăng xuất
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

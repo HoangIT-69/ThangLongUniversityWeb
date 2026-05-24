@@ -12,7 +12,7 @@ export function ProtectedOutlet({ role }: { role: Role }) {
       <div className="grid min-h-screen place-items-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Dang xac thuc...</p>
+          <p className="text-sm text-muted-foreground">Đang xác thực...</p>
         </div>
       </div>
     );
@@ -20,7 +20,12 @@ export function ProtectedOutlet({ role }: { role: Role }) {
 
   if (!current) return <Navigate to="/login" />;
   if (current !== role) {
-    const to = current === "ADMIN" ? "/admin/dashboard" : current === "TEACHER" ? "/teacher/dashboard" : "/student/dashboard";
+    const to =
+      current === "ADMIN"
+        ? "/admin/dashboard"
+        : current === "TEACHER"
+          ? "/teacher/dashboard"
+          : "/student/dashboard";
     return <Navigate to={to} />;
   }
   return (

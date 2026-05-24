@@ -5,7 +5,10 @@ import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import type { ClassSectionResponse } from "@/lib/api/types";
 import { teacherApi } from "@/lib/api/teacher";
-import { useTeacherSemester, type TeacherSemesterOption } from "@/features/teacher/useTeacherSemester";
+import {
+  useTeacherSemester,
+  type TeacherSemesterOption,
+} from "@/features/teacher/useTeacherSemester";
 import {
   Select,
   SelectContent,
@@ -17,12 +20,12 @@ import {
 export const Route = createFileRoute("/teacher/timetable")({ component: TeacherTimetablePage });
 
 const dayLabels: Record<number, string> = {
-  2: "Thu 2",
-  3: "Thu 3",
-  4: "Thu 4",
-  5: "Thu 5",
-  6: "Thu 6",
-  7: "Thu 7",
+  2: "Thứ 2",
+  3: "Thứ 3",
+  4: "Thứ 4",
+  5: "Thứ 5",
+  6: "Thứ 6",
+  7: "Thứ 7",
   8: "CN",
 };
 
@@ -110,8 +113,8 @@ function TeacherTimetablePage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Thoi khoa bieu"
-        description="Lich day cua giang vien theo hoc ky, phong hoc va tiet hoc"
+        title="Thời khóa biểu"
+        description="Lịch dạy của giảng viên theo học kỳ, phòng học và tiết học"
         actions={
           <SemesterFilter
             value={semesterId}
@@ -133,7 +136,7 @@ function TeacherTimetablePage() {
           <thead>
             <tr className="bg-muted/40">
               <th className="border-b p-2 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                Tiet
+                Tiết
               </th>
               {days.map((day) => (
                 <th
@@ -145,7 +148,7 @@ function TeacherTimetablePage() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span>{dayLabels[day]}</span>
-                    {day === todayDayOfWeek && <Badge className="shrink-0">Hom nay</Badge>}
+                    {day === todayDayOfWeek && <Badge className="shrink-0">Hôm nay</Badge>}
                   </div>
                 </th>
               ))}
@@ -155,7 +158,7 @@ function TeacherTimetablePage() {
             {periods.map((period) => (
               <tr key={period.index}>
                 <td className="border-b p-2 align-top">
-                  <div className="font-semibold">Tiet {period.index}</div>
+                  <div className="font-semibold">Tiết {period.index}</div>
                   <div className="text-[10px] tabular-nums text-muted-foreground">
                     {period.start}-{period.end}
                   </div>
@@ -176,16 +179,18 @@ function TeacherTimetablePage() {
                     >
                       {cell && (
                         <div className="flex h-full min-h-16 w-full max-w-full flex-col overflow-hidden rounded-md border border-primary/30 bg-card p-2 text-xs leading-tight shadow-sm">
-                          <div className="truncate font-semibold text-primary">{cell.courseName}</div>
+                          <div className="truncate font-semibold text-primary">
+                            {cell.courseName}
+                          </div>
                           <div className="font-mono text-[10px] text-muted-foreground">
                             {cell.classCode} - {cell.courseCode}
                           </div>
                           <div className="mt-1 text-muted-foreground">Phòng: {cell.roomName}</div>
                           <div className="text-[10px] text-muted-foreground">
-                            So tiet: {cell.lessonCount}
+                            Số tiết: {cell.lessonCount}
                           </div>
                           <div className="text-[10px] text-muted-foreground">
-                            Tiet: {cell.periodRange}
+                            Tiết: {cell.periodRange}
                           </div>
                           {cell.startTime && (
                             <div className="text-[10px] text-muted-foreground">
@@ -205,19 +210,23 @@ function TeacherTimetablePage() {
       </div>
 
       {classesQuery.isLoading && (
-        <div className="text-sm text-muted-foreground">Dang tai thoi khoa bieu...</div>
+        <div className="text-sm text-muted-foreground">Đang tải thời khóa biểu...</div>
       )}
       {!classesQuery.isLoading && !classesQuery.isError && semesterId && !hasSchedule && (
-        <div className="text-sm text-muted-foreground">Chua co lich day trong hoc ky nay.</div>
+        <div className="text-sm text-muted-foreground">Chưa có lịch dạy trong học kỳ này.</div>
       )}
       {classesQuery.isError && (
         <div className="text-sm text-destructive">
-          {classesQuery.error instanceof Error ? classesQuery.error.message : "Khong tai duoc thoi khoa bieu"}
+          {classesQuery.error instanceof Error
+            ? classesQuery.error.message
+            : "Không tải được thời khóa biểu"}
         </div>
       )}
       {semestersQuery.isError && (
         <div className="text-sm text-destructive">
-          {semestersQuery.error instanceof Error ? semestersQuery.error.message : "Khong tai duoc danh sach hoc ky"}
+          {semestersQuery.error instanceof Error
+            ? semestersQuery.error.message
+            : "Không tải được danh sách học kỳ"}
         </div>
       )}
     </div>
@@ -238,7 +247,7 @@ function SemesterFilter({
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger className="w-[280px]">
-        <SelectValue placeholder="Chon hoc ky" />
+        <SelectValue placeholder="Chọn học kỳ" />
       </SelectTrigger>
       <SelectContent>
         {options.map((semester) => (
