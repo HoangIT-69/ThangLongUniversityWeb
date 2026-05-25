@@ -1,7 +1,14 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { articleApi } from "@/lib/api/articles";
-import { ChevronRight, Clock, Eye, Facebook, Twitter, ArrowLeft } from "lucide-react";
+import {
+  ChevronRight,
+  Clock,
+  Eye,
+  Facebook,
+  Twitter,
+  ArrowLeft,
+} from "lucide-react";
 
 const SITE = "https://academe-view-pro.lovable.app";
 
@@ -32,9 +39,7 @@ function ArticleDetailPage() {
   if (!article) {
     return (
       <div className="flex min-h-screen flex-col bg-white">
-        <Breadcrumb
-          items={[{ label: "Tin tức & Sự kiện", to: "/articles" }, { label: "Không tìm thấy" }]}
-        />
+        <Breadcrumb items={[{ label: "Tin tức & Sự kiện", to: "/articles" }, { label: "Không tìm thấy" }]} />
         <div className="mx-auto flex max-w-4xl flex-1 flex-col items-center justify-center gap-4 px-4 py-24 text-center">
           <div className="text-6xl font-black text-[#C8102E]">404</div>
           <h1 className="text-2xl font-bold text-[#00204A]">Bài viết không tồn tại</h1>
@@ -47,6 +52,7 @@ function ArticleDetailPage() {
             Quay lại trang tin tức
           </Link>
         </div>
+        <TluFooter />
       </div>
     );
   }
@@ -67,7 +73,7 @@ function ArticleDetailPage() {
   const pageUrl = `${SITE}/articles/${article.slug}`;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F8FAFC] font-sans text-slate-900">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
       {/* ── Top brand bar ── */}
       <div className="h-1 w-full bg-gradient-to-r from-[#00204A] via-[#C8102E] to-[#00204A]" />
 
@@ -85,8 +91,9 @@ function ArticleDetailPage() {
       </div>
 
       {/* ── Main content: 2 cols = Title | Body ── */}
-      <main className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-10 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-screen-2xl px-4 py-10 sm:px-6 lg:px-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_2fr]">
+
           {/* ── Left col: Title block ── */}
           <div className="lg:sticky lg:top-6 lg:self-start">
             {/* Category badge */}
@@ -102,9 +109,7 @@ function ArticleDetailPage() {
             {/* Date + author */}
             <div className="mt-5 flex items-center gap-1.5 text-sm text-slate-500">
               <span className="h-4 w-0.5 rounded-full bg-[#C8102E]" />
-              <time dateTime={article.publishedAt} title={longDate}>
-                {formattedDate}
-              </time>
+              <time dateTime={article.publishedAt} title={longDate}>{formattedDate}</time>
             </div>
             <div className="mt-1 text-sm font-medium text-slate-600">{article.author.name}</div>
 
@@ -232,7 +237,10 @@ function ArticleDetailPage() {
             />
           </article>
         </div>
-      </main>
+      </div>
+
+      {/* ── Footer ── */}
+      <TluFooter />
 
       {/* Article body styles */}
       <style>{`
@@ -261,12 +269,13 @@ function ArticleDetailPage() {
 
 /* ── Breadcrumb ─────────────────────────────────────────────────────── */
 
-function Breadcrumb({ items }: { items: { label: string; to?: string }[] }) {
+function Breadcrumb({
+  items,
+}: {
+  items: { label: string; to?: string }[];
+}) {
   return (
-    <nav
-      aria-label="Breadcrumb"
-      className="flex flex-wrap items-center gap-1 text-xs text-slate-500"
-    >
+    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-slate-500">
       {items.map((item, i) => {
         const isLast = i === items.length - 1;
         return (
@@ -281,7 +290,9 @@ function Breadcrumb({ items }: { items: { label: string; to?: string }[] }) {
               </Link>
             ) : (
               <span
-                className={`max-w-[240px] truncate ${isLast ? "font-semibold text-[#00204A]" : ""}`}
+                className={`max-w-[240px] truncate ${
+                  isLast ? "font-semibold text-[#00204A]" : ""
+                }`}
               >
                 {item.label}
               </span>
@@ -297,14 +308,14 @@ function Breadcrumb({ items }: { items: { label: string; to?: string }[] }) {
 
 function ArticleDetailSkeleton() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <div className="h-1 w-full bg-gradient-to-r from-[#00204A] via-[#C8102E] to-[#00204A]" />
       <div className="border-b border-slate-100 bg-white">
         <div className="mx-auto max-w-screen-2xl px-4 py-2.5 sm:px-6 lg:px-10">
           <div className="h-3 w-64 animate-pulse rounded bg-slate-200" />
         </div>
       </div>
-      <div className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-8 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-screen-2xl px-4 py-8 sm:px-6 lg:px-10">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_300px]">
           <div>
             <div className="overflow-hidden rounded-xl bg-white shadow-sm">
@@ -331,3 +342,59 @@ function ArticleDetailSkeleton() {
 }
 
 /* ── TLU Footer ─────────────────────────────────────────────────────── */
+
+function TluFooter() {
+  return (
+    <footer className="mt-12 border-t border-slate-200 bg-[#00204A] text-white">
+      <div className="mx-auto max-w-screen-2xl px-4 py-10 sm:px-6 lg:px-10">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          <div>
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-sm font-black text-[#C8102E]">
+                TLU
+              </div>
+              <div>
+                <div className="font-bold">Đại học Thăng Long</div>
+                <div className="text-xs text-white/60">Thang Long University</div>
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed text-white/70">
+              Trường đại học ngoài công lập đầu tiên của Việt Nam, thành lập năm 1988.
+            </p>
+          </div>
+          <div>
+            <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-white/50">Liên hệ</h4>
+            <ul className="space-y-1.5 text-sm text-white/70">
+              <li>Đường Nghiêm Xuân Yêm, Đại Kim, Hoàng Mai, Hà Nội</li>
+              <li>📞 024 3858 7346</li>
+              <li>✉️ daotao@thanglong.edu.vn</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-white/50">Truy cập nhanh</h4>
+            <ul className="space-y-1.5 text-sm">
+              <li>
+                <Link to="/" className="text-white/70 transition hover:text-white">
+                  Trang chủ
+                </Link>
+              </li>
+              <li>
+                <Link to="/articles" className="text-white/70 transition hover:text-white">
+                  Tin tức & Sự kiện
+                </Link>
+              </li>
+              <li>
+                <Link to="/login" className="text-white/70 transition hover:text-white">
+                  Đăng nhập Portal
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="mt-8 border-t border-white/10 pt-5 text-center text-xs text-white/40">
+          © {new Date().getFullYear()} Trường Đại học Thăng Long. Bảo lưu mọi quyền. · Mã trường: DTL
+        </div>
+      </div>
+    </footer>
+  );
+}
