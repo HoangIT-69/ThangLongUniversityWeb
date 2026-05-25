@@ -1,81 +1,182 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { PageHeader, StatCard } from "@/components/ui/page-header";
-import { students, teachers, courses, classSections, enrollments, tuitionInvoices, semesters, formatDateTime, getStudent, getClassSection, getCourse } from "@/data/mock";
-import { Users, GraduationCap, BookOpen, Layers, ClipboardList, Receipt } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { adminApi } from "@/lib/api/admin";
+import { Users, GraduationCap, BookOpen, Layers, ClipboardList } from "lucide-react";
 
 export const Route = createFileRoute("/admin/dashboard")({ component: AdminDashboard });
 
 function AdminDashboard() {
-  const pending = enrollments.filter((e) => e.status === "PENDING").length;
-  const unpaid = tuitionInvoices.filter((i) => i.status !== "PAID").length;
-  const recent = enrollments.slice(0, 6);
-  const currentSem = semesters.find((s) => s.status === "OPEN")!;
+  const studentsQuery = useQuery({
+    queryKey: ["admin", "students"],
+    queryFn: adminApi.listStudents,
+    staleTime: 5 * 60 * 1000,
+  });
+  const teachersQuery = useQuery({
+    queryKey: ["admin", "teachers"],
+    queryFn: adminApi.listTeachers,
+    staleTime: 5 * 60 * 1000,
+  });
+  const coursesQuery = useQuery({
+    queryKey: ["admin", "courses"],
+    queryFn: adminApi.listCourses,
+    staleTime: 5 * 60 * 1000,
+  });
+  const classSectionsQuery = useQuery({
+    queryKey: ["admin", "class-sections"],
+    queryFn: adminApi.listClassSections,
+    staleTime: 60 * 1000,
+  });
+  const semestersQuery = useQuery({
+    queryKey: ["admin", "semesters"],
+    queryFn: adminApi.listSemesters,
+    staleTime: 5 * 60 * 1000,
+  });
+  const enrollmentsQuery = useQuery({
+    queryKey: ["admin", "enrollments", { page: 0, size: 10 }],
+    queryFn: () => adminApi.searchEnrollments({ page: 0, size: 10 }),
+    staleTime: 60 * 1000,
+  });
+
+  const students = studentsQuery.data ?? [];
+  const teachers = teachersQuery.data ?? [];
+  const courses = coursesQuery.data ?? [];
+  const sections = classSectionsQuery.data ?? [];
+  const semesters = semestersQuery.data ?? [];
+  const recentEnrollments = enrollmentsQuery.data?.content ?? [];
+
+  const openSections = sections.filter((s) => !s.closed).length;
+  const currentSemester = semesters.find((s) => s.registrationOpen && !s.locked) ?? semesters[0];
+
+  const isLoading = studentsQuery.isPending || teachersQuery.isPending;
+
+  if (isLoading) return <DashboardSkeleton />;
 
   return (
     <div>
       <PageHeader
         title="Tổng quan hệ thống"
-        description={`Học kỳ hiện tại: ${currentSem.name}`}
+        description={currentSemester ? `Học kỳ hiện tại: ${currentSemester.name}` : "Quản trị hệ thống"}
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Sinh viên" value={students.length.toLocaleString()} icon={GraduationCap} tone="primary" hint="Đang hoạt động" />
-        <StatCard label="Giảng viên" value={teachers.length} icon={Users} tone="info" />
-        <StatCard label="Môn học" value={courses.length} icon={BookOpen} tone="success" />
-        <StatCard label="Lớp học phần" value={classSections.length} icon={Layers} tone="warning" hint={`${classSections.filter((c) => c.status === "OPEN").length} đang mở`} />
-        <StatCard label="Đăng ký chờ" value={pending} icon={ClipboardList} tone="warning" />
-        <StatCard label="Hóa đơn chưa TT" value={unpaid} icon={Receipt} tone="destructive" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
+        <StatCard
+          label="Sinh viên"
+          value={studentsQuery.isPending ? "..." : students.length.toLocaleString()}
+          icon={GraduationCap}
+          tone="primary"
+          hint="Trong hệ thống"
+        />
+        <StatCard
+          label="Giảng viên"
+          value={teachersQuery.isPending ? "..." : teachers.length}
+          icon={Users}
+          tone="info"
+        />
+        <StatCard
+          label="Môn học"
+          value={coursesQuery.isPending ? "..." : courses.length}
+          icon={BookOpen}
+          tone="success"
+        />
+        <StatCard
+          label="Lớp học phần"
+          value={classSectionsQuery.isPending ? "..." : sections.length}
+          icon={Layers}
+          tone="warning"
+          hint={`${openSections} đang mở`}
+        />
+        <StatCard
+          label="Học kỳ"
+          value={semestersQuery.isPending ? "..." : semesters.length}
+          icon={ClipboardList}
+          tone="info"
+        />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-xl border bg-card p-5 shadow-sm lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold">Đăng ký gần đây</h2>
-            <span className="text-xs text-muted-foreground">{recent.length} mục</span>
+            <span className="text-xs text-muted-foreground">
+              {enrollmentsQuery.data?.totalElements ?? 0} tổng
+            </span>
           </div>
-          <ul className="divide-y">
-            {recent.map((e) => {
-              const s = getStudent(e.studentId);
-              const cs = getClassSection(e.classSectionId);
-              const c = getCourse(cs.courseId);
-              return (
-                <li key={e.id} className="flex items-center justify-between gap-3 py-3 text-sm">
+          {enrollmentsQuery.isPending ? (
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          ) : enrollmentsQuery.isError ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              Không tải được danh sách đăng ký
+            </div>
+          ) : recentEnrollments.length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              Chưa có đăng ký nào
+            </div>
+          ) : (
+            <ul className="divide-y">
+              {recentEnrollments.map((e) => (
+                <li key={e.enrollmentId} className="flex items-center justify-between gap-3 py-3 text-sm">
                   <div className="min-w-0">
-                    <div className="truncate font-medium">{s.fullName} <span className="text-muted-foreground">— {s.code}</span></div>
-                    <div className="truncate text-xs text-muted-foreground">{c.code} · {c.name} · {cs.code}</div>
+                    <div className="truncate font-medium">
+                      {e.studentName}{" "}
+                      <span className="text-muted-foreground">— {e.studentCode}</span>
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {e.courseName} · {e.classCode}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="hidden md:inline">{formatDateTime(e.enrolledAt)}</span>
-                    <StatusBadge value={e.status} />
-                  </div>
+                  <StatusBadge value={e.status ?? "PENDING"} />
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="rounded-xl border bg-card p-5 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold">Phân bổ theo học kỳ</h2>
-          <ul className="space-y-3">
-            {semesters.map((s) => {
-              const enr = enrollments.filter((e) => e.semesterId === s.id).length;
-              const pct = Math.min(100, enr * 10);
-              return (
+          <h2 className="mb-4 text-sm font-semibold">Học kỳ</h2>
+          {semestersQuery.isPending ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-8 w-full" />
+              ))}
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {semesters.slice(0, 5).map((s) => (
                 <li key={s.id}>
                   <div className="flex justify-between text-xs">
                     <span className="font-medium">{s.name}</span>
-                    <span className="text-muted-foreground">{enr} đăng ký</span>
+                    <StatusBadge value={s.registrationOpen ? "OPEN" : s.locked ? "LOCKED" : "CLOSED"} />
                   </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {s.startDate ?? "—"} – {s.endDate ?? "—"}
                   </div>
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-12 w-64" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 w-full" />
+        ))}
+      </div>
+      <Skeleton className="h-64 w-full" />
     </div>
   );
 }

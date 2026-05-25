@@ -24,8 +24,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "Thang Long University — Portal" },
       { property: "og:description", content: "Hệ thống quản lý Trường Đại học Thăng Long." },
       { name: "twitter:description", content: "Hệ thống quản lý Trường Đại học Thăng Long." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4685982b-36cb-4bb8-88d8-2fbd1cab1da5/id-preview-64102f14--71421b7c-9016-4391-b6d1-476667aef3e6.lovable.app-1779018363785.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4685982b-36cb-4bb8-88d8-2fbd1cab1da5/id-preview-64102f14--71421b7c-9016-4391-b6d1-476667aef3e6.lovable.app-1779018363785.png" },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4685982b-36cb-4bb8-88d8-2fbd1cab1da5/id-preview-64102f14--71421b7c-9016-4391-b6d1-476667aef3e6.lovable.app-1779018363785.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4685982b-36cb-4bb8-88d8-2fbd1cab1da5/id-preview-64102f14--71421b7c-9016-4391-b6d1-476667aef3e6.lovable.app-1779018363785.png",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
@@ -38,7 +46,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       <div>
         <h1 className="text-6xl font-bold text-primary">404</h1>
         <p className="mt-2 text-muted-foreground">Trang không tồn tại.</p>
-        <a href="/" className="mt-4 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Về trang chủ</a>
+        <a
+          href="/"
+          className="mt-4 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
+          Về trang chủ
+        </a>
       </div>
     </div>
   ),
@@ -47,7 +60,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="vi">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />

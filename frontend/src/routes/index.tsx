@@ -7,11 +7,10 @@ export const Route = createFileRoute("/")({
   component: ThangLongLanding,
   head: () => ({
     meta: [
-      { title: "Đại học Thăng Long - Chất riêng Thăng Long" },
+      { title: "Đại học Thăng Long - Tin tức & Thông báo" },
       {
         name: "description",
-        content:
-          "Landing page Đại học Thăng Long: môi trường học tập cởi mở, cơ sở vật chất hiện đại, đa dạng ngành đào tạo và đời sống sinh viên giàu năng lượng.",
+        content: "Trang tin tức và thông báo của Cổng thông tin sinh viên Đại học Thăng Long.",
       },
     ],
     links: [{ rel: "canonical", href: `${SITE}/` }],

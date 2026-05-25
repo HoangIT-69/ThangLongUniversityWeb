@@ -1,24 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { marketingAnnouncements } from "@/lib/marketing-announcements";
 
 const BASE_URL = "https://academe-view-pro.lovable.app";
 
 const entries = [
   { path: "/", priority: "1.0", changefreq: "weekly" },
-  { path: "/about", priority: "0.8", changefreq: "monthly" },
-  { path: "/programs", priority: "0.9", changefreq: "monthly" },
-  { path: "/admissions", priority: "0.9", changefreq: "weekly" },
-  { path: "/news", priority: "0.7", changefreq: "weekly" },
-  { path: "/contact", priority: "0.5", changefreq: "monthly" },
+  { path: "/articles", priority: "0.7", changefreq: "weekly" },
+  { path: "/announcements", priority: "0.7", changefreq: "weekly" },
+  ...marketingAnnouncements.map((announcement) => ({
+    path: `/announcements/${announcement.slug}`,
+    priority: "0.6",
+    changefreq: "monthly",
+  })),
 ];
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const urls = entries.map((e) => `  <url>\n    <loc>${BASE_URL}${e.path}</loc>\n    <changefreq>${e.changefreq}</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`).join("\n");
+        const urls = entries
+          .map(
+            (e) =>
+              `  <url>\n    <loc>${BASE_URL}${e.path}</loc>\n    <changefreq>${e.changefreq}</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`,
+          )
+          .join("\n");
         const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
-        return new Response(xml, { headers: { "Content-Type": "application/xml", "Cache-Control": "public, max-age=3600" } });
+        return new Response(xml, {
+          headers: { "Content-Type": "application/xml", "Cache-Control": "public, max-age=3600" },
+        });
       },
     },
   },

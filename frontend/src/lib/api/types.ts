@@ -6,6 +6,8 @@ export type RetakeRegistrationType = "RETAKE" | "IMPROVE";
 export type EnrollmentRequestStatus = "PENDING" | "PROCESSING" | "SUCCESS" | "FAILED";
 export type NotificationType = "SCHOOL" | "CHAT";
 
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -42,53 +44,23 @@ export interface UserProfile {
   department?: string | null;
 }
 
-export interface MajorResponse {
-  id: number;
-  majorCode: string;
-  name: string;
-  description?: string | null;
+// ─── Spring Page ──────────────────────────────────────────────────────────────
+
+export interface SpringPage<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  numberOfElements: number;
+  empty: boolean;
+  sort?: unknown;
+  pageable?: unknown;
 }
 
-export interface AdminMajorRequest {
-  majorCode: string;
-  name: string;
-  description?: string;
-}
-
-export interface RoomResponse {
-  id: number;
-  name: string;
-  capacity: number;
-}
-
-export interface AdminRoomRequest {
-  name: string;
-  capacity: number;
-}
-
-export interface PeriodResponse {
-  id: number;
-  periodNumber: number;
-  startTime: string;
-  endTime: string;
-}
-
-export interface PeriodRequest {
-  periodNumber: number;
-  startTime: string;
-  endTime: string;
-}
-
-export type AdminPeriodRequest = PeriodRequest;
-
-export interface AdminSemesterResponse {
-  id: number;
-  name: string;
-  startDate?: string | null;
-  endDate?: string | null;
-  registrationOpen?: boolean;
-  locked?: boolean;
-}
+// ─── Admin: Users ─────────────────────────────────────────────────────────────
 
 export interface AdminUserResponse {
   id: number;
@@ -99,84 +71,195 @@ export interface AdminUserResponse {
   active: boolean;
 }
 
-export interface AdminStudentResponse {
-  id: number;
-  studentCode: string;
+export interface CreateAdminRequest {
   username: string;
-  fullName: string;
+  password: string;
   email: string;
-  dob?: string | null;
-  address?: string | null;
-  academicYear?: number | string | null;
-  majorId?: number | null;
-  majorCode?: string | null;
-  majorName?: string | null;
 }
 
-export interface AdminStudentRequest {
+// ─── Admin: Students ──────────────────────────────────────────────────────────
+
+export interface StudentRequest {
   username: string;
   password: string;
   email: string;
   studentCode: string;
   fullName: string;
-  dob: string;
+  dob?: string | null;
+  gender?: string | null;
+  phone?: string | null;
+  nationalId?: string | null;
+  placeOfBirth?: string | null;
+  hometown?: string | null;
+  permanentAddress?: string | null;
+  currentAddress?: string | null;
+  emergencyContact?: string | null;
   majorId: number;
-  academicYear: number;
-  address?: string;
+  academicYear?: number | null;
+  cohort?: string | null;
+  className?: string | null;
+  advisor?: string | null;
+  status?: string | null;
+  trainingType?: string | null;
+  address?: string | null;
 }
 
-export interface AdminTeacherResponse {
+export interface AdminStudentResponse {
   id: number;
-  username?: string;
-  email?: string;
+  username: string | null;
+  email: string | null;
+  studentCode: string;
+  fullName: string | null;
+  dob: string | null;
+  gender: string | null;
+  phone: string | null;
+  nationalId: string | null;
+  placeOfBirth: string | null;
+  hometown: string | null;
+  permanentAddress: string | null;
+  currentAddress: string | null;
+  emergencyContact: string | null;
+  address: string | null;
+  academicYear: number | null;
+  cohort: string | null;
+  className: string | null;
+  advisor: string | null;
+  status: string | null;
+  trainingType: string | null;
+  majorId: number | null;
+  majorName: string | null;
+  majorCode: string | null;
+}
+
+// ─── Admin: Teachers ──────────────────────────────────────────────────────────
+
+export interface TeacherRequest {
+  username: string;
+  password: string;
+  email: string;
   teacherCode: string;
   fullName: string;
   dob?: string | null;
+  gender?: string | null;
   phone?: string | null;
+  nationalId?: string | null;
+  placeOfBirth?: string | null;
+  hometown?: string | null;
+  permanentAddress?: string | null;
+  currentAddress?: string | null;
+  emergencyContact?: string | null;
   department?: string | null;
   degree?: string | null;
   address?: string | null;
 }
 
-export interface AdminTeacherRequest {
-  username: string;
-  password: string;
-  email: string;
+export interface AdminTeacherResponse {
+  id: number;
   teacherCode: string;
-  fullName: string;
-  dob?: string;
-  department?: string;
-  degree?: string;
-  address?: string;
-  phone?: string;
+  fullName: string | null;
+  dob: string | null;
+  gender: string | null;
+  phone: string | null;
+  nationalId: string | null;
+  placeOfBirth: string | null;
+  hometown: string | null;
+  permanentAddress: string | null;
+  currentAddress: string | null;
+  emergencyContact: string | null;
+  department: string | null;
+  degree: string | null;
+  address: string | null;
 }
 
-export interface AdminCourseRequest {
+// ─── Admin: Majors ────────────────────────────────────────────────────────────
+
+export interface MajorRequest {
+  majorCode: string;
+  name: string;
+  description?: string | null;
+}
+
+export interface MajorResponse {
+  id: number;
+  majorCode: string;
+  name: string;
+  description: string | null;
+}
+
+// ─── Admin: Courses ───────────────────────────────────────────────────────────
+
+export interface CourseRequest {
   code: string;
   name: string;
   credits: number;
-  description?: string;
-  courseType?: "REQUIRED" | "ELECTIVE";
+  description?: string | null;
+  courseType?: CourseType;
   majorId: number;
-  prerequisiteCourseIds?: number[];
+  prerequisiteCourseIds?: number[] | null;
 }
 
-export interface ClassSectionScheduleResponse {
+export interface CourseResponse {
   id: number;
-  dayOfWeek: number;
-  startPeriodId: number;
-  startPeriod: number;
-  endPeriodId: number;
-  endPeriod: number;
-  lessonCount?: number | null;
-  periodRange?: string | null;
-  startTime?: string | null;
-  endTime?: string | null;
-  roomId?: number | null;
-  roomName?: string | null;
+  code: string;
+  name: string;
+  credits: number;
+  description: string | null;
+  courseType: CourseType | null;
+  courseTypeLabel: string | null;
+  majorName: string | null;
+  prerequisiteNames: string[];
 }
 
-export type AdminClassSectionStatus = "DRAFT" | "OPEN" | "CLOSED" | "CANCELLED";
+// ─── Admin: Semesters ─────────────────────────────────────────────────────────
+
+export interface SemesterRequest {
+  name: string;
+  startDate: string;
+  endDate: string;
+  registrationOpen: boolean;
+}
+
+export interface SemesterResponse {
+  id: number;
+  name: string;
+  startDate: string | null;
+  endDate: string | null;
+  registrationOpen: boolean;
+  locked: boolean;
+}
+
+// Legacy alias (used in student module)
+export type StudentSemesterResponse = SemesterResponse;
+
+// ─── Admin: Rooms ─────────────────────────────────────────────────────────────
+
+export interface RoomRequest {
+  name: string;
+  capacity: number;
+}
+
+export interface RoomResponse {
+  id: number;
+  name: string;
+  capacity: number;
+}
+
+// ─── Admin: Periods ───────────────────────────────────────────────────────────
+
+export interface PeriodRequest {
+  periodNumber: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface PeriodResponse {
+  id: number;
+  periodNumber: number;
+  startTime: string;
+  endTime: string;
+}
+
+// ─── Admin: Class Sections ────────────────────────────────────────────────────
 
 export interface ClassSectionScheduleRequest {
   dayOfWeek: number;
@@ -185,13 +268,53 @@ export interface ClassSectionScheduleRequest {
   roomId: number;
 }
 
-export interface AdminClassSectionRequest {
+export interface ClassSectionRequest {
   classCode: string;
   courseId: number;
   semesterId: number;
   teacherId?: number | null;
   schedules: ClassSectionScheduleRequest[];
   maxSlots: number;
+}
+
+export interface ClassSectionScheduleResponse {
+  id: number;
+  dayOfWeek: number;
+  startPeriodId: number | null;
+  startPeriod: number | null;
+  endPeriodId: number | null;
+  endPeriod: number | null;
+  lessonCount: number | null;
+  periodRange: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  roomId: number | null;
+  roomName: string | null;
+}
+
+export type AdminClassSectionStatus = "DRAFT" | "OPEN" | "CLOSED" | "CANCELLED";
+
+export interface ClassSectionResponse {
+  id: number;
+  classCode: string;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  courseType: CourseType | null;
+  courseTypeLabel: string | null;
+  credits: number;
+  semesterId: number;
+  semesterName: string;
+  teacherId: number | null;
+  teacherName: string | null;
+  room: string | null;
+  roomId: number | null;
+  roomCapacity: number | null;
+  schedules: ClassSectionScheduleResponse[];
+  maxSlots: number | null;
+  currentSlots: number | null;
+  closed: boolean;
+  gradeLocked: boolean;
 }
 
 export interface AdminClassSectionStudentResponse {
@@ -209,69 +332,96 @@ export interface AdminClassSectionStudentResponse {
   status?: string | null;
 }
 
-export interface ClassSectionResponse {
-  id: number;
-  classCode: string;
-  courseId: number;
-  courseCode: string;
-  courseName: string;
-  courseType?: CourseType | null;
-  courseTypeLabel?: string | null;
-  credits: number;
-  semesterId: number;
-  semesterName: string;
-  teacherId?: number | null;
-  teacherName?: string | null;
-  room?: string | null;
-  roomId?: number | null;
-  roomCapacity?: number | null;
-  schedules: ClassSectionScheduleResponse[];
-  maxSlots?: number | null;
-  currentSlots?: number | null;
-  closed?: boolean;
-  isClosed?: boolean;
-  gradeLocked?: boolean | null;
-  gradeStatus?: "DRAFT" | "SUBMITTED" | "LOCKED" | string | null;
+// ─── Admin: Enrollments ───────────────────────────────────────────────────────
+
+export interface AdminEnrollmentSearchQuery {
+  semesterId?: number;
+  classSectionId?: number;
+  status?: EnrollmentStatus;
+  page?: number;
+  size?: number;
+  sort?: string;
 }
 
-export interface TeacherGradeRequest {
-  enrollmentId: number;
-  participationScore?: number | null;
-  midTermScore?: number | null;
-  finalScore?: number | null;
-  retestScore?: number | null;
+export interface AdminOverrideEnrollmentRequest {
+  studentId: number;
+  classSectionId: number;
+  note?: string | null;
 }
 
-export interface TeacherStudentGradeResponse {
+export interface AdminEnrollmentResponse {
   enrollmentId: number;
+  studentId: number;
   studentCode: string;
-  fullName: string;
-  phone?: string | null;
-  email?: string | null;
-  className?: string | null;
-  advisorName?: string | null;
-  majorName?: string | null;
-  facultyName?: string | null;
-  midTermScore?: number | null;
-  finalScore?: number | null;
-  totalScore?: number | null;
-  status: "REGISTERED" | "PASSED" | "FAILED" | "CANCELED" | string;
-  courseStatus?: CourseStudyStatus | null;
-  absenceCount?: number | null;
+  studentName: string;
+  classSectionId: number;
+  classCode: string;
+  semesterId: number;
+  courseName: string;
+  status: EnrollmentStatus | string | null;
 }
 
-export type TeacherGradeResponse = GradeResponse;
+// ─── Admin: Academic Results ──────────────────────────────────────────────────
 
-export interface StudentSemesterResponse {
+export interface AcademicResultStudentRef {
+  id: number;
+  studentCode: string;
+  fullName: string | null;
+  dob?: string | null;
+  gender?: string | null;
+  phone?: string | null;
+  nationalId?: string | null;
+  placeOfBirth?: string | null;
+  hometown?: string | null;
+  permanentAddress?: string | null;
+  currentAddress?: string | null;
+  emergencyContact?: string | null;
+  address?: string | null;
+  academicYear?: number | null;
+  cohort?: string | null;
+  className?: string | null;
+  advisor?: string | null;
+  status?: string | null;
+  trainingType?: string | null;
+}
+
+export interface AcademicResultSemesterRef {
   id: number;
   name: string;
   startDate?: string | null;
   endDate?: string | null;
-  registrationOpen: boolean;
-  locked: boolean;
+  registrationOpen?: boolean;
+  locked?: boolean;
 }
 
-export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT";
+export interface AcademicResultResponse {
+  id: number;
+  student?: AcademicResultStudentRef | null;
+  semester?: AcademicResultSemesterRef | null;
+  semesterGpa?: number | null;
+  cumulativeGpa?: number | null;
+  totalCredits?: number | null;
+  cumulativeCredits?: number | null;
+  calculatedAt?: string | null;
+}
+
+// ─── Admin: Settings ──────────────────────────────────────────────────────────
+
+export interface RetakeFeeRequest {
+  feePerCourse: number;
+}
+
+export interface RetakeFeeResponse {
+  feePerCourse: number;
+}
+
+export interface UpdateRetakeFeeResponse {
+  feePerCourse: number;
+  message: string;
+}
+
+// ─── Student: Grades ──────────────────────────────────────────────────────────
+
 export type CourseStudyStatus =
   | "IN_PROGRESS"
   | "PASSED"
@@ -279,31 +429,74 @@ export type CourseStudyStatus =
   | "REPEAT_COURSE"
   | "RETAKE_EXAM";
 
-export interface AttendanceRecordRequest {
+export interface StudentGradeItemResponse {
   enrollmentId: number;
-  status: AttendanceStatus;
-  note?: string | null;
+  semesterId: number;
+  semesterName: string;
+  classCode: string;
+  courseName: string;
+  credits: number;
+  totalScore?: number | null;
+  gradePoint?: number | null;
 }
 
-export interface AttendanceRecordResponse {
+export interface StudentGradesSummaryResponse {
+  semesterId?: number | null;
+  semesterGpa: number;
+  cumulativeGpa: number;
+  items: StudentGradeItemResponse[];
+}
+
+export interface SemesterGpaSummary {
+  semesterId: number;
+  semesterName: string;
+  semesterGpa: number;
+  cumulativeGpa: number;
+  totalCredits: number;
+  cumulativeCredits: number;
+}
+
+export interface GradeResponse {
   id: number;
   enrollmentId: number;
+  studentId: number;
   studentCode: string;
   studentName: string;
-  status: AttendanceStatus;
-  note?: string | null;
+  courseId: number;
+  courseCode: string;
+  classCode: string;
+  courseName: string;
+  credits: number;
+  semesterId: number;
+  semesterName: string;
+  participationScore?: number | null;
+  midtermScore?: number | null;
+  finalScore?: number | null;
+  retestScore?: number | null;
+  attemptNumber?: number | null;
+  enrollmentType?: EnrollmentType | string | null;
+  totalScore?: number | null;
+  letterGrade?: string | null;
+  gpa4?: number | null;
+  gradePoint?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  courseStatus?: CourseStudyStatus | string | null;
+  absenceCount?: number | null;
 }
 
-export interface AttendanceSessionResponse {
-  id: number;
-  classSectionId: number;
-  sessionNumber: number;
-  weekNumber?: number | null;
-  meetingIndex?: number | null;
-  sessionDate?: string | null;
-  locked: boolean;
-  records: AttendanceRecordResponse[];
+export interface LearningResultsResponse {
+  semesterId?: number | null;
+  semesterName?: string | null;
+  semesterGpa?: number | null;
+  cumulativeGpa?: number | null;
+  semesterCredits?: number | null;
+  cumulativeCredits?: number | null;
+  grades: GradeResponse[];
+  semesterSummaries: SemesterGpaSummary[];
 }
+
+// ─── Student: Schedule / Enrollment ──────────────────────────────────────────
 
 export interface EnrollmentRequestResponse {
   requestId?: string | null;
@@ -337,6 +530,8 @@ export interface EnrollmentResponse {
   status?: EnrollmentStatus | string | null;
 }
 
+// ─── Student: Exams ───────────────────────────────────────────────────────────
+
 export interface StudentExamResponse {
   classCode: string;
   courseName: string;
@@ -345,52 +540,7 @@ export interface StudentExamResponse {
   examRoom?: string | null;
 }
 
-export interface StudentGradeItemResponse {
-  enrollmentId: number;
-  semesterId: number;
-  semesterName: string;
-  classCode: string;
-  courseName: string;
-  credits: number;
-  totalScore?: number | null;
-  gradePoint?: number | null;
-}
-
-export interface StudentGradesSummaryResponse {
-  semesterId?: number | null;
-  semesterGpa: number;
-  cumulativeGpa: number;
-  items: StudentGradeItemResponse[];
-}
-
-export interface GradeResponse {
-  id: number;
-  enrollmentId: number;
-  studentId: number;
-  studentCode: string;
-  studentName: string;
-  courseId: number;
-  courseCode: string;
-  classCode: string;
-  courseName: string;
-  credits: number;
-  semesterId: number;
-  semesterName: string;
-  participationScore?: number | null;
-  midtermScore?: number | null;
-  finalScore?: number | null;
-  retestScore?: number | null;
-  attemptNumber?: number | null;
-  enrollmentType?: EnrollmentType | string | null;
-  totalScore?: number | null;
-  letterGrade?: string | null;
-  gpa4?: number | null;
-  gradePoint?: number | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-  courseStatus?: CourseStudyStatus | string | null;
-  absenceCount?: number | null;
-}
+// ─── Student: Tuition ─────────────────────────────────────────────────────────
 
 export interface TuitionItemResponse {
   feeType?: "COURSE" | "RETAKE" | string | null;
@@ -410,69 +560,7 @@ export interface TuitionResponse {
   items: TuitionItemResponse[];
 }
 
-export interface StudentDashboardResponse {
-  profile: UserProfile;
-  currentSemester?: StudentSemesterResponse | null;
-  learningResults?: LearningResultsResponse | null;
-  grades?: StudentGradesSummaryResponse | null;
-  tuition?: TuitionResponse | null;
-  schedule?: EnrollmentResponse[];
-  todaySchedule?: EnrollmentResponse[];
-  exams?: StudentExamResponse[];
-  upcomingExams?: StudentExamResponse[];
-  semesterGpa: number;
-  cumulativeGpa: number;
-  registeredCredits: number;
-  earnedCredits: number;
-  gradedCourseCount: number;
-  activeCourseCount: number;
-  upcomingExamCount: number;
-  tuitionRemaining: number;
-  tuitionStatus: string;
-  registrationStatus: string;
-}
-
-export interface AcademicResultStudentRef {
-  id: number;
-  studentCode: string;
-  fullName: string;
-  dob?: string | null;
-  gender?: string | null;
-  phone?: string | null;
-  nationalId?: string | null;
-  placeOfBirth?: string | null;
-  hometown?: string | null;
-  permanentAddress?: string | null;
-  currentAddress?: string | null;
-  emergencyContact?: string | null;
-  address?: string | null;
-  cohort?: string | null;
-  className?: string | null;
-  advisor?: string | null;
-  status?: string | null;
-  trainingType?: string | null;
-  academicYear?: number | null;
-}
-
-export interface AcademicResultSemesterRef {
-  id: number;
-  name: string;
-  startDate?: string | null;
-  endDate?: string | null;
-  registrationOpen?: boolean;
-  locked?: boolean;
-}
-
-export interface AcademicResultResponse {
-  id: number;
-  student?: AcademicResultStudentRef | null;
-  semester?: AcademicResultSemesterRef | null;
-  semesterGpa?: number | null;
-  cumulativeGpa?: number | null;
-  totalCredits?: number | null;
-  cumulativeCredits?: number | null;
-  calculatedAt?: string | null;
-}
+// ─── Student: Retakes ─────────────────────────────────────────────────────────
 
 export interface RetakeEligibleCourseResponse {
   gradeId: number;
@@ -525,51 +613,61 @@ export interface RetakeRequestResponse {
   totalScore?: number | null;
 }
 
-export interface SemesterRequest {
-  name: string;
-  startDate?: string | null;
-  endDate?: string | null;
-  registrationOpen: boolean;
-}
+// ─── Student: Dashboard ───────────────────────────────────────────────────────
 
-export interface AdminSemesterRequest {
-  name: string;
-  startDate: string;
-  endDate: string;
-  registrationOpen?: boolean;
-}
-
-export interface SemesterGpaSummary {
-  semesterId: number;
-  semesterName: string;
+export interface StudentDashboardResponse {
+  profile: UserProfile;
+  currentSemester?: SemesterResponse | null;
+  learningResults?: LearningResultsResponse | null;
+  grades?: StudentGradesSummaryResponse | null;
+  tuition?: TuitionResponse | null;
+  schedule?: EnrollmentResponse[];
+  todaySchedule?: EnrollmentResponse[];
+  exams?: StudentExamResponse[];
+  upcomingExams?: StudentExamResponse[];
   semesterGpa: number;
   cumulativeGpa: number;
-  totalCredits: number;
-  cumulativeCredits: number;
+  registeredCredits: number;
+  earnedCredits: number;
+  gradedCourseCount: number;
+  activeCourseCount: number;
+  upcomingExamCount: number;
+  tuitionRemaining: number;
+  tuitionStatus: string;
+  registrationStatus: string;
 }
 
-export interface LearningResultsResponse {
-  semesterId?: number | null;
-  semesterName?: string | null;
-  semesterGpa?: number | null;
-  cumulativeGpa?: number | null;
-  semesterCredits?: number | null;
-  cumulativeCredits?: number | null;
-  grades: GradeResponse[];
-  semesterSummaries: SemesterGpaSummary[];
+// ─── Teacher ──────────────────────────────────────────────────────────────────
+
+export interface TeacherGradeRequest {
+  enrollmentId: number;
+  participationScore?: number | null;
+  midTermScore?: number | null;
+  finalScore?: number | null;
+  retestScore?: number | null;
 }
 
-export interface CourseResponse {
-  id: number;
-  code: string;
-  name: string;
-  credits: number;
-  description?: string | null;
-  courseType?: CourseType | null;
-  courseTypeLabel?: string | null;
+export interface TeacherStudentGradeResponse {
+  enrollmentId: number;
+  studentCode: string;
+  fullName: string;
+  phone?: string | null;
+  email?: string | null;
+  className?: string | null;
+  advisorName?: string | null;
   majorName?: string | null;
-  prerequisiteNames?: string[];
+  facultyName?: string | null;
+  midTermScore?: number | null;
+  finalScore?: number | null;
+  totalScore?: number | null;
+  status: "REGISTERED" | "PASSED" | "FAILED" | "CANCELED" | string;
+  courseStatus?: CourseStudyStatus | null;
+  absenceCount?: number | null;
 }
+
+export type TeacherGradeResponse = GradeResponse;
+
+// ─── Notifications ────────────────────────────────────────────────────────────
 
 export interface NotificationResponse {
   id: string;
@@ -580,3 +678,44 @@ export interface NotificationResponse {
   read: boolean;
   createdAt: string;
 }
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT";
+
+export interface AttendanceRecordRequest {
+  enrollmentId: number;
+  status: AttendanceStatus;
+  note?: string | null;
+}
+
+export interface AttendanceRecordResponse {
+  id: number;
+  enrollmentId: number;
+  studentCode: string;
+  studentName: string;
+  status: AttendanceStatus;
+  note?: string | null;
+}
+
+export interface AttendanceSessionResponse {
+  id: number;
+  classSectionId: number;
+  sessionNumber: number;
+  weekNumber?: number | null;
+  meetingIndex?: number | null;
+  sessionDate?: string | null;
+  locked: boolean;
+  records: AttendanceRecordResponse[];
+}
+
+// Legacy aliases kept for backward compatibility
+export type AdminMajorRequest = MajorRequest;
+export type AdminRoomRequest = RoomRequest;
+export type AdminPeriodRequest = PeriodRequest;
+export type AdminSemesterRequest = SemesterRequest;
+export type AdminSemesterResponse = SemesterResponse;
+export type AdminStudentRequest = StudentRequest;
+export type AdminTeacherRequest = TeacherRequest;
+export type AdminCourseRequest = CourseRequest;
+export type AdminClassSectionRequest = ClassSectionRequest;

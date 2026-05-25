@@ -3,7 +3,6 @@ import { AlertCircle, Users } from "lucide-react";
 import { useMemo } from "react";
 import { DataTable } from "@/components/data-table/DataTable";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { adminApi } from "@/lib/api/admin";
-import { mapApiClassSectionStudent, mapMockClassSectionStudents } from "./classSectionMock";
+import { mapApiClassSectionStudent } from "./classSectionMock";
 import type { ClassSectionRow } from "./types";
 
 interface ClassSectionStudentsDialogProps {
@@ -28,7 +27,7 @@ export function ClassSectionStudentsDialog({
   section,
   onOpenChange,
 }: ClassSectionStudentsDialogProps) {
-  const canLoadApi = open && section?.source === "API" && !!section.numericId;
+  const canLoadApi = open && !!section?.numericId;
   const studentsQuery = useQuery({
     queryKey: ["admin", "class-sections", section?.numericId, "students"],
     queryFn: () => adminApi.listClassSectionStudents(section?.numericId ?? 0),
@@ -38,8 +37,7 @@ export function ClassSectionStudentsDialog({
 
   const rows = useMemo(() => {
     if (!section) return [];
-    if (studentsQuery.data?.length) return studentsQuery.data.map(mapApiClassSectionStudent);
-    return mapMockClassSectionStudents(section);
+    return (studentsQuery.data ?? []).map(mapApiClassSectionStudent);
   }, [section, studentsQuery.data]);
 
   return (
@@ -72,17 +70,7 @@ export function ClassSectionStudentsDialog({
               </Alert>
             )}
 
-            {section?.source === "Mock" && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Dang dung du lieu demo</AlertTitle>
-                <AlertDescription>
-                  Lop hoc phan nay dang la mock/fallback, danh sach sinh vien ben duoi cung la mock.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <DataTable
+<DataTable
               data={rows}
               rowKey={(student) => student.enrollmentId}
               pageSize={8}
@@ -95,9 +83,6 @@ export function ClassSectionStudentsDialog({
                   render: (student) => (
                     <div className="space-y-1">
                       <span className="font-mono text-xs font-medium">{student.studentCode}</span>
-                      <Badge variant={student.source === "API" ? "secondary" : "outline"}>
-                        {student.source}
-                      </Badge>
                     </div>
                   ),
                 },

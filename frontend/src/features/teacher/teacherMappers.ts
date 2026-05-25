@@ -98,7 +98,7 @@ function formatScheduleItem(
 
 function mapApiClassSection(section: ClassSectionResponse): TeacherClassRow {
   const schedules = section.schedules ?? [];
-  const isClosed = section.closed ?? section.isClosed ?? false;
+  const isClosed = section.closed ?? false;
   const scheduleRoomItems = schedules.map((schedule) => formatScheduleItem(schedule, section.room));
 
   return {
