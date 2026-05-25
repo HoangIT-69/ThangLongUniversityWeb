@@ -39,14 +39,11 @@ export const mockArticles: ArticleResponse[] = [
     slug: "thong-bao-tuyen-sinh-2025",
     title: "Thông báo tuyển sinh đại học chính quy năm 2025",
     excerpt: "Đại học Thăng Long công bố 6 phương thức xét tuyển đại học chính quy năm 2025 với ngưỡng điểm sàn từ 16–23 điểm.",
-    coverImage: "/images/dhtl1.jpg",
     content: `<p>Trường Đại học Thăng Long chính thức công bố phương án tuyển sinh đại học chính quy năm 2025 với <strong>6 phương thức xét tuyển</strong>, mang đến cơ hội rộng mở cho thí sinh trên toàn quốc.</p>
-<img src="/images/dhtl2.jpg" alt="Khuôn viên Đại học Thăng Long" />
 <h2>Các phương thức xét tuyển</h2>
 <ol><li>Xét điểm thi tốt nghiệp THPT 2025</li><li>Xét học bạ THPT (xét tuyển sớm)</li><li>Chứng chỉ Đánh giá năng lực (HSA) — ĐHQGHN</li><li>Chứng chỉ Đánh giá tư duy (TSA) — ĐHBKHN</li><li>Chứng chỉ quốc tế (IELTS, TOEFL, SAT)</li><li>Xét tuyển thẳng theo quy chế Bộ GD&ĐT</li></ol>
 <h2>Điểm chuẩn tham khảo</h2>
 <p>Ngành <strong>Truyền thông đa phương tiện</strong> dẫn đầu với 26.52 điểm (2024) và 23.75 điểm (2025, tổ hợp D01). Ngành <strong>Trí tuệ nhân tạo</strong> có mức điểm sàn tiếp cận cởi mở từ 16–17 điểm — cơ hội tuyệt vời cho thí sinh đam mê công nghệ.</p>
-<img src="/images/dhtl3.jpg" alt="Sinh viên Đại học Thăng Long" />
 <p>Hạn nộp hồ sơ: <strong>30/06/2025</strong>. Hotline tư vấn: <strong>1900 1582</strong>.</p>`,
     category: cat("tuyen-sinh"),
     tags: tags("tuyen-sinh-2025", "ai", "truyen-thong"),
@@ -61,9 +58,7 @@ export const mockArticles: ArticleResponse[] = [
     slug: "diem-chuan-2024-ky-luc-truyen-thong",
     title: "Truyền thông đa phương tiện xác lập kỷ lục điểm chuẩn 2024",
     excerpt: "Ngành Truyền thông đa phương tiện đạt mức điểm chuẩn trúng tuyển cao nhất toàn trường năm 2024 với 26.52 điểm.",
-    coverImage: "/images/dhtl2.jpg",
     content: `<p>Trong kỳ tuyển sinh 2024, ngành <strong>Truyền thông đa phương tiện</strong> tại Đại học Thăng Long đã xác lập kỷ lục với mức điểm chuẩn <strong>26.52 điểm</strong> — cao nhất toàn trường.</p>
-<img src="/images/dhtl4.jpg" alt="Sinh viên Truyền thông TLU" />
 <p>Con số này phản ánh sức hút mãnh liệt của khối ngành sáng tạo đối với thế hệ Gen Z, đồng thời khẳng định chất lượng đào tạo của TLU trong lĩnh vực truyền thông và thiết kế.</p>
 <blockquote>"Sinh viên Truyền thông TLU không chỉ học lý thuyết mà được cọ xát thực chiến qua các dự án thực tế ngay từ năm nhất" — Trưởng Khoa Truyền thông Đa phương tiện.</blockquote>`,
     category: cat("tuyen-sinh"),
@@ -79,9 +74,7 @@ export const mockArticles: ArticleResponse[] = [
     slug: "nguyen-gia-huy-thac-si-temple-university",
     title: "Cựu sinh viên Nguyễn Gia Huy chinh phục Thạc sĩ tại Temple University, Nhật Bản",
     excerpt: "Từ giảng đường Thăng Long đến Temple University — hành trình bản lĩnh và ý chí của chàng trai 9X.",
-    coverImage: "/images/dhtl3.jpg",
     content: `<p>Cựu sinh viên <strong>Nguyễn Gia Huy</strong> — trưởng thành từ Đại học Thăng Long — đã vươn lên xuất sắc để theo học chương trình <strong>Thạc sĩ Kinh tế tại Temple University</strong> (Nhật Bản), cơ sở quốc tế lâu đời và lớn nhất tại Nhật.</p>
-<img src="/images/dhtl1.jpg" alt="Đại học Thăng Long" />
 <p>Câu chuyện của Gia Huy là bài ca về ý chí nỗ lực bền bỉ, sự trưởng thành sớm từ những khó khăn rèn luyện và bản lĩnh của người trẻ Việt vươn ra quốc tế.</p>
 <blockquote>"Thăng Long đã cho tôi nền tảng vững chắc — không chỉ kiến thức chuyên môn mà còn là tư duy độc lập và khát vọng vươn xa" — Nguyễn Gia Huy.</blockquote>`,
     category: cat("sinh-vien"),
@@ -112,12 +105,9 @@ export const mockArticles: ArticleResponse[] = [
     slug: "co-hoi-nganh-tri-tue-nhan-tao-tlu",
     title: "Cơ hội rộng mở với ngành Trí tuệ nhân tạo tại TLU",
     excerpt: "Với mức điểm sàn 16–17 điểm, ngành AI tại Thăng Long mở ra cơ hội cho thí sinh đam mê công nghệ nhưng chưa tự tin về điểm số.",
-    coverImage: "/images/dhtl4.jpg",
     content: `<p>Ngành <strong>Trí tuệ nhân tạo (AI)</strong> tại Đại học Thăng Long có mức điểm sàn tiếp cận cực kỳ cởi mở: <strong>17 điểm</strong> (tổ hợp A00, X06, X26) và <strong>16 điểm</strong> (tổ hợp A01, D01, D07).</p>
-<img src="/images/dhtl2.jpg" alt="Phòng lab AI - Đại học Thăng Long" />
 <h2>Tại sao chọn AI tại TLU?</h2>
 <ul><li>Phòng lab AI và fablab hiện đại</li><li>Giảng viên tốt nghiệp từ các trường danh tiếng</li><li>Chương trình gắn liền doanh nghiệp công nghệ</li><li>Cơ hội thực tập từ năm 3</li></ul>
-<img src="/images/dhtl3.jpg" alt="Sinh viên TLU học AI" />
 <p>Đây là lợi thế tuyệt đối cho các thí sinh có năng lực trung khá nhưng đam mê công nghệ — bệ phóng vững chắc vào ngành nghề của tương lai.</p>`,
     category: cat("hoc-thuat"),
     tags: tags("ai", "cntt", "tuyen-sinh-2025"),

@@ -60,18 +60,16 @@ function getTodayDayOfWeek() {
 
 function getScheduleSlots(item: EnrollmentResponse) {
   if (item.schedules?.length) {
-    return item.schedules
-      .filter((slot) => slot.startPeriod != null && slot.endPeriod != null)
-      .map((slot) => ({
-        dayOfWeek: slot.dayOfWeek,
-        startPeriod: slot.startPeriod as number,
-        endPeriod: slot.endPeriod as number,
-        room: slot.roomName ?? item.room ?? "",
-        lessonCount: slot.lessonCount ?? Math.max((slot.endPeriod as number) - (slot.startPeriod as number) + 1, 1),
-        periodRange: slot.periodRange ?? `${slot.startPeriod}-${slot.endPeriod}`,
-        startTime: formatApiTime(slot.startTime),
-        endTime: formatApiTime(slot.endTime),
-      }));
+    return item.schedules.map((slot) => ({
+      dayOfWeek: slot.dayOfWeek,
+      startPeriod: slot.startPeriod,
+      endPeriod: slot.endPeriod,
+      room: slot.roomName ?? item.room ?? "",
+      lessonCount: slot.lessonCount ?? Math.max(slot.endPeriod - slot.startPeriod + 1, 1),
+      periodRange: slot.periodRange ?? `${slot.startPeriod}-${slot.endPeriod}`,
+      startTime: formatApiTime(slot.startTime),
+      endTime: formatApiTime(slot.endTime),
+    }));
   }
 
   return [

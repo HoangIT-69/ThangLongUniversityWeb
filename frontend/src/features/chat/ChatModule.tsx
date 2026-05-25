@@ -18,20 +18,13 @@ import {
 import { useAuth } from "@/lib/auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
   ArrowUp,
   FileText,
-  Image as ImageIcon,
   Link as LinkIcon,
   LogOut,
   MessageCircle,
@@ -43,22 +36,14 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { getStoredAuth } from "@/lib/api/client";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 function initials(value?: string | null) {
-  return (value || "?")
-    .split(" ")
-    .slice(-2)
-    .map((part) => part[0] ?? "")
-    .join("")
-    .toUpperCase();
+  return (value || "?").split(" ").slice(-2).map((part) => part[0] ?? "").join("").toUpperCase();
 }
 
-function personLabel(
-  person?: { code?: string | null; fullName?: string | null; username?: string | null } | null,
-) {
+function personLabel(person?: { code?: string | null; fullName?: string | null; username?: string | null } | null) {
   if (!person) return "Chat rieng";
   const code = person.code || person.username;
   const fullName = person.fullName || person.username;
@@ -89,16 +74,8 @@ function formatSize(size?: number | null) {
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
 }
 
-const imageExtensionPattern = /\.(avif|bmp|gif|jpe?g|png|svg|webp)$/i;
-
-function isImageMessage(message: ChatMessage) {
-  const source = `${message.fileName ?? ""} ${message.content ?? ""} ${message.mediaUrl ?? ""}`;
-  return message.type === "IMAGE" || imageExtensionPattern.test(source);
-}
-
 function formatTime(message: Pick<ChatMessage, "createdAt" | "createdAtEpochMs">) {
-  const value =
-    message.createdAtEpochMs ?? (message.createdAt ? new Date(message.createdAt).getTime() : null);
+  const value = message.createdAtEpochMs ?? (message.createdAt ? new Date(message.createdAt).getTime() : null);
   if (!value) return "";
   return new Intl.DateTimeFormat("vi-VN", {
     hour: "2-digit",
@@ -153,102 +130,6 @@ function MessageContent({ content }: { content?: string | null }) {
   );
 }
 
-function FileMessageContent({ message }: { message: ChatMessage }) {
-  const href = mediaHref(message.mediaUrl);
-
-  if (isImageMessage(message)) {
-    return <ImageMessageContent href={href} message={message} />;
-  }
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex items-center gap-2 underline-offset-2 hover:underline"
-    >
-      <FileText className="h-4 w-4" />
-      <span>{message.fileName || message.content}</span>
-      <span className="opacity-70">{formatSize(message.fileSize)}</span>
-    </a>
-  );
-}
-
-function ImageMessageContent({ href, message }: { href: string; message: ChatMessage }) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    let objectUrl: string | null = null;
-    let cancelled = false;
-
-    const loadImage = async () => {
-      try {
-        const auth = getStoredAuth();
-        const response = await fetch(href, {
-          headers: auth?.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : undefined,
-        });
-
-        if (!response.ok) {
-          throw new Error(response.statusText || "Không tải được ảnh");
-        }
-
-        const blob = await response.blob();
-        objectUrl = URL.createObjectURL(blob);
-        if (!cancelled) {
-          setImageUrl(objectUrl);
-        }
-      } catch {
-        if (!cancelled) {
-          setHasError(true);
-        }
-      }
-    };
-
-    loadImage();
-
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [href]);
-
-  if (hasError) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex items-center gap-2 underline-offset-2 hover:underline"
-      >
-        <ImageIcon className="h-4 w-4" />
-        <span>{message.fileName || message.content || "Ảnh đã gửi"}</span>
-      </a>
-    );
-  }
-
-  if (!imageUrl) {
-    return (
-      <div className="flex h-40 w-64 max-w-full items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
-        Đang tải ảnh...
-      </div>
-    );
-  }
-
-  return (
-    <a href={imageUrl} target="_blank" rel="noreferrer" className="block">
-      <img
-        src={imageUrl}
-        alt={message.fileName || message.content || "Ảnh đã gửi"}
-        className="max-h-[360px] max-w-full rounded-md object-contain"
-      />
-      <span className="mt-1 block text-[10px] opacity-70">
-        {message.fileName || "Ảnh đã gửi"} {formatSize(message.fileSize)}
-      </span>
-    </a>
-  );
-}
-
 function UserSuggestionList({
   users,
   onSelect,
@@ -275,9 +156,7 @@ function UserSuggestionList({
           </Avatar>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-medium">{personLabel(user)}</span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {user.subtitle || user.email}
-            </span>
+            <span className="block truncate text-xs text-muted-foreground">{user.subtitle || user.email}</span>
           </span>
         </button>
       ))}
@@ -315,9 +194,7 @@ export function ChatModule() {
   const reloadRooms = async (preferredId?: number) => {
     const page = await listRooms();
     const readRoomId = preferredId ?? activeId;
-    setRooms(
-      page.content.map((room) => (room.id === readRoomId ? { ...room, unreadCount: 0 } : room)),
-    );
+    setRooms(page.content.map((room) => room.id === readRoomId ? { ...room, unreadCount: 0 } : room));
     setActiveId((current) => {
       if (preferredId) return preferredId;
       return page.content.some((room) => room.id === current) ? current : null;
@@ -326,9 +203,7 @@ export function ChatModule() {
 
   const selectRoom = (roomId: number) => {
     setActiveId(roomId);
-    setRooms((prev) =>
-      prev.map((room) => (room.id === roomId ? { ...room, unreadCount: 0 } : room)),
-    );
+    setRooms((prev) => prev.map((room) => room.id === roomId ? { ...room, unreadCount: 0 } : room));
     markRoomRead(roomId)
       .then(() => reloadRooms(roomId))
       .catch(() => undefined);
@@ -353,9 +228,7 @@ export function ChatModule() {
         setMessages(messagePage.content);
         setFiles(filePage.content);
         setLinks(linkPage.content);
-        setRooms((prev) =>
-          prev.map((room) => (room.id === activeId ? { ...room, unreadCount: 0 } : room)),
-        );
+        setRooms((prev) => prev.map((room) => room.id === activeId ? { ...room, unreadCount: 0 } : room));
       })
       .catch((e: Error) => setError(e.message));
   }, [activeId]);
@@ -367,9 +240,7 @@ export function ChatModule() {
         setPersonResults([]);
         return;
       }
-      searchUsers(query)
-        .then(setPersonResults)
-        .catch((e: Error) => setError(e.message));
+      searchUsers(query).then(setPersonResults).catch((e: Error) => setError(e.message));
     }, 220);
     return () => window.clearTimeout(handle);
   }, [personQuery]);
@@ -381,9 +252,7 @@ export function ChatModule() {
         setGroupResults([]);
         return;
       }
-      searchUsers(query)
-        .then(setGroupResults)
-        .catch((e: Error) => setError(e.message));
+      searchUsers(query).then(setGroupResults).catch((e: Error) => setError(e.message));
     }, 220);
     return () => window.clearTimeout(handle);
   }, [groupQuery]);
@@ -405,10 +274,7 @@ export function ChatModule() {
       return;
     }
 
-    const room = await createGroupRoom(
-      groupName.trim() || "Nhom chat moi",
-      selectedMembers.map((user) => user.id),
-    );
+    const room = await createGroupRoom(groupName.trim() || "Nhom chat moi", selectedMembers.map((user) => user.id));
     setGroupOpen(false);
     setGroupName("");
     setGroupQuery("");
@@ -452,24 +318,15 @@ export function ChatModule() {
         sidebarOpen ? "lg:grid-cols-[320px_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)]",
       )}
     >
-      <aside
-        className={cn("min-h-0 flex-col border-r bg-muted/20", sidebarOpen ? "flex" : "hidden")}
-      >
+      <aside className={cn("min-h-0 flex-col border-r bg-muted/20", sidebarOpen ? "flex" : "hidden")}>
         <div className="border-b bg-background p-4">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <div className="text-base font-semibold">Tin nhan</div>
-              <div className="text-xs text-muted-foreground">
-                Tim sinh vien, giang vien de bat dau chat
-              </div>
+              <div className="text-xs text-muted-foreground">Tim sinh vien, giang vien de bat dau chat</div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => setSidebarOpen(false)}
-                title="An sidebar"
-              >
+              <Button size="icon" variant="outline" onClick={() => setSidebarOpen(false)} title="An sidebar">
                 <PanelLeftClose className="h-4 w-4" />
               </Button>
               <Button size="icon" onClick={() => setGroupOpen(true)} title="Tao nhom">
@@ -502,9 +359,7 @@ export function ChatModule() {
           {loadingRooms ? (
             <div className="p-4 text-sm text-muted-foreground">Dang tai danh sach chat...</div>
           ) : rooms.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">
-              Chua co cuoc tro chuyen nao. Hay tim nguoi de nhan tin.
-            </div>
+            <div className="p-6 text-sm text-muted-foreground">Chua co cuoc tro chuyen nao. Hay tim nguoi de nhan tin.</div>
           ) : (
             <div className="divide-y">
               {rooms.map((room) => {
@@ -514,35 +369,19 @@ export function ChatModule() {
                   <button
                     key={room.id}
                     onClick={() => selectRoom(room.id)}
-                    className={cn(
-                      "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted",
-                      active && "bg-background",
-                    )}
+                    className={cn("flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted", active && "bg-background")}
                   >
                     <Avatar className="h-11 w-11">
-                      <AvatarFallback
-                        className={cn(
-                          "text-xs",
-                          room.type !== "PRIVATE" && "bg-primary/10 text-primary",
-                        )}
-                      >
-                        {initials(title)}
-                      </AvatarFallback>
+                      <AvatarFallback className={cn("text-xs", room.type !== "PRIVATE" && "bg-primary/10 text-primary")}>{initials(title)}</AvatarFallback>
                     </Avatar>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="truncate text-sm font-semibold">{title}</span>
-                        {room.type !== "PRIVATE" && (
-                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                        )}
+                        {room.type !== "PRIVATE" && <Users className="h-3.5 w-3.5 text-muted-foreground" />}
                       </span>
-                      <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                        {roomSubtitle(room)}
-                      </span>
+                      <span className="mt-0.5 block truncate text-xs text-muted-foreground">{roomSubtitle(room)}</span>
                       {room.lastMessageTime && (
-                        <span className="mt-0.5 block text-[10px] text-muted-foreground/80">
-                          {formatDateTime(room.lastMessageTime)}
-                        </span>
+                        <span className="mt-0.5 block text-[10px] text-muted-foreground/80">{formatDateTime(room.lastMessageTime)}</span>
                       )}
                     </span>
                     {room.unreadCount > 0 && (
@@ -564,28 +403,17 @@ export function ChatModule() {
             <header className="flex h-16 items-center justify-between border-b bg-background px-5">
               <div className="flex min-w-0 items-center gap-3">
                 {!sidebarOpen && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setSidebarOpen(true)}
-                    title="Hien sidebar"
-                  >
+                  <Button size="icon" variant="ghost" onClick={() => setSidebarOpen(true)} title="Hien sidebar">
                     <PanelLeftOpen className="h-4 w-4" />
                   </Button>
                 )}
                 <Avatar className="h-10 w-10">
-                  <AvatarFallback>
-                    {initials(roomTitle(activeRoom, profile?.username))}
-                  </AvatarFallback>
+                  <AvatarFallback>{initials(roomTitle(activeRoom, profile?.username))}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">
-                    {roomTitle(activeRoom, profile?.username)}
-                  </div>
+                  <div className="truncate text-sm font-semibold">{roomTitle(activeRoom, profile?.username)}</div>
                   <div className="text-xs text-muted-foreground">
-                    {activeRoom.type === "PRIVATE"
-                      ? "Tin nhan rieng"
-                      : `${activeRoom.memberCount} thanh vien`}
+                    {activeRoom.type === "PRIVATE" ? "Tin nhan rieng" : `${activeRoom.memberCount} thanh vien`}
                   </div>
                 </div>
               </div>
@@ -603,10 +431,7 @@ export function ChatModule() {
               )}
             >
               <div className="flex min-h-0 flex-col">
-                <div
-                  ref={scrollRef}
-                  className="min-h-0 flex-1 overflow-y-auto bg-muted/10 px-6 py-5"
-                >
+                <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-muted/10 px-6 py-5">
                   {sortedMessages.length === 0 ? (
                     <div className="grid h-full place-items-center text-center text-sm text-muted-foreground">
                       <div>
@@ -622,20 +447,12 @@ export function ChatModule() {
                           <div key={message.id} className={cn("flex gap-2", mine && "justify-end")}>
                             {!mine && (
                               <Avatar className="mt-5 h-8 w-8">
-                                <AvatarFallback className="text-xs">
-                                  {initials(message.senderFullName)}
-                                </AvatarFallback>
+                                <AvatarFallback className="text-xs">{initials(message.senderFullName)}</AvatarFallback>
                               </Avatar>
                             )}
                             <div className={cn("max-w-[min(760px,82%)]", mine && "text-right")}>
                               <div className="mb-1 text-[11px] text-muted-foreground">
-                                {mine
-                                  ? "Ban"
-                                  : personLabel({
-                                      code: message.senderCode,
-                                      fullName: message.senderFullName,
-                                      username: message.senderUsername,
-                                    })}
+                                {mine ? "Ban" : personLabel({ code: message.senderCode, fullName: message.senderFullName, username: message.senderUsername })}
                               </div>
                               <div
                                 className={cn(
@@ -643,18 +460,22 @@ export function ChatModule() {
                                   mine && "border-primary bg-primary text-primary-foreground",
                                 )}
                               >
-                                {message.type === "FILE" || message.type === "IMAGE" ? (
-                                  <FileMessageContent message={message} />
+                                {message.type === "FILE" ? (
+                                  <a
+                                    href={mediaHref(message.mediaUrl)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 underline-offset-2 hover:underline"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                    <span>{message.fileName || message.content}</span>
+                                    <span className="opacity-70">{formatSize(message.fileSize)}</span>
+                                  </a>
                                 ) : (
                                   <MessageContent content={message.content} />
                                 )}
                               </div>
-                              <div
-                                className={cn(
-                                  "mt-1 text-[10px] text-muted-foreground",
-                                  mine && "text-right",
-                                )}
-                              >
+                              <div className={cn("mt-1 text-[10px] text-muted-foreground", mine && "text-right")}>
                                 {formatTime(message)}
                               </div>
                             </div>
@@ -667,18 +488,8 @@ export function ChatModule() {
 
                 <div className="border-t bg-background p-4">
                   <div className="flex items-center gap-2 rounded-lg border bg-muted/20 p-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      className="hidden"
-                      onChange={(event) => submitFile(event.target.files?.[0])}
-                    />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => fileInputRef.current?.click()}
-                      title="Gửi ảnh hoặc file"
-                    >
+                    <input ref={fileInputRef} type="file" className="hidden" onChange={(event) => submitFile(event.target.files?.[0])} />
+                    <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} title="Gui file">
                       <Paperclip className="h-4 w-4" />
                     </Button>
                     <Input
@@ -693,12 +504,7 @@ export function ChatModule() {
                       placeholder="Nhap tin nhan..."
                       className="border-0 bg-transparent shadow-none focus-visible:ring-0"
                     />
-                    <Button
-                      size="icon"
-                      disabled={!draft.trim()}
-                      onClick={submitMessage}
-                      title="Gui"
-                    >
+                    <Button size="icon" disabled={!draft.trim()} onClick={submitMessage} title="Gui">
                       <ArrowUp className="h-4 w-4" />
                     </Button>
                   </div>
@@ -706,47 +512,20 @@ export function ChatModule() {
               </div>
 
               <aside className="hidden border-l bg-background xl:block">
-                <Tabs
-                  defaultValue={activeRoom.type === "PRIVATE" ? "files" : "members"}
-                  className="h-full"
-                >
-                  <TabsList
-                    className={cn(
-                      "grid h-11 w-full rounded-none border-b bg-muted/30",
-                      activeRoom.type === "PRIVATE" ? "grid-cols-2" : "grid-cols-3",
-                    )}
-                  >
-                    {activeRoom.type !== "PRIVATE" && (
-                      <TabsTrigger value="members">
-                        <Users className="h-4 w-4" />
-                      </TabsTrigger>
-                    )}
-                    <TabsTrigger value="files">
-                      <FileText className="h-4 w-4" />
-                    </TabsTrigger>
-                    <TabsTrigger value="links">
-                      <LinkIcon className="h-4 w-4" />
-                    </TabsTrigger>
+                <Tabs defaultValue={activeRoom.type === "PRIVATE" ? "files" : "members"} className="h-full">
+                  <TabsList className={cn("grid h-11 w-full rounded-none border-b bg-muted/30", activeRoom.type === "PRIVATE" ? "grid-cols-2" : "grid-cols-3")}>
+                    {activeRoom.type !== "PRIVATE" && <TabsTrigger value="members"><Users className="h-4 w-4" /></TabsTrigger>}
+                    <TabsTrigger value="files"><FileText className="h-4 w-4" /></TabsTrigger>
+                    <TabsTrigger value="links"><LinkIcon className="h-4 w-4" /></TabsTrigger>
                   </TabsList>
                   {activeRoom.type !== "PRIVATE" && (
                     <TabsContent value="members" className="m-0 p-3">
-                      <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-                        Thanh vien
-                      </div>
+                      <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Thanh vien</div>
                       {activeRoom.members.map((member) => (
-                        <div
-                          key={member.userId}
-                          className="flex items-center gap-3 rounded-md px-2 py-2"
-                        >
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {initials(member.fullName)}
-                            </AvatarFallback>
-                          </Avatar>
+                        <div key={member.userId} className="flex items-center gap-3 rounded-md px-2 py-2">
+                          <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{initials(member.fullName)}</AvatarFallback></Avatar>
                           <div className="min-w-0">
-                            <div className="truncate text-sm font-medium">
-                              {personLabel(member)}
-                            </div>
+                            <div className="truncate text-sm font-medium">{personLabel(member)}</div>
                             <div className="text-xs text-muted-foreground">{member.role}</div>
                           </div>
                         </div>
@@ -754,57 +533,27 @@ export function ChatModule() {
                     </TabsContent>
                   )}
                   <TabsContent value="files" className="m-0 space-y-2 p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-                      File da gui
-                    </div>
-                    {files.length === 0 ? (
-                      <div className="text-sm text-muted-foreground">Chua co file.</div>
-                    ) : (
-                      files.map((file) => (
-                        <a
-                          key={file.id}
-                          href={mediaHref(file.mediaUrl)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block rounded-md border p-2 text-sm hover:bg-muted"
-                        >
-                          <span className="flex min-w-0 gap-2">
-                            <FileText className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span className="min-w-0 truncate">
-                              {file.fileName || file.content}
-                            </span>
-                          </span>
-                          <span className="mt-1 block pl-6 text-[10px] text-muted-foreground">
-                            {formatSize(file.fileSize)} {formatTime(file)}
-                          </span>
-                        </a>
-                      ))
-                    )}
+                    <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">File da gui</div>
+                    {files.length === 0 ? <div className="text-sm text-muted-foreground">Chua co file.</div> : files.map((file) => (
+                      <a key={file.id} href={mediaHref(file.mediaUrl)} target="_blank" rel="noreferrer" className="block rounded-md border p-2 text-sm hover:bg-muted">
+                        <span className="flex min-w-0 gap-2">
+                          <FileText className="mt-0.5 h-4 w-4 shrink-0" />
+                          <span className="min-w-0 truncate">{file.fileName || file.content}</span>
+                        </span>
+                        <span className="mt-1 block pl-6 text-[10px] text-muted-foreground">
+                          {formatSize(file.fileSize)} {formatTime(file)}
+                        </span>
+                      </a>
+                    ))}
                   </TabsContent>
                   <TabsContent value="links" className="m-0 space-y-2 p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-                      Link da gui
-                    </div>
-                    {links.length === 0 ? (
-                      <div className="text-sm text-muted-foreground">Chua co link.</div>
-                    ) : (
-                      links.map((link) => (
-                        <a
-                          key={link.id}
-                          href={extractFirstUrl(link.content) || "#"}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block truncate rounded-md border p-2 text-sm hover:bg-muted"
-                        >
-                          <span className="block truncate">
-                            {extractFirstUrl(link.content) || link.content}
-                          </span>
-                          <span className="mt-1 block text-[10px] text-muted-foreground">
-                            {formatTime(link)}
-                          </span>
-                        </a>
-                      ))
-                    )}
+                    <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Link da gui</div>
+                    {links.length === 0 ? <div className="text-sm text-muted-foreground">Chua co link.</div> : links.map((link) => (
+                      <a key={link.id} href={extractFirstUrl(link.content) || "#"} target="_blank" rel="noreferrer" className="block truncate rounded-md border p-2 text-sm hover:bg-muted">
+                        <span className="block truncate">{extractFirstUrl(link.content) || link.content}</span>
+                        <span className="mt-1 block text-[10px] text-muted-foreground">{formatTime(link)}</span>
+                      </a>
+                    ))}
                   </TabsContent>
                 </Tabs>
               </aside>
@@ -831,11 +580,7 @@ export function ChatModule() {
             <DialogTitle>Tao nhom chat</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <Input
-              value={groupName}
-              onChange={(event) => setGroupName(event.target.value)}
-              placeholder="Ten nhom"
-            />
+            <Input value={groupName} onChange={(event) => setGroupName(event.target.value)} placeholder="Ten nhom" />
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -852,9 +597,7 @@ export function ChatModule() {
                   type="button"
                   size="sm"
                   variant="secondary"
-                  onClick={() =>
-                    setSelectedMembers((prev) => prev.filter((item) => item.id !== user.id))
-                  }
+                  onClick={() => setSelectedMembers((prev) => prev.filter((item) => item.id !== user.id))}
                 >
                   {personLabel(user)}
                   <X className="ml-1 h-3 w-3" />
@@ -863,15 +606,9 @@ export function ChatModule() {
             </div>
             <div className="overflow-hidden rounded-lg border">
               <UserSuggestionList
-                users={groupResults.filter(
-                  (user) => !selectedMembers.some((item) => item.id === user.id),
-                )}
+                users={groupResults.filter((user) => !selectedMembers.some((item) => item.id === user.id))}
                 onSelect={(user) => setSelectedMembers((prev) => [...prev, user])}
-                emptyText={
-                  groupQuery.trim().length < 2
-                    ? "Nhap it nhat 2 ky tu de tim."
-                    : "Khong tim thay nguoi phu hop."
-                }
+                emptyText={groupQuery.trim().length < 2 ? "Nhap it nhat 2 ky tu de tim." : "Khong tim thay nguoi phu hop."}
               />
             </div>
           </div>

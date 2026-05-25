@@ -1,209 +1,85 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/data-table/DataTable";
+import { majors as fallbackMajors, type Major } from "@/data/mock";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { adminApi } from "@/lib/api/admin";
-import type { MajorResponse } from "@/lib/api/types";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { adminApi } from "@/lib/api/admin";
 
 export const Route = createFileRoute("/admin/majors")({ component: MajorsPage });
 
-const majorSchema = z.object({
-  majorCode: z.string().min(1, "Bắt buộc"),
-  name: z.string().min(1, "Bắt buộc"),
-  description: z.string().optional(),
-});
-type MajorFormData = z.infer<typeof majorSchema>;
-
 function MajorsPage() {
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<MajorResponse | null>(null);
-  const [toDelete, setToDelete] = useState<MajorResponse | null>(null);
+  const [toDelete, setToDelete] = useState<Major | null>(null);
 
-  const { data: majors, isPending, isError, error } = useQuery({
+  const query = useQuery({
     queryKey: ["admin", "majors"],
     queryFn: adminApi.listMajors,
   });
 
-  const form = useForm<MajorFormData>({
-    resolver: zodResolver(majorSchema),
-    defaultValues: { majorCode: "", name: "", description: "" },
-  });
-
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["admin", "majors"] });
-
-  const createMutation = useMutation({
-    mutationFn: adminApi.createMajor,
-    onSuccess: () => { invalidate(); toast.success("Đã tạo ngành học"); closeForm(); },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: MajorFormData }) =>
-      adminApi.updateMajor(id, data),
-    onSuccess: () => { invalidate(); toast.success("Đã cập nhật ngành học"); closeForm(); },
-    onError: (err) => toast.error(err.message),
-  });
-
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => adminApi.deleteMajor(id),
-    onSuccess: () => { invalidate(); toast.success("Đã xóa ngành học"); setToDelete(null); },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Xóa ngành thất bại"),
+    mutationFn: (id: string) => adminApi.deleteMajor(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "majors"] });
+      toast.success("Da xoa nganh");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Xoa nganh that bai"),
   });
 
-  function openCreate() {
-    setEditing(null);
-    form.reset({ majorCode: "", name: "", description: "" });
-    setOpen(true);
-  }
-
-  function openEdit(major: MajorResponse) {
-    setEditing(major);
-    form.reset({
-      majorCode: major.majorCode,
-      name: major.name,
-      description: major.description ?? "",
-    });
-    setOpen(true);
-  }
-
-  function closeForm() { setOpen(false); setEditing(null); }
-
-  function onSubmit(data: MajorFormData) {
-    if (editing) updateMutation.mutate({ id: editing.id, data });
-    else createMutation.mutate(data);
-  }
-
-  if (isPending) return <Skeleton className="h-96 w-full" />;
-  if (isError)
-    return (
-      <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-        {error.message}
-      </div>
-    );
-
-  const rows = majors ?? [];
+  const data = useMemo<Major[]>(() => {
+    if (!query.data) return fallbackMajors;
+    return query.data.map((m) => ({
+      id: String(m.id),
+      code: m.majorCode,
+      name: m.name,
+      students: 0,
+      courses: 0,
+    }));
+  }, [query.data]);
 
   return (
     <div>
       <PageHeader
-        title="Ngành học"
-        description={`${rows.length} ngành`}
+        title="Nganh hoc"
+        description={query.isError ? `${data.length} nganh (fallback mock)` : `${data.length} nganh`}
         actions={
-          <Button className="gap-2" onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Thêm ngành
+          <Button className="gap-2" onClick={() => toast.info("Form them/sua se noi API o buoc tiep theo")}>
+            <Plus className="h-4 w-4" />Them nganh
           </Button>
         }
       />
-
       <DataTable
-        data={rows}
-        rowKey={(m) => String(m.id)}
-        searchPlaceholder="Tìm theo mã, tên ngành..."
+        data={data}
+        rowKey={(m) => m.id}
+        searchPlaceholder="Tim theo ma, ten nganh..."
         columns={[
-          {
-            key: "majorCode",
-            header: "Mã ngành",
-            render: (m) => <span className="font-mono text-xs">{m.majorCode}</span>,
-          },
-          {
-            key: "name",
-            header: "Tên ngành",
-            render: (m) => <span className="font-medium">{m.name}</span>,
-          },
-          {
-            key: "description",
-            header: "Mô tả",
-            render: (m) => (
-              <span className="line-clamp-2 max-w-64 text-xs text-muted-foreground">
-                {m.description ?? "—"}
-              </span>
-            ),
-          },
-          {
-            key: "actions",
-            header: "",
-            className: "w-24 text-right",
-            searchable: false,
-            render: (m) => (
-              <div className="flex justify-end gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(m)}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost" size="icon" className="h-8 w-8 text-destructive"
-                  onClick={() => setToDelete(m)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ),
-          },
+          { key: "code", header: "Ma nganh", render: (m) => <span className="font-mono text-xs">{m.code}</span> },
+          { key: "name", header: "Ten nganh", render: (m) => <span className="font-medium">{m.name}</span> },
+          { key: "students", header: "Sinh vien", render: (m) => <span className="tabular-nums">{m.students.toLocaleString()}</span> },
+          { key: "courses", header: "Mon hoc", render: (m) => <span className="tabular-nums">{m.courses}</span> },
+          { key: "actions", header: "", className: "w-24 text-right", searchable: false, render: (m) => (
+            <div className="flex justify-end gap-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toast.info(`Sua nganh ${m.name} se lam o buoc tiep theo`)}><Pencil className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setToDelete(m)} disabled={query.isError}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          )},
         ]}
       />
-
-      <Dialog open={open} onOpenChange={(v) => { if (!v) closeForm(); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Sửa ngành học" : "Thêm ngành học"}</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField control={form.control} name="majorCode" render={({ field }) => (
-                <FormItem><FormLabel>Mã ngành</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Tên ngành</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem><FormLabel>Mô tả</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={closeForm}>Hủy</Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {createMutation.isPending || updateMutation.isPending ? "Đang lưu..." : editing ? "Cập nhật" : "Tạo ngành"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(v) => !v && setToDelete(null)}
-        title="Xóa ngành học?"
+        title="Xoa nganh?"
         description={toDelete?.name}
         destructive
-        confirmText="Xóa"
-        onConfirm={() => { if (toDelete) deleteMutation.mutate(toDelete.id); }}
+        confirmText="Xoa"
+        onConfirm={() => {
+          if (toDelete) deleteMutation.mutate(toDelete.id);
+          setToDelete(null);
+        }}
       />
     </div>
   );

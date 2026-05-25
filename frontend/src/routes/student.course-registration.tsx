@@ -80,27 +80,22 @@ function formatEnrollmentSchedule(item: EnrollmentResponse) {
 }
 
 function overlapsSelectedSchedule(section: ClassSectionResponse, selected: EnrollmentResponse[]) {
-  return section.schedules.some((schedule) => {
-    if (schedule.startPeriod == null || schedule.endPeriod == null) return false;
-    return selected.some(
+  return section.schedules.some((schedule) =>
+    selected.some(
       (item) =>
         item.classSectionId !== section.id &&
         getEnrollmentSchedules(item).some(
-          (selectedSchedule) => {
-            if (selectedSchedule.startPeriod == null || selectedSchedule.endPeriod == null) return false;
-            return (
-              selectedSchedule.dayOfWeek === schedule.dayOfWeek &&
-              isPeriodOverlap(
-                schedule.startPeriod as number,
-                schedule.endPeriod as number,
-                selectedSchedule.startPeriod as number,
-                selectedSchedule.endPeriod as number,
-              )
-            );
-          },
+          (selectedSchedule) =>
+            selectedSchedule.dayOfWeek === schedule.dayOfWeek &&
+            isPeriodOverlap(
+              schedule.startPeriod,
+              schedule.endPeriod,
+              selectedSchedule.startPeriod,
+              selectedSchedule.endPeriod,
+            ),
         ),
-    );
-  });
+    ),
+  );
 }
 
 function groupByCourse(sections: ClassSectionResponse[]): CourseGroup[] {

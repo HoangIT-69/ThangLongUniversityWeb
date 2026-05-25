@@ -12,6 +12,7 @@ import type { AdminClassSectionStatus } from "@/lib/api/types";
 import {
   buildOptionSets,
   mapApiClassSection,
+  mapMockClassSections,
   toClassSectionRequest,
 } from "./classSectionMock";
 import { ClassSectionFormDialog } from "./ClassSectionFormDialog";
@@ -66,11 +67,14 @@ export function AdminClassSectionsContent() {
   });
 
   const rows = useMemo(() => {
-    return (classSectionsQuery.data ?? []).map((section) =>
-      mapApiClassSection(section),
-    ).map((row) => ({
-      ...row,
-      status: statusOverrides[row.id] ?? row.status,
+    if (classSectionsQuery.data?.length) {
+      return classSectionsQuery.data.map((section) =>
+        mapApiClassSection(section, statusOverrides[String(section.id)]),
+      );
+    }
+    return mapMockClassSections().map((section) => ({
+      ...section,
+      status: statusOverrides[section.id] ?? section.status,
     }));
   }, [classSectionsQuery.data, statusOverrides]);
 
@@ -78,7 +82,7 @@ export function AdminClassSectionsContent() {
     const courseMajorMap = new Map(
       (coursesQuery.data ?? []).map((course) => [
         course.id,
-        course.majorName ?? "—",
+        course.majorName ?? "Can BE: majorName",
       ]),
     );
     return rows.map((row) => ({
@@ -190,7 +194,7 @@ export function AdminClassSectionsContent() {
     <div className="space-y-4">
       <PageHeader
         title="Lop hoc phan"
-        description={`${rowsWithMajors.length} lớp học phần`}
+        description={`${rowsWithMajors.length} lop hoc phan theo nganh${classSectionsQuery.isError ? " - dang dung du lieu mau" : ""}`}
         actions={
           <Button
             className="gap-2"
@@ -208,8 +212,19 @@ export function AdminClassSectionsContent() {
       {classSectionsQuery.isError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Không tải được danh sách lớp học phần</AlertTitle>
-          <AlertDescription>{classSectionsQuery.error.message}</AlertDescription>
+          <AlertTitle>Khong tai duoc API lop hoc phan</AlertTitle>
+          <AlertDescription>
+            {classSectionsQuery.error.message}. FE dang hien mock data tam thoi.
+          </AlertDescription>
+        </Alert>
+      )}
+      {(coursesQuery.isError || semestersQuery.isError) && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Mot so danh muc dang dung fallback</AlertTitle>
+          <AlertDescription>
+            Course/Semester API chua on dinh nen form co the lay danh muc tu lop hien co hoac mock.
+          </AlertDescription>
         </Alert>
       )}
 
