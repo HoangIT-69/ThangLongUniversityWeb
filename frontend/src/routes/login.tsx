@@ -5,17 +5,7 @@ import { useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/api/types";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import {
-  AlertCircle,
-  BookOpen,
-  CheckCircle2,
-  GraduationCap,
-  Loader2,
-  ShieldCheck,
-  Sparkles,
-  UserCog,
-  WifiOff,
-} from "lucide-react";
+import { AlertCircle, BookOpen, CheckCircle2, Loader2, Sparkles, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
@@ -23,17 +13,6 @@ const BACKEND_PROBE_TIMEOUT_MS = 3000;
 const schoolLogo = "/images/LogoThangLongUniversity.png";
 
 type BackendStatus = "checking" | "online" | "offline";
-type Credentials = {
-  username: string;
-  password: string;
-};
-
-const DEMO_CREDENTIALS: Record<Role, Credentials> = {
-  ADMIN: { username: "admin", password: "password123" },
-  TEACHER: { username: "gv101", password: "password123" },
-  STUDENT: { username: "sv001", password: "password123" },
-};
-
 export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
@@ -75,12 +54,11 @@ const HERO_STATS = [
 function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("password123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("checking");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeDemoRole, setActiveDemoRole] = useState<Role | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -95,13 +73,12 @@ function LoginPage() {
     };
   }, []);
 
-  const submitLogin = async (credentials: Credentials, demoRole?: Role) => {
+  const submitLogin = async () => {
     setIsSubmitting(true);
-    setActiveDemoRole(demoRole ?? null);
     setErrorMessage(null);
 
     try {
-      const role = await login(credentials.username, credentials.password);
+      const role = await login(username, password);
       toast.success(`Đăng nhập thành công với vai trò ${role.toLowerCase()}`);
       navigate({ to: resolveDashboard(role) });
     } catch (error) {
@@ -111,20 +88,12 @@ function LoginPage() {
       toast.error(message);
     } finally {
       setIsSubmitting(false);
-      setActiveDemoRole(null);
     }
   };
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    void submitLogin({ username, password });
-  };
-
-  const loginAs = (role: Role) => {
-    const credentials = DEMO_CREDENTIALS[role];
-    setUsername(credentials.username);
-    setPassword(credentials.password);
-    void submitLogin(credentials, role);
+    void submitLogin();
   };
 
   const statusIcon =
@@ -166,7 +135,11 @@ function LoginPage() {
           {/* Top — Logo & brand */}
           <Link to="/" className="inline-flex items-center" aria-label="Về trang chính">
             <div className="grid h-24 w-40 place-items-center rounded-2xl p-3 shadow-xl transition-transform hover:scale-[1.02]">
-              <img src={schoolLogo} alt="Logo Đại học Thăng Long" className="h-full w-full object-contain" />
+              <img
+                src={schoolLogo}
+                alt="Logo Đại học Thăng Long"
+                className="h-full w-full object-contain"
+              />
             </div>
           </Link>
 
@@ -188,14 +161,17 @@ function LoginPage() {
             </h1>
 
             <p className="mt-4 max-w-md text-base leading-relaxed text-white/70">
-              Hệ thống quản lý đào tạo toàn diện dành cho sinh viên, giảng viên và cán bộ quản lý
-              — Trường Đại học Thăng Long.
+              Hệ thống quản lý đào tạo toàn diện dành cho sinh viên, giảng viên và cán bộ quản lý —
+              Trường Đại học Thăng Long.
             </p>
 
             {/* Stats row */}
             <div className="mt-8 flex gap-6">
               {HERO_STATS.map((stat) => (
-                <div key={stat.label} className="border-l border-white/20 pl-4 first:border-l-0 first:pl-0">
+                <div
+                  key={stat.label}
+                  className="border-l border-white/20 pl-4 first:border-l-0 first:pl-0"
+                >
                   <div className="text-2xl font-bold text-white">{stat.value}</div>
                   <div className="mt-0.5 text-xs text-white/60">{stat.label}</div>
                 </div>
@@ -223,7 +199,11 @@ function LoginPage() {
               className="grid h-20 w-36 place-items-center rounded-2xl bg-white/95 p-2 shadow-xl transition-transform hover:scale-[1.02]"
               aria-label="Về trang chính"
             >
-              <img src={schoolLogo} alt="Logo Đại học Thăng Long" className="h-full w-full object-contain" />
+              <img
+                src={schoolLogo}
+                alt="Logo Đại học Thăng Long"
+                className="h-full w-full object-contain"
+              />
             </Link>
           </div>
         </div>
@@ -234,7 +214,9 @@ function LoginPage() {
             {/* Desktop: show logo above form */}
             <div className="mb-1 hidden items-center gap-2 lg:flex">
               <BookOpen className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">Hệ thống Quản lý Đào tạo</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Hệ thống Quản lý Đào tạo
+              </span>
             </div>
 
             <h2 className="text-2xl font-bold tracking-tight">Đăng nhập</h2>
@@ -255,7 +237,7 @@ function LoginPage() {
                   id="username"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="admin / gv101 / sv001"
+                  placeholder="Nhập tên đăng nhập"
                   autoComplete="username"
                   className="h-11"
                 />
@@ -280,62 +262,15 @@ function LoginPage() {
                 </div>
               )}
 
-              <Button type="submit" className="h-11 w-full text-sm font-semibold" disabled={isSubmitting}>
-                {isSubmitting && !activeDemoRole ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
+              <Button
+                type="submit"
+                className="h-11 w-full text-sm font-semibold"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Đăng nhập
               </Button>
             </form>
-
-            {/* Divider */}
-            <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
-              <div className="h-px flex-1 bg-border" />
-              Đăng nhập nhanh
-              <div className="h-px flex-1 bg-border" />
-            </div>
-
-            {/* Quick login buttons */}
-            <div className="grid gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 justify-start"
-                onClick={() => loginAs("ADMIN")}
-                disabled={isSubmitting}
-              >
-                <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
-                Quản trị viên
-                <span className="ml-auto text-xs text-muted-foreground">admin</span>
-                {activeDemoRole === "ADMIN" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 justify-start"
-                onClick={() => loginAs("TEACHER")}
-                disabled={isSubmitting}
-              >
-                <UserCog className="mr-2 h-4 w-4 text-blue-500" />
-                Giảng viên
-                <span className="ml-auto text-xs text-muted-foreground">gv101</span>
-                {activeDemoRole === "TEACHER" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 justify-start"
-                onClick={() => loginAs("STUDENT")}
-                disabled={isSubmitting}
-              >
-                <GraduationCap className="mr-2 h-4 w-4 text-emerald-500" />
-                Sinh viên
-                <span className="ml-auto text-xs text-muted-foreground">sv001</span>
-                {activeDemoRole === "STUDENT" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              </Button>
-            </div>
 
             {/* Footer note */}
             <p className="mt-8 text-center text-xs text-muted-foreground">

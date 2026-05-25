@@ -6,8 +6,6 @@ import {
   ChevronRight,
   Megaphone,
   Newspaper,
-  Shield,
-  Smartphone,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { marketingAnnouncements } from "@/lib/marketing-announcements";
@@ -54,7 +52,6 @@ export function ThangLongLanding() {
     <div className="min-h-screen bg-white font-sans text-slate-950 selection:bg-[#C8102E] selection:text-white">
       <HeroCarousel />
       <NewsAndAnnouncements />
-      <SupportFooter />
     </div>
   );
 }
@@ -303,85 +300,5 @@ function NewsAndAnnouncements() {
         </div>
       </div>
     </section>
-  );
-}
-
-function SupportFooter() {
-  return (
-    <footer id="support" className="border-t border-slate-100 bg-white pb-10 pt-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-16 grid grid-cols-1 gap-12 md:grid-cols-12">
-          <div className="md:col-span-5">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#C8102E] text-xl font-black tracking-tighter text-white">
-                TLU
-              </div>
-              <span className="text-xl font-bold text-[#00204A]">Đại học Thăng Long</span>
-            </div>
-            <p className="mb-6 max-w-sm text-slate-500">
-              Cổng thông tin sinh viên nội bộ. Hệ thống được quản trị và phát triển bởi Trung tâm
-              CNTT - Đại học Thăng Long.
-            </p>
-            <div className="flex gap-4">
-              <div className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-[#C8102E] hover:text-white">
-                <Smartphone size={20} />
-              </div>
-              <div className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-[#00204A] hover:text-white">
-                <Shield size={20} />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-8 md:col-span-7 md:grid-cols-3">
-            <div>
-              <h4 className="mb-4 font-bold text-[#00204A]">Hỗ trợ nhanh</h4>
-              <ul className="space-y-3 text-sm text-slate-500">
-                <li>
-                  <Link to="/login" className="hover:text-[#C8102E]">
-                    Quên mật khẩu?
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/login" className="hover:text-[#C8102E]">
-                    Cấp lại tài khoản
-                  </Link>
-                </li>
-                <li>
-                  <a href="mailto:support@thanglong.edu.vn" className="hover:text-[#C8102E]">
-                    Báo lỗi hệ thống
-                  </a>
-                </li>
-                <li>
-                  <Link to="/announcements" className="hover:text-[#C8102E]">
-                    Câu hỏi thường gặp
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div className="col-span-2">
-              <div className="h-full rounded-2xl bg-blue-50 p-6">
-                <h4 className="mb-2 font-bold text-blue-900">Phòng Đào tạo</h4>
-                <p className="mb-4 text-sm text-blue-700">
-                  Giải đáp thắc mắc về điểm, đăng ký môn và lịch thi.
-                </p>
-                <p className="font-bold text-blue-900">024 3858 7346 (Phím 1)</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center justify-between border-t border-slate-100 pt-8 text-sm text-slate-400 md:flex-row">
-          <p>© 2026 Thang Long University. All rights reserved.</p>
-          <div className="mt-4 flex gap-6 md:mt-0">
-            <a href="#support" className="hover:text-slate-600">
-              Điều khoản sử dụng
-            </a>
-            <a href="#support" className="hover:text-slate-600">
-              Chính sách bảo mật
-            </a>
-          </div>
-        </div>
-      </div>
-    </footer>
   );
 }

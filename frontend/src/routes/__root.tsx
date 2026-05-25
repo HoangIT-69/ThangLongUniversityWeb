@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth";
 import { LandingContentProvider } from "@/lib/landing-content";
+import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { Toaster } from "@/components/ui/sonner";
 import type { ReactNode } from "react";
@@ -87,17 +88,25 @@ function RootComponent() {
 
 function PublicShell() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const shouldHideHeader =
+  const shouldHideMarketingShell =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/student") ||
     pathname.startsWith("/teacher") ||
-    pathname === "/login" ||
     pathname.endsWith(".xml");
+  const shouldHideHeader = shouldHideMarketingShell || pathname === "/login";
+  const shouldHideFooter = shouldHideMarketingShell || pathname === "/login";
+
+  if (shouldHideMarketingShell) {
+    return <Outlet />;
+  }
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col">
       {!shouldHideHeader && <SiteHeader />}
-      <Outlet />
-    </>
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      {!shouldHideFooter && <MarketingFooter />}
+    </div>
   );
 }

@@ -56,7 +56,6 @@ function AnnouncementDetailPage() {
             Quay lại trang thông báo
           </Link>
         </div>
-        <TluFooter />
       </div>
     );
   }
@@ -64,7 +63,7 @@ function AnnouncementDetailPage() {
   const relatedAnnouncements = getRelatedAnnouncements(announcement.slug, announcement.category);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
+    <div className="flex min-h-screen flex-col bg-[#F8FAFC] font-sans text-slate-900">
       <div className="h-1 w-full bg-gradient-to-r from-[#00204A] via-[#C8102E] to-[#00204A]" />
 
       <div className="border-b border-slate-100 bg-white">
@@ -79,7 +78,7 @@ function AnnouncementDetailPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-screen-2xl px-4 py-10 sm:px-6 lg:px-10">
+      <main className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-10 sm:px-6 lg:px-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_2fr]">
           <div className="lg:sticky lg:top-6 lg:self-start">
             <span className="inline-block rounded-full bg-[#C8102E] px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
@@ -180,9 +179,7 @@ function AnnouncementDetailPage() {
             </div>
           </article>
         </div>
-      </div>
-
-      <TluFooter />
+      </main>
 
       <style>{`
         .article-body p { margin-bottom: 1rem; line-height: 1.8; color: #1e293b; }
@@ -234,66 +231,5 @@ function Breadcrumb({ items }: { items: { label: string; to?: string }[] }) {
         );
       })}
     </nav>
-  );
-}
-
-function TluFooter() {
-  return (
-    <footer className="mt-12 border-t border-slate-200 bg-[#00204A] text-white">
-      <div className="mx-auto max-w-screen-2xl px-4 py-10 sm:px-6 lg:px-10">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div>
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-sm font-black text-[#C8102E]">
-                TLU
-              </div>
-              <div>
-                <div className="font-bold">Đại học Thăng Long</div>
-                <div className="text-xs text-white/60">Thang Long University</div>
-              </div>
-            </div>
-            <p className="text-sm leading-relaxed text-white/70">
-              Trường đại học ngoài công lập đầu tiên của Việt Nam, thành lập năm 1988.
-            </p>
-          </div>
-          <div>
-            <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-white/50">
-              Liên hệ
-            </h4>
-            <ul className="space-y-1.5 text-sm text-white/70">
-              <li>Đường Nghiêm Xuân Yêm, Đại Kim, Hoàng Mai, Hà Nội</li>
-              <li>024 3858 7346</li>
-              <li>daotao@thanglong.edu.vn</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-white/50">
-              Truy cập nhanh
-            </h4>
-            <ul className="space-y-1.5 text-sm">
-              <li>
-                <Link to="/" className="text-white/70 transition hover:text-white">
-                  Trang chủ
-                </Link>
-              </li>
-              <li>
-                <Link to="/articles" className="text-white/70 transition hover:text-white">
-                  Tin tức & Sự kiện
-                </Link>
-              </li>
-              <li>
-                <Link to="/announcements" className="text-white/70 transition hover:text-white">
-                  Thông báo
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className="mt-8 border-t border-white/10 pt-5 text-center text-xs text-white/40">
-          © {new Date().getFullYear()} Trường Đại học Thăng Long. Bảo lưu mọi quyền. · Mã trường:
-          DTL
-        </div>
-      </div>
-    </footer>
   );
 }
