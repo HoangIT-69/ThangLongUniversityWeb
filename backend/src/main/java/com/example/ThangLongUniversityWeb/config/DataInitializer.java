@@ -3,8 +3,10 @@ package com.example.ThangLongUniversityWeb.config;
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
 import com.example.ThangLongUniversityWeb.entity.ClassSectionSchedule;
 import com.example.ThangLongUniversityWeb.entity.Course;
+import com.example.ThangLongUniversityWeb.entity.Department;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.entity.Grade;
+import com.example.ThangLongUniversityWeb.entity.Homeroom;
 import com.example.ThangLongUniversityWeb.entity.Major;
 import com.example.ThangLongUniversityWeb.entity.Period;
 import com.example.ThangLongUniversityWeb.entity.Room;
@@ -19,8 +21,10 @@ import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.enums.Role;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.CourseRepository;
+import com.example.ThangLongUniversityWeb.repository.DepartmentRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.GradeRepository;
+import com.example.ThangLongUniversityWeb.repository.HomeroomRepository;
 import com.example.ThangLongUniversityWeb.repository.MajorRepository;
 import com.example.ThangLongUniversityWeb.repository.PeriodRepository;
 import com.example.ThangLongUniversityWeb.repository.RoomRepository;
@@ -54,6 +58,8 @@ public class DataInitializer implements CommandLineRunner {
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final MajorRepository majorRepository;
+    private final DepartmentRepository departmentRepository;
+    private final HomeroomRepository homeroomRepository;
     private final CourseRepository courseRepository;
     private final SemesterRepository semesterRepository;
     private final RoomRepository roomRepository;
@@ -77,19 +83,25 @@ public class DataInitializer implements CommandLineRunner {
             ))
         );
 
-        Major cntt = major("CNTT", "Cong nghe thong tin", "Dao tao lap trinh, he thong thong tin va cong nghe phan mem.");
-        Major kt = major("KT", "Kinh te", "Dao tao kinh te ung dung va quan tri.");
-        Major qtkd = major("QTKD", "Quan tri kinh doanh", "Dao tao quan tri doanh nghiep, marketing va van hanh.");
-        Major nn = major("NN", "Ngon ngu Anh", "Dao tao ngon ngu, bien phien dich va tieng Anh ung dung.");
+        // Seed Departments
+        Department deptCNTT = department("CNTT", "Khoa Cong nghe thong tin", "Dao tao CNTT va HTTT");
+        Department deptKT = department("KT", "Khoa Kinh te", "Dao tao kinh te va tai chinh");
+        Department deptNN = department("NN", "Khoa Ngoai ngu", "Dao tao ngon ngu va bien phien dich");
+        Department deptQTKD = department("QTKD", "Khoa Quan tri kinh doanh", "Dao tao quan tri va marketing");
+
+        Major cntt = major("CNTT", "Cong nghe thong tin", "Dao tao lap trinh, he thong thong tin va cong nghe phan mem.", deptCNTT);
+        Major kt = major("KT", "Kinh te", "Dao tao kinh te ung dung va quan tri.", deptKT);
+        Major qtkd = major("QTKD", "Quan tri kinh doanh", "Dao tao quan tri doanh nghiep, marketing va van hanh.", deptQTKD);
+        Major nn = major("NN", "Ngon ngu Anh", "Dao tao ngon ngu, bien phien dich va tieng Anh ung dung.", deptNN);
 
         Semester hk1 = semester("HK1 2025-2026", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 15), false, false);
         Semester hk2 = semester("HK2 2025-2026", LocalDate.of(2026, 2, 2), LocalDate.of(2026, 6, 15), true, false);
 
-        Room a101 = room("A101", 60);
-        Room b202 = room("B202", 45);
-        Room lab301 = room("LAB301", 35);
-        Room c303 = room("C303", 55);
-        Room lab402 = room("LAB402", 40);
+        Room a101 = room("A101", 60, "LECTURE", "AVAILABLE");
+        Room b202 = room("B202", 45, "LECTURE", "AVAILABLE");
+        Room lab301 = room("LAB301", 35, "LAB", "AVAILABLE");
+        Room c303 = room("C303", 55, "LECTURE", "AVAILABLE");
+        Room lab402 = room("LAB402", 40, "LAB", "AVAILABLE");
 
         Period p1 = period(1, "07:00", "07:50");
         Period p2 = period(2, "08:00", "08:50");
@@ -127,13 +139,28 @@ public class DataInitializer implements CommandLineRunner {
         Course startup = course("BUS1201", "Khoi nghiep doi moi sang tao", 2, "Tu duy san pham, mo hinh kinh doanh va go-to-market.", null, CourseType.ELECTIVE);
         Course psychology = course("SOC1101", "Tam ly hoc dai cuong", 2, "Hanh vi ca nhan, dong luc va giao tiep xa hoi.", null, CourseType.ELECTIVE);
 
-        Teacher gv101 = teacher("gv101", "teacher1@tlu.edu.vn", "GV101", "Nguyen Minh Anh", "Cong nghe thong tin", "ThS");
-        Teacher gv102 = teacher("gv102", "teacher2@tlu.edu.vn", "GV102", "Tran Hoang Nam", "Kinh te", "TS");
-        Teacher gv103 = teacher("gv103", "teacher3@tlu.edu.vn", "GV103", "Do Quang Huy", "Cong nghe thong tin", "TS");
-        Teacher gv104 = teacher("gv104", "teacher4@tlu.edu.vn", "GV104", "Pham Thu Ha", "Ngoai ngu", "ThS");
+        prerequisites(web, java);
+        prerequisites(db, discreteMath);
+        prerequisites(os, dataStructures);
+        prerequisites(se, java);
+        prerequisites(ai, dataStructures);
+        prerequisites(mobile, java, web);
+        prerequisites(security, network);
+        prerequisites(macro, econ);
+        prerequisites(accounting, econ);
+        prerequisites(marketing, management);
 
-        Student sv001 = student("sv001", "student1@tlu.edu.vn", "SV001", "Le Thanh Binh", cntt, 2025);
-        Student sv002 = student("sv002", "student2@tlu.edu.vn", "SV002", "Pham Ngoc Linh", kt, 2025);
+        Teacher gv101 = teacher("gv101", "teacher1@tlu.edu.vn", "GV101", "Nguyen Minh Anh", deptCNTT, "ThS");
+        Teacher gv102 = teacher("gv102", "teacher2@tlu.edu.vn", "GV102", "Tran Hoang Nam", deptKT, "TS");
+        Teacher gv103 = teacher("gv103", "teacher3@tlu.edu.vn", "GV103", "Do Quang Huy", deptCNTT, "TS");
+        Teacher gv104 = teacher("gv104", "teacher4@tlu.edu.vn", "GV104", "Pham Thu Ha", deptNN, "ThS");
+
+        // Seed Homerooms
+        Homeroom cnttK36A = homeroom("CNTT-K36A", gv101, cntt, 2025, "K36");
+        Homeroom ktK36A = homeroom("KT-K36A", gv102, kt, 2025, "K36");
+
+        Student sv001 = student("sv001", "student1@tlu.edu.vn", "SV001", "Le Thanh Binh", cntt, 2025, cnttK36A);
+        Student sv002 = student("sv002", "student2@tlu.edu.vn", "SV002", "Pham Ngoc Linh", kt, 2025, ktK36A);
 
         admin("admin", "admin@tlu.edu.vn");
 
@@ -233,9 +260,9 @@ public class DataInitializer implements CommandLineRunner {
                 .orElseGet(() -> saveUser(username, email, Role.ADMIN));
     }
 
-    private Student student(String username, String email, String code, String fullName, Major major, Integer academicYear) {
+    private Student student(String username, String email, String code, String fullName, Major major, Integer academicYear, Homeroom homeroom) {
         return studentRepository.findByStudentCode(code).map(existing -> {
-            applyStudentProfile(existing, code, fullName, major, academicYear);
+            applyStudentProfile(existing, code, fullName, major, academicYear, homeroom);
             return studentRepository.save(existing);
         }).orElseGet(() -> {
             User user = userRepository.findByUsername(username)
@@ -243,12 +270,12 @@ public class DataInitializer implements CommandLineRunner {
 
             Student student = new Student();
             student.setUser(user);
-            applyStudentProfile(student, code, fullName, major, academicYear);
+            applyStudentProfile(student, code, fullName, major, academicYear, homeroom);
             return studentRepository.save(student);
         });
     }
 
-    private void applyStudentProfile(Student student, String code, String fullName, Major major, Integer academicYear) {
+    private void applyStudentProfile(Student student, String code, String fullName, Major major, Integer academicYear, Homeroom homeroom) {
         boolean firstStudent = code.endsWith("1");
         student.setStudentCode(code);
         student.setFullName(fullName);
@@ -269,29 +296,90 @@ public class DataInitializer implements CommandLineRunner {
                 : "Pham Thi Hoa - 0912000002");
         student.setAddress(student.getCurrentAddress());
         student.setCohort(firstStudent ? "K36" : "K36");
-        student.setClassName(firstStudent ? "CNTT-K36A" : "KT-K36A");
-        student.setAdvisor(firstStudent ? "ThS. Nguyen Minh Anh" : "TS. Tran Hoang Nam");
+        student.setHomeroom(homeroom);
         student.setStatus("Dang hoc");
         student.setTrainingType("Dai hoc chinh quy");
         student.setMajor(major);
         student.setAcademicYear(academicYear);
     }
 
-    private Teacher teacher(String username, String email, String code, String fullName, String department, String degree) {
-        return teacherRepository.findByTeacherCode(code).orElseGet(() -> {
+    private Teacher teacher(String username, String email, String code, String fullName, Department department, String degree) {
+        boolean isFirst = code.endsWith("1");
+        boolean isSecond = code.endsWith("2");
+
+        LocalDate dobDate = isFirst ? LocalDate.of(1985, 5, 12) : isSecond ? LocalDate.of(1982, 3, 8) : LocalDate.of(1988, 11, 25);
+        String phone = isFirst ? "0901000001" : isSecond ? "0902000002" : "0903000003";
+        String gender = code.endsWith("4") ? "Nu" : "Nam";
+        String nationalId = isFirst ? "001185000101" : isSecond ? "001182000202" : code.endsWith("3") ? "001188000303" : "001188000404";
+        String placeOfBirth = isFirst ? "Ha Noi" : isSecond ? "Nghe An" : code.endsWith("3") ? "Hai Duong" : "Thai Nguyen";
+        String hometown = isFirst ? "Thanh Xuan, Ha Noi" : isSecond ? "Vinh, Nghe An" : code.endsWith("3") ? "Hai Duong" : "Thai Nguyen";
+        String permanentAddress = isFirst ? "So 25 Nguyen Trai, Thanh Xuan, Ha Noi" : isSecond ? "So 10 Le Loi, Vinh, Nghe An" : code.endsWith("3") ? "So 5 Tran Phu, Hai Duong" : "So 18 Hoang Van Thu, Thai Nguyen";
+        String currentAddress = permanentAddress;
+        String emergencyContact = isFirst ? "Nguyen Van An - 0912000001" : isSecond ? "Tran Thi Lan - 0912000002" : code.endsWith("3") ? "Do Van Minh - 0912000003" : "Le Thi Hoa - 0912000004";
+
+        return teacherRepository.findByTeacherCode(code).map(existing -> {
+            // Keep existing user — do NOT reassign to avoid duplicate email errors
+            existing.setFullName(fullName);
+            existing.setDob(dobDate);
+            existing.setGender(gender);
+            existing.setPhone(phone);
+            existing.setNationalId(nationalId);
+            existing.setPlaceOfBirth(placeOfBirth);
+            existing.setHometown(hometown);
+            existing.setPermanentAddress(permanentAddress);
+            existing.setCurrentAddress(currentAddress);
+            existing.setEmergencyContact(emergencyContact);
+            existing.setDepartment(department);
+            existing.setDegree(degree);
+            existing.setAddress(currentAddress);
+            if (existing.getStatus() == null) {
+                existing.setStatus(com.example.ThangLongUniversityWeb.enums.TeacherStatus.DANG_GIANG_DAY);
+            }
+            return teacherRepository.save(existing);
+        }).orElseGet(() -> {
             User user = userRepository.findByUsername(username)
                     .orElseGet(() -> saveUser(username, email, Role.TEACHER));
+            Teacher t = new Teacher();
+            t.setUser(user);
+            t.setTeacherCode(code);
+            t.setFullName(fullName);
+            t.setDob(dobDate);
+            t.setGender(gender);
+            t.setPhone(phone);
+            t.setNationalId(nationalId);
+            t.setPlaceOfBirth(placeOfBirth);
+            t.setHometown(hometown);
+            t.setPermanentAddress(permanentAddress);
+            t.setCurrentAddress(currentAddress);
+            t.setEmergencyContact(emergencyContact);
+            t.setDepartment(department);
+            t.setDegree(degree);
+            t.setAddress(currentAddress);
+            t.setStatus(com.example.ThangLongUniversityWeb.enums.TeacherStatus.DANG_GIANG_DAY);
+            return teacherRepository.save(t);
+        });
+    }
 
-            Teacher teacher = new Teacher();
-            teacher.setUser(user);
-            teacher.setTeacherCode(code);
-            teacher.setFullName(fullName);
-            teacher.setDob(LocalDate.of(1985, 5, code.endsWith("1") ? 12 : 20));
-            teacher.setPhone(code.endsWith("1") ? "0901000001" : "0901000002");
-            teacher.setDepartment(department);
-            teacher.setDegree(degree);
-            teacher.setAddress("Ha Noi");
-            return teacherRepository.save(teacher);
+    private Department department(String code, String name, String description) {
+        return departmentRepository.findByDepartmentCode(code).orElseGet(() -> {
+            Department dept = new Department();
+            dept.setDepartmentCode(code);
+            dept.setName(name);
+            dept.setDescription(description);
+            return departmentRepository.save(dept);
+        });
+    }
+
+    private Homeroom homeroom(String className, Teacher advisor, Major major, Integer academicYear, String cohort) {
+        return homeroomRepository.findByClassName(className).orElseGet(() -> {
+            Homeroom hr = new Homeroom();
+            hr.setClassName(className);
+            hr.setAdvisor(advisor);
+            hr.setMajor(major);
+            hr.setAcademicYear(academicYear);
+            hr.setCohort(cohort);
+            hr.setIsActive(true);
+            return homeroomRepository.save(hr);
         });
     }
 
@@ -305,12 +393,18 @@ public class DataInitializer implements CommandLineRunner {
         return userRepository.save(user);
     }
 
-    private Major major(String code, String name, String description) {
-        return majorRepository.findByMajorCode(code).orElseGet(() -> {
+    private Major major(String code, String name, String description, Department department) {
+        return majorRepository.findByMajorCode(code).map(existing -> {
+            existing.setName(name);
+            existing.setDescription(description);
+            existing.setDepartment(department);
+            return majorRepository.save(existing);
+        }).orElseGet(() -> {
             Major major = new Major();
             major.setMajorCode(code);
             major.setName(name);
             major.setDescription(description);
+            major.setDepartment(department);
             return majorRepository.save(major);
         });
     }
@@ -339,6 +433,16 @@ public class DataInitializer implements CommandLineRunner {
         });
     }
 
+    private Course prerequisites(Course course, Course... prerequisites) {
+        course.getPrerequisites().clear();
+        for (Course prerequisite : prerequisites) {
+            if (prerequisite != null && prerequisite.getId() != null && !prerequisite.getId().equals(course.getId())) {
+                course.getPrerequisites().add(prerequisite);
+            }
+        }
+        return courseRepository.save(course);
+    }
+
     private CourseType defaultCourseType(String code) {
         return code != null && code.startsWith("ENG") ? CourseType.ELECTIVE : CourseType.REQUIRED;
     }
@@ -361,11 +465,18 @@ public class DataInitializer implements CommandLineRunner {
         });
     }
 
-    private Room room(String name, Integer capacity) {
-        return roomRepository.findByName(name).orElseGet(() -> {
+    private Room room(String name, Integer capacity, String type, String status) {
+        return roomRepository.findByName(name).map(existing -> {
+            existing.setCapacity(capacity);
+            existing.setType(type);
+            existing.setStatus(status);
+            return roomRepository.save(existing);
+        }).orElseGet(() -> {
             Room room = new Room();
             room.setName(name);
             room.setCapacity(capacity);
+            room.setType(type);
+            room.setStatus(status);
             return roomRepository.save(room);
         });
     }

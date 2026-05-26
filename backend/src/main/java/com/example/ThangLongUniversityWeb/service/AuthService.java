@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -34,6 +35,9 @@ public class AuthService {
 
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + request.getUsername()));
+
+        user.setLastLoginAt(LocalDateTime.now());
+        userRepository.save(user);
 
         String accessToken = jwtUtils.generateAccessToken(user.getUsername(), user.getRole().name());
         String refreshJti = UUID.randomUUID().toString();

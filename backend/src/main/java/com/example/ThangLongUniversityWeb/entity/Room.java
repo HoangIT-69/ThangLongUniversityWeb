@@ -22,4 +22,10 @@ public class Room {
 
     @Column(nullable = false)
     private Integer capacity;
+
+    @Column
+    private String type = "LECTURE";
+
+    @Column
+    private String status = "AVAILABLE";
 }

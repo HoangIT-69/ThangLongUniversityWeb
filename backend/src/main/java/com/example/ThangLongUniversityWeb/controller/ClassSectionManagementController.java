@@ -1,6 +1,7 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.ClassSectionRequest;
+import com.example.ThangLongUniversityWeb.dto.request.ExamScheduleRequest;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.service.ClassSectionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -64,5 +66,26 @@ public class ClassSectionManagementController {
     public ResponseEntity<?> deleteClassSection(@PathVariable Long id) {
         classSectionService.deleteClassSection(id);
         return ResponseEntity.ok("Xóa lớp học phần thành công!");
+    }
+
+    @Operation(summary = "Cập nhật lịch thi cho một lớp học phần")
+    @PutMapping("/{id}/exam-schedule")
+    public ResponseEntity<?> updateExamSchedule(@PathVariable Long id, @RequestBody ExamScheduleRequest request) {
+        return ResponseEntity.ok(classSectionService.updateExamSchedule(id, request));
+    }
+
+    @Operation(summary = "Cập nhật hàng loạt lịch thi cho các lớp trong một học kỳ")
+    @PutMapping("/semester/{semesterId}/exam-schedules")
+    public ResponseEntity<?> batchUpdateExamSchedules(
+            @PathVariable Long semesterId,
+            @RequestBody List<ExamScheduleRequest> requests
+    ) {
+        return ResponseEntity.ok(classSectionService.batchUpdateExamSchedules(semesterId, requests));
+    }
+
+    @Operation(summary = "Lấy danh sách lịch thi theo học kỳ")
+    @GetMapping("/semester/{semesterId}/exam-schedules")
+    public ResponseEntity<?> getExamSchedules(@PathVariable Long semesterId) {
+        return ResponseEntity.ok(classSectionService.getExamSchedulesBySemester(semesterId));
     }
 }

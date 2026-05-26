@@ -2,11 +2,11 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Award,
-  BarChart3,
   Bell,
   BookCheck,
   BookMarked,
   BookOpen,
+  Building2,
   CalendarCheck,
   CalendarDays,
   ClipboardList,
@@ -25,6 +25,7 @@ import {
   PanelLeftOpen,
   Receipt,
   Repeat,
+  School,
   User,
   UserCog,
   Users,
@@ -40,7 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/api/types";
 import {
@@ -70,21 +71,25 @@ const adminNavGroups: NavGroup[] = [
     ],
   },
   {
-    heading: "Học vụ",
+    heading: "Danh mục",
     items: [
+      { to: "/admin/departments", label: "Khoa / Bộ môn", icon: Building2 },
       { to: "/admin/majors", label: "Ngành học", icon: Library },
+      { to: "/admin/homerooms", label: "Lớp hành chính", icon: School },
       { to: "/admin/courses", label: "Học phần", icon: BookOpen },
-      { to: "/admin/semesters", label: "Học kỳ", icon: CalendarDays },
       { to: "/admin/rooms", label: "Phòng học", icon: DoorOpen },
       { to: "/admin/periods", label: "Tiết học", icon: Clock },
-      { to: "/admin/class-sections", label: "Lớp học phần", icon: Layers },
-      { to: "/admin/enrollments", label: "Đăng ký học", icon: ClipboardList },
-      { to: "/admin/academic-results", label: "Kết quả học tập", icon: BarChart3 },
     ],
   },
   {
-    heading: "Hệ thống",
-    items: [{ to: "/admin/profile", label: "Hồ sơ cá nhân", icon: User }],
+    heading: "Quản lý lớp",
+    items: [
+      { to: "/admin/semesters", label: "Học kỳ", icon: CalendarDays },
+      { to: "/admin/class-sections", label: "Lớp học phần", icon: Layers },
+      { to: "/admin/enrollments", label: "Đăng ký học", icon: ClipboardList },
+      { to: "/admin/exam-schedules", label: "Lịch thi", icon: CalendarCheck },
+      { to: "/admin/exam-registrations", label: "Đăng ký thi lại", icon: Repeat },
+    ],
   },
 ];
 
@@ -99,7 +104,9 @@ const teacherNavGroups: NavGroup[] = [
   {
     heading: "Giảng dạy",
     items: [
+      { to: "/teacher/timetable", label: "Thời khóa biểu", icon: CalendarDays },
       { to: "/teacher/classes", label: "Lớp học phần", icon: Layers },
+      { to: "/teacher/attendance", label: "Điểm danh sinh viên", icon: ClipboardList },
       { to: "/teacher/grades", label: "Quản lý điểm", icon: NotebookPen },
     ],
   },
@@ -223,7 +230,7 @@ function SidebarInner({ pathname, onNavigate }: { pathname: string; onNavigate?:
           <div className="text-xs text-sidebar-foreground/60">Cổng thông tin</div>
         </div>
       </Link>
-      <div className="flex-1 overflow-y-auto">
+      <div className="sidebar-scroll flex-1 overflow-y-auto">
         {role ? (
           <GroupedNavList groups={navGroups} pathname={pathname} onNavigate={onNavigate} />
         ) : null}
@@ -333,6 +340,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Menu điều hướng</SheetTitle>
+              </SheetHeader>
               <SidebarInner pathname={pathname} onNavigate={() => setOpen(false)} />
             </SheetContent>
           </Sheet>

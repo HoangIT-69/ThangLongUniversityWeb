@@ -58,28 +58,28 @@ public class StudentRequest {
     )
     private LocalDate dob;
 
-    @Schema(description = "Gioi tinh", example = "Nam")
+    @Schema(description = "Giới tính", example = "Nam")
     private String gender;
 
-    @Schema(description = "So dien thoai", example = "0987654321")
+    @Schema(description = "Số điện thoại", example = "0987654321")
     private String phone;
 
-    @Schema(description = "So CCCD/CMND", example = "001204000789")
+    @Schema(description = "Số CCCD/CMND", example = "001204000789")
     private String nationalId;
 
-    @Schema(description = "Noi sinh", example = "Ha Noi")
+    @Schema(description = "Nơi sinh", example = "Hà Nội")
     private String placeOfBirth;
 
-    @Schema(description = "Que quan", example = "Thanh Tri, Ha Noi")
+    @Schema(description = "Quê quán", example = "Thanh Trì, Hà Nội")
     private String hometown;
 
-    @Schema(description = "Dia chi thuong tru")
+    @Schema(description = "Địa chỉ thường trú")
     private String permanentAddress;
 
-    @Schema(description = "Noi o hien tai")
+    @Schema(description = "Nơi ở hiện tại")
     private String currentAddress;
 
-    @Schema(description = "Lien he khan cap", example = "Nguyen Van B - 0912345678")
+    @Schema(description = "Liên hệ khẩn cấp", example = "Nguyễn Văn B - 0912345678")
     private String emergencyContact;
     
     @Schema(
@@ -96,19 +96,16 @@ public class StudentRequest {
     )
     private Integer academicYear;
 
-    @Schema(description = "Khoa", example = "K36")
+    @Schema(description = "Khóa", example = "K36")
     private String cohort;
 
-    @Schema(description = "Lop hanh chinh", example = "CNTT-K36A")
-    private String className;
+    @Schema(description = "ID lớp hành chính (không bắt buộc, có thể gán sau)", example = "1")
+    private Long homeroomId;
 
-    @Schema(description = "Co van hoc tap", example = "ThS. Nguyen Minh Hoang")
-    private String advisor;
-
-    @Schema(description = "Trang thai sinh vien", example = "Dang hoc")
+    @Schema(description = "Trạng thái sinh viên", example = "Đang học")
     private String status;
 
-    @Schema(description = "He dao tao", example = "Dai hoc chinh quy")
+    @Schema(description = "Hệ đào tạo", example = "Đại học chính quy")
     private String trainingType;
     
     @Schema(

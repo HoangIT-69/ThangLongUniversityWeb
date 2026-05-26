@@ -31,4 +31,28 @@ public class MajorResponse {
             example = "Chuyên ngành đào tạo về công nghệ thông tin..."
     )
     private String description;
+
+    @Schema(
+            description = "So sinh vien thuoc nganh",
+            example = "120"
+    )
+    private Long studentCount;
+
+    @Schema(
+            description = "So mon hoc thuoc nganh",
+            example = "36"
+    )
+    private Long courseCount;
+
+    @Schema(
+            description = "ID khoa/bo mon quan ly nganh",
+            example = "1"
+    )
+    private Long departmentId;
+
+    @Schema(
+            description = "Ten khoa/bo mon quan ly nganh",
+            example = "Khoa Cong nghe thong tin"
+    )
+    private String departmentName;
 }

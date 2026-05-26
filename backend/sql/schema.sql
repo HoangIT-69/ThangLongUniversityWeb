@@ -29,7 +29,9 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     email       VARCHAR(255) NOT NULL UNIQUE,
     role        VARCHAR(20)  NOT NULL CHECK (role IN ('ADMIN', 'STUDENT', 'TEACHER')),
-    is_active   BOOLEAN      NOT NULL DEFAULT TRUE
+    is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP
 );
 
 -- 1.2 Majors — Ngành học

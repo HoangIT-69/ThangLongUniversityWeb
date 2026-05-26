@@ -58,11 +58,9 @@ public class Student {
     @Column(length = 30)
     private String cohort;
 
-    @Column(name = "class_name", length = 80)
-    private String className;
-
-    @Column(length = 120)
-    private String advisor;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "homeroom_id")
+    private Homeroom homeroom;
 
     @Column(length = 50)
     private String status;

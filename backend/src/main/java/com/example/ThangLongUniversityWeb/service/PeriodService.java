@@ -3,8 +3,10 @@ package com.example.ThangLongUniversityWeb.service;
 import com.example.ThangLongUniversityWeb.dto.request.PeriodRequest;
 import com.example.ThangLongUniversityWeb.dto.response.PeriodResponse;
 import com.example.ThangLongUniversityWeb.entity.Period;
+import com.example.ThangLongUniversityWeb.exception.ConflictException;
 import com.example.ThangLongUniversityWeb.repository.PeriodRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,7 +63,14 @@ public class PeriodService {
 
     @Transactional
     public void deletePeriod(Long id) {
-        periodRepository.deleteById(id);
+        Period period = periodRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay tiet hoc!"));
+        try {
+            periodRepository.delete(period);
+            periodRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException("Khong the xoa tiet hoc vi dang duoc su dung trong lich lop hoc phan.");
+        }
     }
 
     private PeriodResponse toResponse(Period period) {

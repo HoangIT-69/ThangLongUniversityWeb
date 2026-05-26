@@ -19,13 +19,15 @@ interface Props<T> {
   columns: Column<T>[];
   pageSize?: number;
   searchPlaceholder?: string;
+  searchSlot?: ReactNode;
+  filterRow?: ReactNode;
   emptyMessage?: string;
   toolbar?: ReactNode;
   rowKey: (row: T) => string;
   onRowClick?: (row: T) => void;
 }
 
-export function DataTable<T>({ data, columns, pageSize = 8, searchPlaceholder = "Tìm kiếm…", emptyMessage = "Không có dữ liệu", toolbar, rowKey, onRowClick }: Props<T>) {
+export function DataTable<T>({ data, columns, pageSize = 8, searchPlaceholder = "Tìm kiếm…", searchSlot, filterRow, emptyMessage = "Không có dữ liệu", toolbar, rowKey, onRowClick }: Props<T>) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
 
@@ -47,17 +49,21 @@ export function DataTable<T>({ data, columns, pageSize = 8, searchPlaceholder = 
 
   return (
     <div className="rounded-xl border bg-card shadow-sm">
-      <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => { setQ(e.target.value); setPage(1); }}
-            placeholder={searchPlaceholder}
-            className="pl-9"
-          />
+      <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end lg:flex-1">
+          <div className="relative w-full sm:min-w-xs sm:max-w-xs sm:self-end">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => { setQ(e.target.value); setPage(1); }}
+              placeholder={searchPlaceholder}
+              className="pl-9"
+            />
+          </div>
+          {searchSlot && <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-end">{searchSlot}</div>}
+          {filterRow && <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-end">{filterRow}</div>}
         </div>
-        {toolbar && <div className="flex flex-wrap items-center gap-2">{toolbar}</div>}
+        {toolbar && <div className="flex flex-wrap items-center gap-2 lg:justify-end">{toolbar}</div>}
       </div>
 
       <div className="overflow-x-auto">

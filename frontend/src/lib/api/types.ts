@@ -47,23 +47,32 @@ export interface MajorResponse {
   majorCode: string;
   name: string;
   description?: string | null;
+  studentCount?: number | null;
+  courseCount?: number | null;
+  departmentId?: number | null;
+  departmentName?: string | null;
 }
 
 export interface AdminMajorRequest {
   majorCode: string;
   name: string;
   description?: string;
+  departmentId?: number | null;
 }
 
 export interface RoomResponse {
   id: number;
   name: string;
   capacity: number;
+  type?: "LECTURE" | "LAB" | "AUDITORIUM" | string | null;
+  status?: "AVAILABLE" | "MAINTENANCE" | string | null;
 }
 
 export interface AdminRoomRequest {
   name: string;
   capacity: number;
+  type?: "LECTURE" | "LAB" | "AUDITORIUM";
+  status?: "AVAILABLE" | "MAINTENANCE";
 }
 
 export interface PeriodResponse {
@@ -97,6 +106,16 @@ export interface AdminUserResponse {
   email: string;
   role: Role;
   active: boolean;
+  fullName?: string | null;
+  profileId?: number | null;
+  createdAt?: string | null;
+  lastLoginAt?: string | null;
+}
+
+export interface AdminUserUpdateRequest {
+  username: string;
+  email: string;
+  fullName: string;
 }
 
 export interface AdminStudentResponse {
@@ -108,9 +127,29 @@ export interface AdminStudentResponse {
   dob?: string | null;
   address?: string | null;
   academicYear?: number | string | null;
+  cohort?: string | null;
   majorId?: number | null;
   majorCode?: string | null;
   majorName?: string | null;
+  status?: string | null;
+  gpa?: number | null;
+  cpa?: number | null;
+  totalCredits?: number | null;
+  // extended profile fields
+  gender?: string | null;
+  phone?: string | null;
+  nationalId?: string | null;
+  placeOfBirth?: string | null;
+  hometown?: string | null;
+  permanentAddress?: string | null;
+  currentAddress?: string | null;
+  emergencyContact?: string | null;
+  className?: string | null;
+  homeroomId?: number | null;
+  advisorId?: number | null;
+  advisorName?: string | null;
+  advisorCode?: string | null;
+  trainingType?: string | null;
 }
 
 export interface AdminStudentRequest {
@@ -127,15 +166,25 @@ export interface AdminStudentRequest {
 
 export interface AdminTeacherResponse {
   id: number;
-  username?: string;
-  email?: string;
+  username?: string | null;
+  email?: string | null;
   teacherCode: string;
   fullName: string;
   dob?: string | null;
+  gender?: string | null;
   phone?: string | null;
-  department?: string | null;
+  nationalId?: string | null;
+  placeOfBirth?: string | null;
+  hometown?: string | null;
+  permanentAddress?: string | null;
+  currentAddress?: string | null;
+  emergencyContact?: string | null;
+  departmentId?: number | null;
+  departmentCode?: string | null;
+  departmentName?: string | null;
   degree?: string | null;
   address?: string | null;
+  status?: "DANG_GIANG_DAY" | "NGHI_PHEP" | "DA_NGHI_VIEC" | null;
 }
 
 export interface AdminTeacherRequest {
@@ -145,10 +194,51 @@ export interface AdminTeacherRequest {
   teacherCode: string;
   fullName: string;
   dob?: string;
-  department?: string;
+  departmentId?: number;
   degree?: string;
   address?: string;
   phone?: string;
+}
+
+export interface DepartmentResponse {
+  id: number;
+  departmentCode: string;
+  name: string;
+  description?: string | null;
+  teacherCount?: number | null;
+  majorCount?: number | null;
+}
+
+export interface DepartmentRequest {
+  departmentCode: string;
+  name: string;
+  description?: string;
+}
+
+export interface HomeroomResponse {
+  id: number;
+  className: string;
+  advisorId?: number | null;
+  advisorCode?: string | null;
+  advisorName?: string | null;
+  majorId?: number | null;
+  majorName?: string | null;
+  academicYear?: number | null;
+  cohort?: string | null;
+  studentCount?: number | null;
+  isActive?: boolean;
+}
+
+export interface HomeroomRequest {
+  className: string;
+  advisorId?: number | null;
+  majorId?: number | null;
+  academicYear?: number | null;
+  cohort?: string;
+}
+
+export interface HomeroomStudentsRequest {
+  studentIds: number[];
 }
 
 export interface AdminCourseRequest {
@@ -567,7 +657,9 @@ export interface CourseResponse {
   description?: string | null;
   courseType?: CourseType | null;
   courseTypeLabel?: string | null;
+  majorId?: number | null;
   majorName?: string | null;
+  prerequisiteCourseIds?: number[];
   prerequisiteNames?: string[];
 }
 
@@ -579,4 +671,83 @@ export interface NotificationResponse {
   link?: string | null;
   read: boolean;
   createdAt: string;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+export interface AdminEnrollmentResponse {
+  enrollmentId: number;
+  studentId: number;
+  studentCode: string;
+  studentName: string;
+  classSectionId: number;
+  classCode: string;
+  semesterId: number;
+  semesterName?: string | null;
+  courseName: string;
+  courseCode?: string | null;
+  credits?: number | null;
+  enrolledAt?: string | null;
+  status: string;
+}
+
+export interface AdminOverrideEnrollmentRequest {
+  studentId: number;
+  classSectionId: number;
+  note?: string;
+}
+
+export interface ExamScheduleRequest {
+  classSectionId: number;
+  examAt: string | null;
+  examRoom: string | null;
+}
+
+export interface ExamScheduleResponse {
+  classSectionId: number;
+  classCode: string;
+  courseName: string;
+  courseCode: string;
+  credits: number;
+  teacherName: string;
+  examAt: string | null;
+  examRoom: string | null;
+  studentCount: number;
+  semesterId: number;
+  semesterName: string;
+}
+
+export interface AdminExamRegistrationResponse {
+  id: number;
+  studentId: number;
+  studentCode: string;
+  studentName: string;
+  classSectionId: number;
+  classCode: string;
+  courseName: string;
+  courseCode: string;
+  credits: number;
+  semesterId: number;
+  semesterName: string;
+  status: string;
+  registrationType: string;
+  feeCharged: number | null;
+  attemptNumber: number | null;
+  examAt: string | null;
+  examRoom: string | null;
+  createdAt: string | null;
+}
+
+export interface AdminExamRegistrationSummary {
+  semesterId: number;
+  total: number;
+  pending: number;
+  registered: number;
+  totalFeeCharged: number;
 }

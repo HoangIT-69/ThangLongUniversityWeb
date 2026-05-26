@@ -2,8 +2,12 @@ package com.example.ThangLongUniversityWeb.service;
 
 import com.example.ThangLongUniversityWeb.dto.request.MajorRequest;
 import com.example.ThangLongUniversityWeb.dto.response.MajorResponse;
+import com.example.ThangLongUniversityWeb.entity.Department;
 import com.example.ThangLongUniversityWeb.entity.Major;
+import com.example.ThangLongUniversityWeb.repository.CourseRepository;
+import com.example.ThangLongUniversityWeb.repository.DepartmentRepository;
 import com.example.ThangLongUniversityWeb.repository.MajorRepository;
+import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +20,9 @@ import java.util.stream.Collectors;
 public class MajorService {
 
     private final MajorRepository majorRepository;
+    private final StudentRepository studentRepository;
+    private final CourseRepository courseRepository;
+    private final DepartmentRepository departmentRepository;
 
     public List<MajorResponse> getAllMajors() {
         return majorRepository.findAll().stream()
@@ -37,6 +44,7 @@ public class MajorService {
         major.setMajorCode(request.getMajorCode().trim());
         major.setName(request.getName().trim());
         major.setDescription(request.getDescription());
+        major.setDepartment(getDepartmentOrNull(request.getDepartmentId()));
 
         return toResponse(majorRepository.save(major));
     }
@@ -66,6 +74,7 @@ public class MajorService {
         }
 
         major.setDescription(request.getDescription());
+        major.setDepartment(getDepartmentOrNull(request.getDepartmentId()));
         return toResponse(majorRepository.save(major));
     }
 
@@ -84,11 +93,24 @@ public class MajorService {
     }
 
     private MajorResponse toResponse(Major major) {
+        Department department = major.getDepartment();
         return MajorResponse.builder()
                 .id(major.getId())
                 .majorCode(major.getMajorCode())
                 .name(major.getName())
                 .description(major.getDescription())
+                .studentCount(studentRepository.countByMajorId(major.getId()))
+                .courseCount(courseRepository.countByMajorId(major.getId()))
+                .departmentId(department != null ? department.getId() : null)
+                .departmentName(department != null ? department.getName() : null)
                 .build();
+    }
+
+    private Department getDepartmentOrNull(Long departmentId) {
+        if (departmentId == null) {
+            return null;
+        }
+        return departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay khoa/bo mon!"));
     }
 }

@@ -53,7 +53,11 @@ import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminPeriodsRouteImport } from './routes/admin.periods'
 import { Route as AdminMajorsRouteImport } from './routes/admin.majors'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
+import { Route as AdminHomeroomsRouteImport } from './routes/admin.homerooms'
+import { Route as AdminExamSchedulesRouteImport } from './routes/admin.exam-schedules'
+import { Route as AdminExamRegistrationsRouteImport } from './routes/admin.exam-registrations'
 import { Route as AdminEnrollmentsRouteImport } from './routes/admin.enrollments'
+import { Route as AdminDepartmentsRouteImport } from './routes/admin.departments'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin.courses'
 import { Route as AdminClassSectionsRouteImport } from './routes/admin.class-sections'
@@ -283,9 +287,29 @@ const AdminLandingRoute = AdminLandingRouteImport.update({
   path: '/landing',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHomeroomsRoute = AdminHomeroomsRouteImport.update({
+  id: '/homerooms',
+  path: '/homerooms',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminExamSchedulesRoute = AdminExamSchedulesRouteImport.update({
+  id: '/exam-schedules',
+  path: '/exam-schedules',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminExamRegistrationsRoute = AdminExamRegistrationsRouteImport.update({
+  id: '/exam-registrations',
+  path: '/exam-registrations',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEnrollmentsRoute = AdminEnrollmentsRouteImport.update({
   id: '/enrollments',
   path: '/enrollments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDepartmentsRoute = AdminDepartmentsRouteImport.update({
+  id: '/departments',
+  path: '/departments',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
@@ -340,7 +364,11 @@ export interface FileRoutesByFullPath {
   '/admin/class-sections': typeof AdminClassSectionsRoute
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/departments': typeof AdminDepartmentsRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
+  '/admin/exam-registrations': typeof AdminExamRegistrationsRoute
+  '/admin/exam-schedules': typeof AdminExamSchedulesRoute
+  '/admin/homerooms': typeof AdminHomeroomsRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
   '/admin/periods': typeof AdminPeriodsRoute
@@ -392,7 +420,11 @@ export interface FileRoutesByTo {
   '/admin/class-sections': typeof AdminClassSectionsRoute
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/departments': typeof AdminDepartmentsRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
+  '/admin/exam-registrations': typeof AdminExamRegistrationsRoute
+  '/admin/exam-schedules': typeof AdminExamSchedulesRoute
+  '/admin/homerooms': typeof AdminHomeroomsRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
   '/admin/periods': typeof AdminPeriodsRoute
@@ -446,7 +478,11 @@ export interface FileRoutesById {
   '/admin/class-sections': typeof AdminClassSectionsRoute
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/departments': typeof AdminDepartmentsRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
+  '/admin/exam-registrations': typeof AdminExamRegistrationsRoute
+  '/admin/exam-schedules': typeof AdminExamSchedulesRoute
+  '/admin/homerooms': typeof AdminHomeroomsRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
   '/admin/periods': typeof AdminPeriodsRoute
@@ -501,7 +537,11 @@ export interface FileRouteTypes {
     | '/admin/class-sections'
     | '/admin/courses'
     | '/admin/dashboard'
+    | '/admin/departments'
     | '/admin/enrollments'
+    | '/admin/exam-registrations'
+    | '/admin/exam-schedules'
+    | '/admin/homerooms'
     | '/admin/landing'
     | '/admin/majors'
     | '/admin/periods'
@@ -553,7 +593,11 @@ export interface FileRouteTypes {
     | '/admin/class-sections'
     | '/admin/courses'
     | '/admin/dashboard'
+    | '/admin/departments'
     | '/admin/enrollments'
+    | '/admin/exam-registrations'
+    | '/admin/exam-schedules'
+    | '/admin/homerooms'
     | '/admin/landing'
     | '/admin/majors'
     | '/admin/periods'
@@ -606,7 +650,11 @@ export interface FileRouteTypes {
     | '/admin/class-sections'
     | '/admin/courses'
     | '/admin/dashboard'
+    | '/admin/departments'
     | '/admin/enrollments'
+    | '/admin/exam-registrations'
+    | '/admin/exam-schedules'
+    | '/admin/homerooms'
     | '/admin/landing'
     | '/admin/majors'
     | '/admin/periods'
@@ -967,11 +1015,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLandingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/homerooms': {
+      id: '/admin/homerooms'
+      path: '/homerooms'
+      fullPath: '/admin/homerooms'
+      preLoaderRoute: typeof AdminHomeroomsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/exam-schedules': {
+      id: '/admin/exam-schedules'
+      path: '/exam-schedules'
+      fullPath: '/admin/exam-schedules'
+      preLoaderRoute: typeof AdminExamSchedulesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/exam-registrations': {
+      id: '/admin/exam-registrations'
+      path: '/exam-registrations'
+      fullPath: '/admin/exam-registrations'
+      preLoaderRoute: typeof AdminExamRegistrationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/enrollments': {
       id: '/admin/enrollments'
       path: '/enrollments'
       fullPath: '/admin/enrollments'
       preLoaderRoute: typeof AdminEnrollmentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/departments': {
+      id: '/admin/departments'
+      path: '/departments'
+      fullPath: '/admin/departments'
+      preLoaderRoute: typeof AdminDepartmentsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/dashboard': {
@@ -1025,7 +1101,11 @@ interface AdminRouteChildren {
   AdminClassSectionsRoute: typeof AdminClassSectionsRoute
   AdminCoursesRoute: typeof AdminCoursesRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminDepartmentsRoute: typeof AdminDepartmentsRoute
   AdminEnrollmentsRoute: typeof AdminEnrollmentsRoute
+  AdminExamRegistrationsRoute: typeof AdminExamRegistrationsRoute
+  AdminExamSchedulesRoute: typeof AdminExamSchedulesRoute
+  AdminHomeroomsRoute: typeof AdminHomeroomsRoute
   AdminLandingRoute: typeof AdminLandingRoute
   AdminMajorsRoute: typeof AdminMajorsRoute
   AdminPeriodsRoute: typeof AdminPeriodsRoute
@@ -1043,7 +1123,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminClassSectionsRoute: AdminClassSectionsRoute,
   AdminCoursesRoute: AdminCoursesRoute,
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminDepartmentsRoute: AdminDepartmentsRoute,
   AdminEnrollmentsRoute: AdminEnrollmentsRoute,
+  AdminExamRegistrationsRoute: AdminExamRegistrationsRoute,
+  AdminExamSchedulesRoute: AdminExamSchedulesRoute,
+  AdminHomeroomsRoute: AdminHomeroomsRoute,
   AdminLandingRoute: AdminLandingRoute,
   AdminMajorsRoute: AdminMajorsRoute,
   AdminPeriodsRoute: AdminPeriodsRoute,

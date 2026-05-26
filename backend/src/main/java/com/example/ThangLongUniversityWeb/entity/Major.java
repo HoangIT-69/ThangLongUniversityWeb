@@ -30,5 +30,8 @@ public class Major {
     private String name;
 
     private String description;
-}
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+}

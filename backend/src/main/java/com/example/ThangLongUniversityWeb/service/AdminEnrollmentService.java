@@ -116,16 +116,20 @@ public class AdminEnrollmentService {
     }
 
     private AdminEnrollmentResponse toAdminResponse(Enrollment e) {
-        return new AdminEnrollmentResponse(
-                e.getId(),
-                e.getStudent().getId(),
-                e.getStudent().getStudentCode(),
-                e.getStudent().getFullName(),
-                e.getClassSection().getId(),
-                e.getClassSection().getClassCode(),
-                e.getClassSection().getSemester().getId(),
-                e.getClassSection().getCourse().getName(),
-                e.getStatus() == null ? null : e.getStatus().name()
-        );
+        return AdminEnrollmentResponse.builder()
+                .enrollmentId(e.getId())
+                .studentId(e.getStudent().getId())
+                .studentCode(e.getStudent().getStudentCode())
+                .studentName(e.getStudent().getFullName())
+                .classSectionId(e.getClassSection().getId())
+                .classCode(e.getClassSection().getClassCode())
+                .semesterId(e.getClassSection().getSemester().getId())
+                .semesterName(e.getClassSection().getSemester().getName())
+                .courseName(e.getClassSection().getCourse().getName())
+                .courseCode(e.getClassSection().getCourse().getCode())
+                .credits(e.getClassSection().getCourse().getCredits())
+                .enrolledAt(null)
+                .status(e.getStatus() == null ? null : e.getStatus().name())
+                .build();
     }
 }

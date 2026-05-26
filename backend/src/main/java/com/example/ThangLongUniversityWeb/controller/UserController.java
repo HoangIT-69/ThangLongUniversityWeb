@@ -121,9 +121,9 @@ public class UserController {
                     .phone(studentProfile.getPhone())
                     .emergencyContact(studentProfile.getEmergencyContact())
                     .cohort(studentProfile.getCohort())
-                    .className(studentProfile.getClassName())
+                    .className(studentProfile.getHomeroom() != null ? studentProfile.getHomeroom().getClassName() : null)
                     .academicYear(academicYearStr)
-                    .advisor(studentProfile.getAdvisor())
+                    .advisor(studentProfile.getHomeroom() != null && studentProfile.getHomeroom().getAdvisor() != null ? studentProfile.getHomeroom().getAdvisor().getFullName() : null)
                     .status(studentProfile.getStatus())
                     .trainingType(studentProfile.getTrainingType());
         } else if (user.getRole() == Role.TEACHER && teacherProfile != null) {
@@ -144,7 +144,7 @@ public class UserController {
                     .currentAddress(teacherProfile.getCurrentAddress())
                     .phone(teacherProfile.getPhone())
                     .emergencyContact(teacherProfile.getEmergencyContact())
-                    .department(teacherProfile.getDepartment());
+                    .department(teacherProfile.getDepartment() != null ? teacherProfile.getDepartment().getName() : null);
         } else if (user.getRole() == Role.ADMIN) {
             responseBuilder.fullName("Quản trị viên hệ thống").code("ADMIN");
         }
