@@ -68,6 +68,12 @@ public class ClassSectionManagementController {
         return ResponseEntity.ok("Xóa lớp học phần thành công!");
     }
 
+    @Operation(summary = "Lấy danh sách sinh viên đăng ký một lớp học phần")
+    @GetMapping("/{id}/students")
+    public ResponseEntity<?> getClassSectionStudents(@PathVariable Long id) {
+        return ResponseEntity.ok(classSectionService.getClassSectionStudents(id));
+    }
+
     @Operation(summary = "Cập nhật lịch thi cho một lớp học phần")
     @PutMapping("/{id}/exam-schedule")
     public ResponseEntity<?> updateExamSchedule(@PathVariable Long id, @RequestBody ExamScheduleRequest request) {

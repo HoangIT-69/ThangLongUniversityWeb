@@ -14,7 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
-import { periods as fallbackPeriods } from "@/data/mock";
 import { adminApi } from "@/lib/api/admin";
 import type { PeriodResponse } from "@/lib/api/types";
 import { Pencil, Plus, Trash2 } from "lucide-react";
@@ -33,7 +32,6 @@ type PeriodRow = {
   periodNumber: number;
   startTime: string;
   endTime: string;
-  fallback?: boolean;
 };
 
 const emptyForm: PeriodForm = {
@@ -55,18 +53,7 @@ function PeriodsPage() {
   });
 
   const data = useMemo<PeriodRow[]>(() => {
-    if (query.data?.length) {
-      return query.data.map(mapApiPeriod).sort((a, b) => a.periodNumber - b.periodNumber);
-    }
-    return fallbackPeriods
-      .map((period) => ({
-        id: period.id,
-        periodNumber: period.index,
-        startTime: period.start,
-        endTime: period.end,
-        fallback: true,
-      }))
-      .sort((a, b) => a.periodNumber - b.periodNumber);
+    return (query.data ?? []).map(mapApiPeriod).sort((a, b) => a.periodNumber - b.periodNumber);
   }, [query.data]);
 
   const createMutation = useMutation({
@@ -100,13 +87,11 @@ function PeriodsPage() {
     onError: (error) => toast.error(error instanceof Error ? error.message : "Xoa tiet hoc that bai"),
   });
 
-  const apiUnavailable = query.isError;
-
   return (
     <div>
       <PageHeader
         title="Tiet hoc"
-        description={apiUnavailable ? `${data.length} tiet - dang hien du lieu mau` : `${data.length} tiet`}
+        description={`${data.length} tiet`}
       />
 
       <DataTable
@@ -114,7 +99,7 @@ function PeriodsPage() {
         rowKey={(period) => String(period.id)}
         searchPlaceholder="Tim theo tiet, gio bat dau, gio ket thuc..."
         toolbar={
-          <Button className="gap-2" onClick={() => setCreateOpen(true)} disabled={apiUnavailable}>
+          <Button className="gap-2" onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
             Them tiet hoc
           </Button>
@@ -146,7 +131,6 @@ function PeriodsPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  disabled={period.fallback}
                   onClick={() => setEditItem(period)}
                 >
                   <Pencil className="h-4 w-4" />
@@ -155,7 +139,6 @@ function PeriodsPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-destructive"
-                  disabled={period.fallback}
                   onClick={() => setToDelete(period)}
                 >
                   <Trash2 className="h-4 w-4" />

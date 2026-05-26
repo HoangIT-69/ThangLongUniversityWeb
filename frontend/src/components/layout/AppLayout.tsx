@@ -84,11 +84,7 @@ const adminNavGroups: NavGroup[] = [
   {
     heading: "Quản lý lớp",
     items: [
-      { to: "/admin/semesters", label: "Học kỳ", icon: CalendarDays },
-      { to: "/admin/class-sections", label: "Lớp học phần", icon: Layers },
-      { to: "/admin/enrollments", label: "Đăng ký học", icon: ClipboardList },
-      { to: "/admin/exam-schedules", label: "Lịch thi", icon: CalendarCheck },
-      { to: "/admin/exam-registrations", label: "Đăng ký thi lại", icon: Repeat },
+      { to: "/admin/semesters", label: "Quản lý học kỳ", icon: CalendarDays },
     ],
   },
 ];

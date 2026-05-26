@@ -30,6 +30,7 @@ import type {
   PeriodResponse,
   RoomResponse,
   SemesterRequest,
+  SemesterSummaryResponse,
   StudentSemesterResponse,
 } from "./types";
 
@@ -90,10 +91,30 @@ export const adminApi = {
     apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${id}`, { method: "PUT", body: jsonBody(request) }),
   deleteSemester: (id: number | string) =>
     apiRequest<string>(`/api/admin/semesters/${id}`, { method: "DELETE" }),
+  getSemesterSummary: (id: number | string) =>
+    apiRequest<SemesterSummaryResponse>(`/api/admin/semesters/${id}/summary`),
+  toggleRegistration: (semesterId: number | string, open: boolean) =>
+    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/toggle-registration`, {
+      method: "POST",
+      body: jsonBody({ open }),
+    }),
   lockEnrollmentSemester: (semesterId: number | string) =>
     apiRequest<string>(`/api/admin/enrollments/lock-semester/${semesterId}`, { method: "POST" }),
   lockRetakeSemester: (semesterId: number | string) =>
     apiRequest<string>(`/api/admin/enrollments/lock-retakes/${semesterId}`, { method: "POST" }),
+  lockEnrollments: (semesterId: number | string) =>
+    apiRequest<{ message: string }>(`/api/admin/semesters/${semesterId}/lock-enrollments`, { method: "POST" }),
+  publishExamSchedules: (semesterId: number | string) =>
+    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/publish-exams`, { method: "POST" }),
+  unpublishExamSchedules: (semesterId: number | string) =>
+    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/unpublish-exams`, { method: "POST" }),
+  toggleRetakeRegistration: (semesterId: number | string, open: boolean) =>
+    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/toggle-retake`, {
+      method: "POST",
+      body: jsonBody({ open }),
+    }),
+  lockRetakes: (semesterId: number | string) =>
+    apiRequest<{ message: string }>(`/api/admin/semesters/${semesterId}/lock-retakes`, { method: "POST" }),
 
   listEnrollments: (params?: {
     semesterId?: number;
@@ -139,6 +160,17 @@ export const adminApi = {
   },
   getExamRegistrationSummary: (semesterId: number) =>
     apiRequest<AdminExamRegistrationSummary>(`/api/admin/exam-registrations/semester/${semesterId}/summary`),
+
+  listClassSectionsBySemester: (semesterId: number | string) =>
+    apiRequest<ClassSectionResponse[]>(`/api/admin/class-sections/semester/${semesterId}`),
+
+  // Export Excel
+  exportEnrollmentsUrl: (semesterId: number | string) =>
+    `/api/admin/export/enrollments/semester/${semesterId}`,
+  exportExamSchedulesUrl: (semesterId: number | string) =>
+    `/api/admin/export/exam-schedules/semester/${semesterId}`,
+  exportRetakesUrl: (semesterId: number | string) =>
+    `/api/admin/export/retakes/semester/${semesterId}`,
 
   listClassSections: () => apiRequest<ClassSectionResponse[]>("/api/admin/class-sections"),
   createClassSection: (request: AdminClassSectionRequest) =>

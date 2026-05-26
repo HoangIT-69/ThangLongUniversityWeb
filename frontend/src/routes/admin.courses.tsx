@@ -24,7 +24,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "@/lib/api/admin";
 import type { CourseResponse, CourseType } from "@/lib/api/types";
-import { courses as mockCourses, majors as mockMajors, getMajor } from "@/data/mock";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,7 +43,6 @@ type CourseRow = Omit<CourseResponse, "id" | "majorId" | "prerequisiteCourseIds"
   id: number | string;
   majorId?: number | string | null;
   prerequisiteCourseIds?: Array<number | string>;
-  fallback?: boolean;
 };
 
 const emptyForm: CourseForm = {
@@ -81,28 +79,10 @@ function CoursesPage() {
   });
 
   const rows = useMemo<CourseRow[]>(() => {
-    if (query.data?.length) return query.data;
-    const mockCourseById = new Map(mockCourses.map((course) => [course.id, course]));
-    return mockCourses.map((course) => ({
-      id: course.id,
-      code: course.code,
-      name: course.name,
-      credits: course.credits,
-      majorId: course.majorId,
-      majorName: getMajor(course.majorId).name,
-      description: "",
-      courseType: "REQUIRED",
-      courseTypeLabel: "Bat buoc",
-      prerequisiteNames: course.prerequisites.map((id) => {
-        const prerequisite = mockCourseById.get(id);
-        return prerequisite ? `${prerequisite.code} - ${prerequisite.name}` : id;
-      }),
-      prerequisiteCourseIds: course.prerequisites,
-      fallback: true,
-    }));
+    return query.data ?? [];
   }, [query.data]);
 
-  const majors = majorsQuery.data?.length ? majorsQuery.data : mockMajors;
+  const majors = majorsQuery.data ?? [];
   const creditOptions = useMemo(
     () => Array.from(new Set(rows.map((course) => course.credits))).sort((a, b) => a - b),
     [rows],
@@ -152,7 +132,7 @@ function CoursesPage() {
     <div>
       <PageHeader
         title="Mon hoc"
-        description={`${filteredRows.length} / ${rows.length} mon${query.isError ? " - dang hien du lieu mau" : ""}`}
+        description={`${filteredRows.length} / ${rows.length} mon`}
       />
 
       <DataTable
@@ -272,7 +252,6 @@ function CoursesPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  disabled={course.fallback}
                   onClick={() => setEditItem(course)}
                 >
                   <Pencil className="h-4 w-4" />
@@ -281,7 +260,6 @@ function CoursesPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-destructive"
-                  disabled={course.fallback}
                   onClick={() => setToDelete(course)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -297,7 +275,7 @@ function CoursesPage() {
         onOpenChange={setCreateOpen}
         title="Them mon hoc"
         initial={emptyForm}
-        courses={rows.filter((course) => !course.fallback)}
+        courses={rows}
         submitting={createMutation.isPending}
         onSubmit={(form) => createMutation.mutate(form)}
       />
@@ -307,7 +285,7 @@ function CoursesPage() {
         onOpenChange={(value) => !value && setEditItem(null)}
         title={`Sua mon ${editItem?.code ?? ""}`}
         initial={editItem ? toForm(editItem) : emptyForm}
-        courses={rows.filter((course) => !course.fallback)}
+        courses={rows}
         editingId={editItem?.id}
         submitting={updateMutation.isPending}
         onSubmit={(form) => {

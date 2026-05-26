@@ -2,7 +2,7 @@
  * article-types.ts
  * TypeScript interfaces for the Article/News system.
  * Designed to match a future CMS REST API schema.
- * Used by: article-mock.ts, articles.ts (API module), article pages
+ * Used by: articles.ts (API module), article pages
  */
 
 // ─── Core Article Types ──────────────────────────────────────────────

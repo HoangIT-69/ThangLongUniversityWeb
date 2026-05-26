@@ -305,6 +305,7 @@ export interface ClassSectionResponse {
   courseId: number;
   courseCode: string;
   courseName: string;
+  majorName?: string | null;
   courseType?: CourseType | null;
   courseTypeLabel?: string | null;
   credits: number;
@@ -322,6 +323,7 @@ export interface ClassSectionResponse {
   isClosed?: boolean;
   gradeLocked?: boolean | null;
   gradeStatus?: "DRAFT" | "SUBMITTED" | "LOCKED" | string | null;
+  examType?: "NORMAL" | "RETAKE" | "IMPROVE" | null;
 }
 
 export interface TeacherGradeRequest {
@@ -359,6 +361,9 @@ export interface StudentSemesterResponse {
   endDate?: string | null;
   registrationOpen: boolean;
   locked: boolean;
+  examPublished: boolean;
+  retakeOpen: boolean;
+  retakeLocked: boolean;
 }
 
 export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT";
@@ -707,6 +712,7 @@ export interface ExamScheduleRequest {
   classSectionId: number;
   examAt: string | null;
   examRoom: string | null;
+  examType?: "NORMAL" | "RETAKE" | "IMPROVE" | null;
 }
 
 export interface ExamScheduleResponse {
@@ -718,9 +724,32 @@ export interface ExamScheduleResponse {
   teacherName: string;
   examAt: string | null;
   examRoom: string | null;
+  examType: "NORMAL" | "RETAKE" | "IMPROVE" | null;
   studentCount: number;
   semesterId: number;
   semesterName: string;
+}
+
+export interface SemesterSummaryResponse {
+  semesterId: number;
+  name: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  classSectionCount: number;
+  examScheduledCount: number;
+  examNotScheduledCount: number;
+  enrollmentCount: number;
+  pendingEnrollments: number;
+  registeredEnrollments: number;
+  retakeRegistrations: number;
+  retakePending: number;
+  retakeRegistered: number;
+  registrationOpen: boolean;
+  locked: boolean;
+  examPublished: boolean;
+  retakeOpen: boolean;
+  retakeLocked: boolean;
+  maxCreditsPerSemester: number;
 }
 
 export interface AdminExamRegistrationResponse {

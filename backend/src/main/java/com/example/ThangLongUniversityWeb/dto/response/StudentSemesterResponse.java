@@ -1,11 +1,15 @@
 package com.example.ThangLongUniversityWeb.dto.response;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Data
+@Builder
+@NoArgsConstructor
 @AllArgsConstructor
 public class StudentSemesterResponse {
     private Long id;
@@ -14,4 +18,7 @@ public class StudentSemesterResponse {
     private LocalDate endDate;
     private boolean registrationOpen;
     private boolean locked;
+    private boolean examPublished;
+    private boolean retakeOpen;
+    private boolean retakeLocked;
 }

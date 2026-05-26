@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,7 +14,10 @@ import { toast } from "sonner";
 import { adminApi } from "@/lib/api/admin";
 import type { ExamScheduleResponse } from "@/lib/api/types";
 
-export const Route = createFileRoute("/admin/exam-schedules")({ component: ExamSchedulesPage });
+export const Route = createFileRoute("/admin/exam-schedules")({
+  beforeLoad: () => { throw redirect({ to: "/admin/semesters" }); },
+  component: ExamSchedulesPage,
+});
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";

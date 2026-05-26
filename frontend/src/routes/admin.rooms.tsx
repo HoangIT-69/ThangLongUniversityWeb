@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { rooms as fallbackRooms } from "@/data/mock";
 import { adminApi } from "@/lib/api/admin";
 import type { RoomResponse } from "@/lib/api/types";
 import { Pencil, Plus, Trash2 } from "lucide-react";
@@ -46,7 +45,6 @@ type RoomRow = {
   capacity: number;
   type: RoomType;
   status: RoomStatus;
-  fallback?: boolean;
 };
 
 const emptyForm: RoomForm = {
@@ -73,8 +71,7 @@ function RoomsPage() {
   });
 
   const data = useMemo<RoomRow[]>(() => {
-    if (query.data?.length) return query.data.map(mapApiRoom);
-    return fallbackRooms.map((room) => ({ ...room, fallback: true }));
+    return (query.data ?? []).map(mapApiRoom);
   }, [query.data]);
 
   const filteredData = useMemo(() => {
@@ -116,17 +113,11 @@ function RoomsPage() {
     onError: (error) => toast.error(error instanceof Error ? error.message : "Xoa phong that bai"),
   });
 
-  const apiUnavailable = query.isError;
-
   return (
     <div>
       <PageHeader
         title="Phong hoc"
-        description={
-          apiUnavailable
-            ? `${filteredData.length} / ${data.length} phong - dang hien du lieu mau`
-            : `${filteredData.length} / ${data.length} phong`
-        }
+        description={`${filteredData.length} / ${data.length} phong`}
       />
 
       <DataTable
@@ -160,7 +151,7 @@ function RoomsPage() {
           </>
         }
         toolbar={
-          <Button className="gap-2" onClick={() => setCreateOpen(true)} disabled={apiUnavailable}>
+          <Button className="gap-2" onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
             Them phong
           </Button>
@@ -197,7 +188,6 @@ function RoomsPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  disabled={room.fallback}
                   onClick={() => setEditItem(room)}
                 >
                   <Pencil className="h-4 w-4" />
@@ -206,7 +196,6 @@ function RoomsPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-destructive"
-                  disabled={room.fallback}
                   onClick={() => setToDelete(room)}
                 >
                   <Trash2 className="h-4 w-4" />

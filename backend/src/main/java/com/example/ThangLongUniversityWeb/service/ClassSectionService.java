@@ -3,6 +3,7 @@ package com.example.ThangLongUniversityWeb.service;
 import com.example.ThangLongUniversityWeb.dto.request.ClassSectionRequest;
 import com.example.ThangLongUniversityWeb.dto.request.ClassSectionScheduleRequest;
 import com.example.ThangLongUniversityWeb.dto.request.ExamScheduleRequest;
+import com.example.ThangLongUniversityWeb.dto.response.AdminClassSectionStudentResponse;
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionResponse;
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionScheduleResponse;
 import com.example.ThangLongUniversityWeb.dto.response.ExamScheduleResponse;
@@ -23,6 +24,7 @@ import com.example.ThangLongUniversityWeb.repository.RoomRepository;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -226,7 +228,39 @@ public class ClassSectionService {
     public void deleteClassSection(Long id) {
         ClassSection section = classSectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
-        classSectionRepository.delete(section);
+        try {
+            classSectionRepository.delete(section);
+            classSectionRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            throw new RuntimeException("Không thể xóa lớp học phần vì đã được tham chiếu bởi đăng ký, điểm, lịch học hoặc dữ liệu liên quan. Chỉ nên xóa lớp vừa tạo nhầm và chưa phát sinh dữ liệu.");
+        }
+    }
+
+    public List<AdminClassSectionStudentResponse> getClassSectionStudents(Long classSectionId) {
+        ClassSection section = classSectionRepository.findById(classSectionId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
+
+        return enrollmentRepository.findByClassSectionId(section.getId()).stream()
+                .map(enrollment -> {
+                    var student = enrollment.getStudent();
+                    var major = student.getMajor();
+                    var user = student.getUser();
+                    return AdminClassSectionStudentResponse.builder()
+                            .enrollmentId(enrollment.getId())
+                            .studentId(student.getId())
+                            .studentCode(student.getStudentCode())
+                            .fullName(student.getFullName())
+                            .email(user != null ? user.getEmail() : null)
+                            .majorId(major != null ? major.getId() : null)
+                            .majorCode(major != null ? major.getMajorCode() : null)
+                            .majorName(major != null ? major.getName() : null)
+                            .cohort(student.getCohort())
+                            .academicYear(student.getAcademicYear())
+                            .enrolledAt(null)
+                            .status(enrollment.getStatus() != null ? enrollment.getStatus().name() : null)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     public ClassSectionResponse mapToResponse(ClassSection section) {
@@ -301,6 +335,9 @@ public class ClassSectionService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
         section.setExamAt(request.getExamAt());
         section.setExamRoom(request.getExamRoom());
+        if (request.getExamType() != null) {
+            section.setExamType(request.getExamType());
+        }
         classSectionRepository.save(section);
         return toExamScheduleResponse(section);
     }
@@ -315,6 +352,9 @@ public class ClassSectionService {
             }
             section.setExamAt(req.getExamAt());
             section.setExamRoom(req.getExamRoom());
+            if (req.getExamType() != null) {
+                section.setExamType(req.getExamType());
+            }
             classSectionRepository.save(section);
             return toExamScheduleResponse(section);
         }).collect(Collectors.toList());
@@ -340,6 +380,7 @@ public class ClassSectionService {
                 .teacherName(section.getTeacher() != null ? section.getTeacher().getFullName() : "Chưa phân công")
                 .examAt(section.getExamAt())
                 .examRoom(section.getExamRoom())
+                .examType(section.getExamType())
                 .studentCount(studentCount)
                 .semesterId(section.getSemester().getId())
                 .semesterName(section.getSemester().getName())

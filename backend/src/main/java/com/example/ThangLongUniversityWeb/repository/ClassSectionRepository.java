@@ -56,4 +56,6 @@ public interface ClassSectionRepository extends JpaRepository<ClassSection, Long
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select cs from ClassSection cs where cs.id = :id")
     Optional<ClassSection> findByIdForUpdate(@Param("id") Long id);
+
+    long countBySemesterId(Long semesterId);
 }

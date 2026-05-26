@@ -1,5 +1,6 @@
 package com.example.ThangLongUniversityWeb.dto.response;
 
+import com.example.ThangLongUniversityWeb.enums.ExamType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,6 +21,7 @@ public class ExamScheduleResponse {
     private String teacherName;
     private LocalDateTime examAt;
     private String examRoom;
+    private ExamType examType;
     private Integer studentCount;
     private Long semesterId;
     private String semesterName;

@@ -206,13 +206,17 @@ public class TeacherService {
     public List<StudentSemesterResponse> getSemesters() {
         return semesterRepository.findAll().stream()
                 .sorted(Comparator.comparing(semester -> semester.getStartDate() == null ? LocalDate.MIN : semester.getStartDate()))
-                .map(semester -> new StudentSemesterResponse(
-                        semester.getId(),
-                        semester.getName(),
-                        semester.getStartDate(),
-                        semester.getEndDate(),
-                        semester.isRegistrationOpen(),
-                        semester.isLocked()))
+                .map(semester -> StudentSemesterResponse.builder()
+                        .id(semester.getId())
+                        .name(semester.getName())
+                        .startDate(semester.getStartDate())
+                        .endDate(semester.getEndDate())
+                        .registrationOpen(semester.isRegistrationOpen())
+                        .locked(semester.isLocked())
+                        .examPublished(semester.isExamPublished())
+                        .retakeOpen(semester.isRetakeOpen())
+                        .retakeLocked(semester.isRetakeLocked())
+                        .build())
                 .collect(Collectors.toList());
     }
 

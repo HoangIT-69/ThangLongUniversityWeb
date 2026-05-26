@@ -30,13 +30,27 @@ function ExamsPage() {
     if (!semesterId && semesters.length) setSemesterId(pickCurrentSemester(semesters)?.id ?? null);
   }, [semesterId, semesters]);
 
+  const currentSemester = semesters.find((s) => s.id === semesterId);
+
   const examsQuery = useQuery({
     queryKey: ["student", "exams", semesterId],
     queryFn: () => studentApi.getExams(semesterId as number),
-    enabled: semesterId != null,
+    enabled: semesterId != null && !!currentSemester?.examPublished,
   });
 
   const exams = examsQuery.data ?? [];
+
+  if (currentSemester && !currentSemester.examPublished) {
+    return (
+      <div className="p-6">
+        <PageHeader title="Lịch thi" description="Lịch thi chưa được công bố" />
+        <div className="mt-4 rounded-lg border bg-muted/30 p-8 text-center text-muted-foreground">
+          <p className="text-lg">⏳ Lịch thi chưa được công bố</p>
+          <p className="text-sm mt-1">Vui lòng quay lại sau khi nhà trường công bố lịch thi.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

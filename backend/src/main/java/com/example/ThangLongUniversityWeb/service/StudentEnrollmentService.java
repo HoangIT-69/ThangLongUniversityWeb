@@ -112,6 +112,16 @@ public class StudentEnrollmentService {
             }
         }
 
+        // Kiểm tra giới hạn tín chỉ tối đa mỗi kỳ
+        int maxCredits = targetClass.getSemester().getMaxCreditsPerSemester();
+        int currentCredits = currentClasses.stream()
+                .mapToInt(cs -> cs.getCourse().getCredits())
+                .sum();
+        int newCredits = targetClass.getCourse().getCredits();
+        if (currentCredits + newCredits > maxCredits) {
+            throw new RuntimeException("Vượt quá giới hạn " + maxCredits + " tín chỉ/kỳ. Hiện tại: " + currentCredits + " TC, thêm: " + newCredits + " TC.");
+        }
+
         Enrollment enrollment = existingEnrollment != null ? existingEnrollment : new Enrollment();
         enrollment.setStudent(student);
         enrollment.setClassSection(targetClass);

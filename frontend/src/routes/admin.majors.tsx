@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/data-table/DataTable";
-import { majors as fallbackMajors, type Major } from "@/data/mock";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +29,15 @@ import {
 export const Route = createFileRoute("/admin/majors")({ component: MajorsPage });
 
 type MajorForm = { majorCode: string; name: string; description: string; departmentId: string };
-type MajorRow = Major & { description?: string | null; departmentName?: string | null };
+type MajorRow = {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  departmentName?: string | null;
+  students: number;
+  courses: number;
+};
 const emptyForm: MajorForm = { majorCode: "", name: "", description: "", departmentId: "" };
 
 function MajorFormDialog({
@@ -133,7 +140,7 @@ function MajorFormDialog({
 
 function MajorsPage() {
   const queryClient = useQueryClient();
-  const [toDelete, setToDelete] = useState<Major | null>(null);
+  const [toDelete, setToDelete] = useState<MajorRow | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editItem, setEditItem] = useState<MajorResponse | null>(null);
   const [departmentFilter, setDepartmentFilter] = useState("all");
@@ -192,8 +199,7 @@ function MajorsPage() {
   });
 
   const data = useMemo<MajorRow[]>(() => {
-    if (!query.data) return fallbackMajors.map((major) => ({ ...major, description: null, departmentName: null }));
-    return query.data.map((m) => ({
+    return (query.data ?? []).map((m) => ({
       id: String(m.id),
       code: m.majorCode,
       name: m.name,
@@ -213,7 +219,7 @@ function MajorsPage() {
     <div>
       <PageHeader
         title="Nganh hoc"
-        description={query.isError ? `${filteredData.length} / ${data.length} nganh (fallback mock)` : `${filteredData.length} / ${data.length} nganh`}
+        description={`${filteredData.length} / ${data.length} nganh`}
       />
       <DataTable
         data={filteredData}

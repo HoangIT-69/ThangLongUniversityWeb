@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+﻿import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
@@ -28,7 +28,7 @@ type Credentials = {
   password: string;
 };
 
-const DEMO_CREDENTIALS: Record<Role, Credentials> = {
+const QUICK_CREDENTIALS: Record<Role, Credentials> = {
   ADMIN: { username: "admin", password: "password123" },
   TEACHER: { username: "gv101", password: "password123" },
   STUDENT: { username: "sv001", password: "password123" },
@@ -65,7 +65,6 @@ function resolveDashboard(role: Role) {
   return "/student/dashboard";
 }
 
-/* ─── stat cards shown on the hero panel ─── */
 const HERO_STATS = [
   { label: "Năm thành lập", value: "1988" },
   { label: "Ngành đào tạo", value: "30+" },
@@ -80,7 +79,7 @@ function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("checking");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeDemoRole, setActiveDemoRole] = useState<Role | null>(null);
+  const [activeQuickRole, setActiveQuickRole] = useState<Role | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -95,9 +94,9 @@ function LoginPage() {
     };
   }, []);
 
-  const submitLogin = async (credentials: Credentials, demoRole?: Role) => {
+  const submitLogin = async (credentials: Credentials, quickRole?: Role) => {
     setIsSubmitting(true);
-    setActiveDemoRole(demoRole ?? null);
+    setActiveQuickRole(quickRole ?? null);
     setErrorMessage(null);
 
     try {
@@ -111,7 +110,7 @@ function LoginPage() {
       toast.error(message);
     } finally {
       setIsSubmitting(false);
-      setActiveDemoRole(null);
+      setActiveQuickRole(null);
     }
   };
 
@@ -121,7 +120,7 @@ function LoginPage() {
   };
 
   const loginAs = (role: Role) => {
-    const credentials = DEMO_CREDENTIALS[role];
+    const credentials = QUICK_CREDENTIALS[role];
     setUsername(credentials.username);
     setPassword(credentials.password);
     void submitLogin(credentials, role);
@@ -148,29 +147,21 @@ function LoginPage() {
 
   return (
     <div className="relative min-h-screen lg:grid lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_520px]">
-      {/* ════════════════════════════════════════════════
-          LEFT — Hero panel with campus image
-         ════════════════════════════════════════════════ */}
       <div className="relative hidden lg:block">
-        {/* Campus background image */}
         <img
           src="/images/DHTL.jpg"
           alt="Toàn cảnh khuôn viên Đại học Thăng Long"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        {/* Dark gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
 
-        {/* Content on top of image */}
         <div className="relative flex h-full flex-col justify-between p-10">
-          {/* Top — Logo & brand */}
           <Link to="/" className="inline-flex items-center" aria-label="Về trang chính">
             <div className="grid h-24 w-40 place-items-center rounded-2xl p-3 shadow-xl transition-transform hover:scale-[1.02]">
               <img src={schoolLogo} alt="Logo Đại học Thăng Long" className="h-full w-full object-contain" />
             </div>
           </Link>
 
-          {/* Bottom — Brand messaging */}
           <div>
             <div className="mb-6 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-amber-400" />
@@ -189,7 +180,7 @@ function LoginPage() {
 
             <p className="mt-4 max-w-md text-base leading-relaxed text-white/70">
               Hệ thống quản lý đào tạo toàn diện dành cho sinh viên, giảng viên và cán bộ quản lý
-              — Trường Đại học Thăng Long.
+              Trường Đại học Thăng Long.
             </p>
 
             {/* Stats row */}
@@ -205,11 +196,7 @@ function LoginPage() {
         </div>
       </div>
 
-      {/* ════════════════════════════════════════════════
-          RIGHT — Login form panel
-         ════════════════════════════════════════════════ */}
       <div className="flex min-h-screen flex-col bg-background">
-        {/* Mobile-only hero banner */}
         <div className="relative h-48 overflow-hidden lg:hidden">
           <img
             src="/images/DHTL.jpg"
@@ -228,10 +215,8 @@ function LoginPage() {
           </div>
         </div>
 
-        {/* Form area */}
         <div className="flex flex-1 items-center justify-center px-6 py-8 sm:px-10">
           <div className="w-full max-w-sm">
-            {/* Desktop: show logo above form */}
             <div className="mb-1 hidden items-center gap-2 lg:flex">
               <BookOpen className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium text-muted-foreground">Hệ thống Quản lý Đào tạo</span>
@@ -242,7 +227,6 @@ function LoginPage() {
               Sử dụng tài khoản được cấp để truy cập hệ thống.
             </p>
 
-            {/* Backend status pill */}
             <div className="mt-4 flex items-center gap-1.5 text-xs">
               {statusIcon}
               <span className={statusTextClassName}>{statusText}</span>
@@ -281,21 +265,19 @@ function LoginPage() {
               )}
 
               <Button type="submit" className="h-11 w-full text-sm font-semibold" disabled={isSubmitting}>
-                {isSubmitting && !activeDemoRole ? (
+                {isSubmitting && !activeQuickRole ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 Đăng nhập
               </Button>
             </form>
 
-            {/* Divider */}
             <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
               Đăng nhập nhanh
               <div className="h-px flex-1 bg-border" />
             </div>
 
-            {/* Quick login buttons */}
             <div className="grid gap-2">
               <Button
                 type="button"
@@ -307,7 +289,7 @@ function LoginPage() {
                 <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
                 Quản trị viên
                 <span className="ml-auto text-xs text-muted-foreground">admin</span>
-                {activeDemoRole === "ADMIN" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                {activeQuickRole === "ADMIN" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
               </Button>
 
               <Button
@@ -320,7 +302,7 @@ function LoginPage() {
                 <UserCog className="mr-2 h-4 w-4 text-blue-500" />
                 Giảng viên
                 <span className="ml-auto text-xs text-muted-foreground">gv101</span>
-                {activeDemoRole === "TEACHER" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                {activeQuickRole === "TEACHER" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
               </Button>
 
               <Button
@@ -333,11 +315,10 @@ function LoginPage() {
                 <GraduationCap className="mr-2 h-4 w-4 text-emerald-500" />
                 Sinh viên
                 <span className="ml-auto text-xs text-muted-foreground">sv001</span>
-                {activeDemoRole === "STUDENT" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                {activeQuickRole === "STUDENT" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
               </Button>
             </div>
 
-            {/* Footer note */}
             <p className="mt-8 text-center text-xs text-muted-foreground">
               © {new Date().getFullYear()} Trường Đại học Thăng Long. Bảo lưu mọi quyền.
             </p>
@@ -347,3 +328,4 @@ function LoginPage() {
     </div>
   );
 }
+

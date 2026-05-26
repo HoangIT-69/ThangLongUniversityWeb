@@ -19,7 +19,6 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Switch } from "@/components/ui/switch";
 import { adminApi } from "@/lib/api/admin";
 import type { AdminUserResponse, Role } from "@/lib/api/types";
-import { users as mockUsers } from "@/data/mock";
 import { GraduationCap, Pencil, Plus, User, UserRound, Users, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,7 +35,7 @@ type AdminUserRow = {
   active: boolean;
   createdAt: string;
   lastLogin: string;
-  source: "API" | "Mock";
+  source: "API";
 };
 
 const roleLabels: Record<Role, string> = {
@@ -79,19 +78,7 @@ function UsersPage() {
   });
 
   const rows = useMemo(() => {
-    if (query.data?.length) return query.data.map(mapApiUser);
-    return mockUsers.map((user) => ({
-      id: user.id,
-      numericId: Number(user.id),
-      username: user.username,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role,
-      active: user.active,
-      createdAt: user.createdAt,
-      lastLogin: "Chua dang nhap",
-      source: "Mock" as const,
-    }));
+    return (query.data ?? []).map(mapApiUser);
   }, [query.data]);
 
   const filteredRows = useMemo(() => {

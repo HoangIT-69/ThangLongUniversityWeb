@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
@@ -12,7 +12,10 @@ import { Label } from "@/components/ui/label";
 import { adminApi } from "@/lib/api/admin";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/enrollments")({ component: EnrollmentsPage });
+export const Route = createFileRoute("/admin/enrollments")({
+  beforeLoad: () => { throw redirect({ to: "/admin/semesters" }); },
+  component: EnrollmentsPage,
+});
 
 const ALL = "ALL";
 
