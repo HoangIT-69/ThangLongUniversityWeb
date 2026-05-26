@@ -2,20 +2,26 @@ package com.example.ThangLongUniversityWeb.service;
 
 import com.example.ThangLongUniversityWeb.dto.request.GradeRequest;
 import com.example.ThangLongUniversityWeb.dto.request.TeacherRequest;
+import com.example.ThangLongUniversityWeb.dto.request.TeacherUpdateRequest;
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentGradeResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentSemesterResponse;
+import com.example.ThangLongUniversityWeb.dto.response.TeacherResponse;
 import com.example.ThangLongUniversityWeb.audit.Audit;
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
+import com.example.ThangLongUniversityWeb.entity.Department;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.entity.Grade;
+import com.example.ThangLongUniversityWeb.entity.Homeroom;
 import com.example.ThangLongUniversityWeb.entity.Student;
+import com.example.ThangLongUniversityWeb.entity.Teacher;
+import com.example.ThangLongUniversityWeb.exception.ConflictException;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.enums.Role;
-import com.example.ThangLongUniversityWeb.entity.Teacher;
 import com.example.ThangLongUniversityWeb.entity.User;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
+import com.example.ThangLongUniversityWeb.repository.DepartmentRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.GradeRepository;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
@@ -38,12 +44,81 @@ public class TeacherService {
 
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
     private final ClassSectionRepository classSectionRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final GradeRepository gradeRepository;
     private final ClassSectionService classSectionService;
     private final SemesterRepository semesterRepository;
     private final PasswordEncoder passwordEncoder;
+
+    // ── Admin: danh sách + mapping ────────────────────────────────────────
+
+    public List<TeacherResponse> getAllTeachers() {
+        return teacherRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public TeacherResponse mapToResponse(Teacher teacher) {
+        User user = teacher.getUser();
+        Department dept = teacher.getDepartment();
+        return TeacherResponse.builder()
+                .id(teacher.getId())
+                .username(user != null ? user.getUsername() : null)
+                .email(user != null ? user.getEmail() : null)
+                .teacherCode(teacher.getTeacherCode())
+                .fullName(teacher.getFullName())
+                .dob(teacher.getDob())
+                .gender(teacher.getGender())
+                .phone(teacher.getPhone())
+                .nationalId(teacher.getNationalId())
+                .placeOfBirth(teacher.getPlaceOfBirth())
+                .hometown(teacher.getHometown())
+                .permanentAddress(teacher.getPermanentAddress())
+                .currentAddress(teacher.getCurrentAddress())
+                .emergencyContact(teacher.getEmergencyContact())
+                .departmentId(dept != null ? dept.getId() : null)
+                .departmentCode(dept != null ? dept.getDepartmentCode() : null)
+                .departmentName(dept != null ? dept.getName() : null)
+                .degree(teacher.getDegree())
+                .address(teacher.getAddress())
+                .status(teacher.getStatus())
+                .build();
+    }
+
+    @Transactional
+    public TeacherResponse updateTeacherPartial(Long id, TeacherUpdateRequest request) {
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy giảng viên!"));
+
+        if (request.getFullName() != null) teacher.setFullName(request.getFullName());
+        if (request.getDob() != null) teacher.setDob(request.getDob());
+        if (request.getGender() != null) teacher.setGender(request.getGender());
+        if (request.getPhone() != null) teacher.setPhone(request.getPhone());
+        if (request.getNationalId() != null) teacher.setNationalId(request.getNationalId());
+        if (request.getPlaceOfBirth() != null) teacher.setPlaceOfBirth(request.getPlaceOfBirth());
+        if (request.getHometown() != null) teacher.setHometown(request.getHometown());
+        if (request.getPermanentAddress() != null) teacher.setPermanentAddress(request.getPermanentAddress());
+        if (request.getCurrentAddress() != null) teacher.setCurrentAddress(request.getCurrentAddress());
+        if (request.getEmergencyContact() != null) teacher.setEmergencyContact(request.getEmergencyContact());
+        if (request.getDepartmentId() != null) {
+            Department dept = departmentRepository.findById(request.getDepartmentId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khoa/bộ môn!"));
+            teacher.setDepartment(dept);
+        }
+        if (request.getDegree() != null) teacher.setDegree(request.getDegree());
+        if (request.getAddress() != null) teacher.setAddress(request.getAddress());
+        if (request.getStatus() != null) teacher.setStatus(request.getStatus());
+
+        User user = teacher.getUser();
+        if (user != null && request.getEmail() != null) {
+            user.setEmail(request.getEmail());
+            userRepository.save(user);
+        }
+
+        return mapToResponse(teacherRepository.save(teacher));
+    }
 
     @Transactional
     public Teacher createTeacher(TeacherRequest request) {
@@ -64,7 +139,11 @@ public class TeacherService {
         teacher.setTeacherCode(request.getTeacherCode());
         teacher.setFullName(request.getFullName());
         teacher.setDob(request.getDob());
-        teacher.setDepartment(request.getDepartment());
+        if (request.getDepartmentId() != null) {
+            Department dept = departmentRepository.findById(request.getDepartmentId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khoa/bộ môn!"));
+            teacher.setDepartment(dept);
+        }
         teacher.setDegree(request.getDegree());
         teacher.setAddress(request.getAddress());
         teacher.setPhone(request.getPhone());
@@ -78,7 +157,11 @@ public class TeacherService {
 
         teacher.setFullName(request.getFullName());
         teacher.setDob(request.getDob());
-        teacher.setDepartment(request.getDepartment());
+        if (request.getDepartmentId() != null) {
+            Department dept = departmentRepository.findById(request.getDepartmentId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khoa/bộ môn!"));
+            teacher.setDepartment(dept);
+        }
         teacher.setDegree(request.getDegree());
         teacher.setAddress(request.getAddress());
 
@@ -93,6 +176,11 @@ public class TeacherService {
     public void deleteTeacher(Long id) {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy giảng viên!"));
+
+        List<ClassSection> assignedSections = classSectionRepository.findByTeacherId(teacher.getId());
+        if (!assignedSections.isEmpty()) {
+            throw new ConflictException("Không thể xóa giảng viên vì đã được phân công lớp học phần. Hãy gỡ phân công hoặc chuyển giảng viên trước khi xóa.");
+        }
 
         User user = teacher.getUser();
         teacherRepository.delete(teacher);
@@ -118,13 +206,17 @@ public class TeacherService {
     public List<StudentSemesterResponse> getSemesters() {
         return semesterRepository.findAll().stream()
                 .sorted(Comparator.comparing(semester -> semester.getStartDate() == null ? LocalDate.MIN : semester.getStartDate()))
-                .map(semester -> new StudentSemesterResponse(
-                        semester.getId(),
-                        semester.getName(),
-                        semester.getStartDate(),
-                        semester.getEndDate(),
-                        semester.isRegistrationOpen(),
-                        semester.isLocked()))
+                .map(semester -> StudentSemesterResponse.builder()
+                        .id(semester.getId())
+                        .name(semester.getName())
+                        .startDate(semester.getStartDate())
+                        .endDate(semester.getEndDate())
+                        .registrationOpen(semester.isRegistrationOpen())
+                        .locked(semester.isLocked())
+                        .examPublished(semester.isExamPublished())
+                        .retakeOpen(semester.isRetakeOpen())
+                        .retakeLocked(semester.isRetakeLocked())
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -181,21 +273,22 @@ public class TeacherService {
 
         Grade savedGrade = gradeRepository.save(grade);
 
-        // courseStatus được cập nhật tập trung qua CourseOutcomeService (gọi từ GradeService.updateGrade)
-        // Đây là endpoint cũ – không tự cập nhật EnrollmentStatus để tránh lặp logic
         return buildStudentGradeResponse(enrollment, savedGrade);
     }
 
     private StudentGradeResponse buildStudentGradeResponse(Enrollment enrollment, Grade grade) {
         Student student = enrollment.getStudent();
+        Homeroom homeroom = student.getHomeroom();
+        Teacher advisor = homeroom != null ? homeroom.getAdvisor() : null;
+
         return StudentGradeResponse.builder()
                 .enrollmentId(enrollment.getId())
                 .studentCode(student.getStudentCode())
                 .fullName(student.getFullName())
                 .phone(student.getPhone())
                 .email(student.getUser() != null ? student.getUser().getEmail() : null)
-                .className(student.getClassName())
-                .advisorName(student.getAdvisor())
+                .className(homeroom != null ? homeroom.getClassName() : null)
+                .advisorName(advisor != null ? advisor.getFullName() : null)
                 .majorName(student.getMajor() != null ? student.getMajor().getName() : null)
                 .facultyName(student.getCohort())
                 .midTermScore(grade != null ? grade.getMidtermScore() : null)

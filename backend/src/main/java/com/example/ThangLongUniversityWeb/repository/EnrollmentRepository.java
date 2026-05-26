@@ -32,6 +32,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     List<Enrollment> findByStudentId(Long studentId);
 
+    long deleteByStudentId(Long studentId);
+
     @Query("SELECT e FROM Enrollment e " +
             "WHERE e.student.id = :studentId AND e.classSection.course.id = :courseId " +
             "ORDER BY e.id DESC")

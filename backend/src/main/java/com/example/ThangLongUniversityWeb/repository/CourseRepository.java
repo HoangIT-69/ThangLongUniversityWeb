@@ -28,4 +28,6 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     // Lấy danh sach mon hoc theo nganh (dung cho chuong trinh dao tao)
     @EntityGraph(attributePaths = {"major", "prerequisites"})
     List<Course> findByMajorId(Long majorId);
+
+    long countByMajorId(Long majorId);
 }

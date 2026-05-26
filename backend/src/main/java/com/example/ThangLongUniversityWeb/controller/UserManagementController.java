@@ -1,10 +1,11 @@
 package com.example.ThangLongUniversityWeb.controller;
 
-import com.example.ThangLongUniversityWeb.repository.UserRepository;
+import com.example.ThangLongUniversityWeb.dto.request.AdminUserUpdateRequest;
 import com.example.ThangLongUniversityWeb.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,13 +17,12 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "bearerAuth")
 public class UserManagementController {
 
-    private final UserRepository userRepository; // Gọi thẳng để Đọc
     private final UserService userService;       // Gọi qua Service để Ghi
 
     @Operation(summary = "Lấy danh sách TOÀN BỘ tài khoản trong hệ thống")
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
-        return ResponseEntity.ok(userRepository.findAll());
+        return ResponseEntity.ok(userService.listUsersForAdmin());
     }
 
     @Operation(summary = "Tạo thêm một Admin mới")
@@ -38,6 +38,14 @@ public class UserManagementController {
     @PutMapping("/{id}/toggle-status")
     public ResponseEntity<?> toggleUserStatus(@PathVariable Long id) {
         return ResponseEntity.ok(userService.toggleUserStatus(id));
+    }
+
+    @Operation(summary = "Cap nhat thong tin tai khoan")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(
+            @PathVariable Long id,
+            @RequestBody @Valid AdminUserUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateUser(id, request));
     }
 
     @Operation(summary = "Xóa tài khoản Admin")

@@ -1,11 +1,30 @@
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function ConfirmDialog({
-  open, onOpenChange, title, description, confirmText = "Xác nhận", onConfirm, destructive,
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmText = "Xác nhận",
+  onConfirm,
+  destructive,
 }: {
-  open: boolean; onOpenChange: (v: boolean) => void;
-  title: string; description?: string;
-  confirmText?: string; onConfirm: () => void; destructive?: boolean;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  title: string;
+  description?: string;
+  confirmText?: string;
+  onConfirm: () => void;
+  destructive?: boolean;
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

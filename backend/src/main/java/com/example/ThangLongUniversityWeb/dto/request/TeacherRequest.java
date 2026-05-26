@@ -58,10 +58,10 @@ public class TeacherRequest {
     private LocalDate dob;
     
     @Schema(
-            description = "Khoa/Bộ môn",
-            example = "Công nghệ thông tin"
+            description = "ID khoa/bộ môn",
+            example = "1"
     )
-    private String department;
+    private Long departmentId;
     
     @Schema(
             description = "Học vị",

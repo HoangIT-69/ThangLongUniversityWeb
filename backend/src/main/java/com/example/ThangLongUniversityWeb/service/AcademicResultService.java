@@ -146,4 +146,65 @@ public class AcademicResultService {
             default: return 0.0f;
         }
     }
+
+    // ── Live (read-only, no save) compute methods ─────────────────────────
+
+    /**
+     * Tính GPA học kỳ gần nhất trực tiếp từ bảng grades (không lưu).
+     */
+    @Transactional(readOnly = true)
+    public Float computeLatestSemesterGpaLive(Long studentId) {
+        List<Grade> scored = gradeRepository.findByStudentId(studentId).stream()
+                .filter(g -> g.getTotalScore() != null && g.getLetterGrade() != null)
+                .collect(Collectors.toList());
+        if (scored.isEmpty()) return null;
+
+        Long latestSemesterId = scored.stream()
+                .map(g -> g.getEnrollment().getClassSection().getSemester().getId())
+                .max(Long::compareTo)
+                .orElse(null);
+        if (latestSemesterId == null) return null;
+
+        List<Grade> semGrades = scored.stream()
+                .filter(g -> g.getEnrollment().getClassSection().getSemester().getId().equals(latestSemesterId))
+                .collect(Collectors.toList());
+        return computeGpaFromList(semGrades);
+    }
+
+    /**
+     * Tính CPA tích lũy trực tiếp từ bảng grades (không lưu).
+     */
+    @Transactional(readOnly = true)
+    public Float computeCumulativeGpaLive(Long studentId) {
+        List<Grade> bestGrades = getBestGradesForCPA(studentId);
+        if (bestGrades.isEmpty()) return null;
+        return computeGpaFromList(bestGrades);
+    }
+
+    /**
+     * Tính tổng tín chỉ tích lũy trực tiếp từ bảng grades (không lưu).
+     */
+    @Transactional(readOnly = true)
+    public Integer computeCumulativeCreditsLive(Long studentId) {
+        List<Grade> bestGrades = getBestGradesForCPA(studentId);
+        if (bestGrades.isEmpty()) return null;
+        return bestGrades.stream()
+                .mapToInt(g -> {
+                    Integer credits = g.getEnrollment().getClassSection().getCourse().getCredits();
+                    return credits != null ? credits : 0;
+                })
+                .sum();
+    }
+
+    private float computeGpaFromList(List<Grade> grades) {
+        float totalPoints = 0f;
+        int totalCredits = 0;
+        for (Grade g : grades) {
+            int credits = g.getEnrollment().getClassSection().getCourse().getCredits() != null
+                    ? g.getEnrollment().getClassSection().getCourse().getCredits() : 0;
+            totalPoints += convertLetterGradeToPoint(g.getLetterGrade()) * credits;
+            totalCredits += credits;
+        }
+        return totalCredits > 0 ? totalPoints / totalCredits : 0f;
+    }
 }

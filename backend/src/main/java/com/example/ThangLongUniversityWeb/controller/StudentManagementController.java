@@ -1,6 +1,7 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.StudentRequest;
+import com.example.ThangLongUniversityWeb.dto.request.StudentUpdateRequest;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,7 +37,7 @@ public class StudentManagementController {
 
     @Operation(summary = "Cập nhật thông tin sinh viên")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateStudent(@PathVariable Long id, @RequestBody StudentRequest request) {
+    public ResponseEntity<?> updateStudent(@PathVariable Long id, @RequestBody StudentUpdateRequest request) {
         return ResponseEntity.ok(studentService.updateStudent(id, request));
     }
 

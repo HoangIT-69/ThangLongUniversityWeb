@@ -1,15 +1,31 @@
+import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { semesters } from "@/data/mock";
+import { adminApi } from "@/lib/api/admin";
 
-export function SemesterSelect({ value, onChange, className }: { value: string; onChange: (v: string) => void; className?: string }) {
+export function SemesterSelect({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+}) {
+  const query = useQuery({
+    queryKey: ["admin", "semesters"],
+    queryFn: adminApi.listSemesters,
+  });
+
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value} onValueChange={onChange} disabled={query.isLoading || query.isError}>
       <SelectTrigger className={className ?? "w-[260px]"}>
-        <SelectValue placeholder="Chọn học kỳ" />
+        <SelectValue placeholder={query.isError ? "Không tải được học kỳ" : "Chọn học kỳ"} />
       </SelectTrigger>
       <SelectContent>
-        {semesters.map((s) => (
-          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+        {(query.data ?? []).map((semester) => (
+          <SelectItem key={semester.id} value={String(semester.id)}>
+            {semester.name}
+          </SelectItem>
         ))}
       </SelectContent>
     </Select>

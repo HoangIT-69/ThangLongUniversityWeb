@@ -1,6 +1,7 @@
 package com.example.ThangLongUniversityWeb.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.example.ThangLongUniversityWeb.enums.TeacherStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,10 +45,15 @@ public class Teacher {
 
     private String emergencyContact;
 
-    private String department;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
 
     private String degree;
 
     private String address;
+
+    @Enumerated(EnumType.STRING)
+    private TeacherStatus status;
 
 }

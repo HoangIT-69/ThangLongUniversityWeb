@@ -1,9 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+﻿import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Users } from "lucide-react";
 import { useMemo } from "react";
 import { DataTable } from "@/components/data-table/DataTable";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { adminApi } from "@/lib/api/admin";
-import { mapApiClassSectionStudent, mapMockClassSectionStudents } from "./classSectionMock";
+import { mapApiClassSectionStudent } from "./classSectionMappers";
 import type { ClassSectionRow } from "./types";
 
 interface ClassSectionStudentsDialogProps {
@@ -28,7 +27,7 @@ export function ClassSectionStudentsDialog({
   section,
   onOpenChange,
 }: ClassSectionStudentsDialogProps) {
-  const canLoadApi = open && section?.source === "API" && !!section.numericId;
+  const canLoadApi = open && !!section?.numericId;
   const studentsQuery = useQuery({
     queryKey: ["admin", "class-sections", section?.numericId, "students"],
     queryFn: () => adminApi.listClassSectionStudents(section?.numericId ?? 0),
@@ -38,8 +37,7 @@ export function ClassSectionStudentsDialog({
 
   const rows = useMemo(() => {
     if (!section) return [];
-    if (studentsQuery.data?.length) return studentsQuery.data.map(mapApiClassSectionStudent);
-    return mapMockClassSectionStudents(section);
+    return (studentsQuery.data ?? []).map(mapApiClassSectionStudent);
   }, [section, studentsQuery.data]);
 
   return (
@@ -48,12 +46,12 @@ export function ClassSectionStudentsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Sinh vien dang ky lop {section?.classCode ?? ""}
+            Sinh viên đăng ký lớp {section?.classCode ?? ""}
           </DialogTitle>
           <DialogDescription>
             {section
-              ? `${section.courseName} - ${section.currentSlots}/${section.maxSlots} sinh vien`
-              : "Danh sach sinh vien dang ky lop hoc phan"}
+              ? `${section.courseName} - ${section.currentSlots}/${section.maxSlots} sinh viên`
+              : "Danh sách sinh viên đăng ký lớp học phần"}
           </DialogDescription>
         </DialogHeader>
 
@@ -64,20 +62,9 @@ export function ClassSectionStudentsDialog({
             {studentsQuery.isError && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Chua tai duoc danh sach sinh vien tu API</AlertTitle>
+                <AlertTitle>Chưa tải được danh sách sinh viên</AlertTitle>
                 <AlertDescription>
-                  {studentsQuery.error.message}. FE dang hien demo tam thoi de BE nhin duoc UI can
-                  tra ve.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {section?.source === "Mock" && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Dang dung du lieu demo</AlertTitle>
-                <AlertDescription>
-                  Lop hoc phan nay dang la mock/fallback, danh sach sinh vien ben duoi cung la mock.
+                  {studentsQuery.error.message}
                 </AlertDescription>
               </Alert>
             )}
@@ -86,24 +73,19 @@ export function ClassSectionStudentsDialog({
               data={rows}
               rowKey={(student) => student.enrollmentId}
               pageSize={8}
-              searchPlaceholder="Tim theo ma SV, ho ten, email, nganh..."
-              emptyMessage="Chua co sinh vien dang ky lop nay"
+              searchPlaceholder="Tìm theo mã SV, họ tên, email, ngành..."
+              emptyMessage="Chưa có sinh viên đăng ký lớp này"
               columns={[
                 {
                   key: "studentCode",
-                  header: "Ma SV",
+                  header: "Mã SV",
                   render: (student) => (
-                    <div className="space-y-1">
-                      <span className="font-mono text-xs font-medium">{student.studentCode}</span>
-                      <Badge variant={student.source === "API" ? "secondary" : "outline"}>
-                        {student.source}
-                      </Badge>
-                    </div>
+                    <span className="font-mono text-xs font-medium">{student.studentCode}</span>
                   ),
                 },
                 {
                   key: "fullName",
-                  header: "Ho ten",
+                  header: "Họ tên",
                   render: (student) => <span className="font-medium">{student.fullName}</span>,
                 },
                 {
@@ -115,7 +97,7 @@ export function ClassSectionStudentsDialog({
                 },
                 {
                   key: "majorName",
-                  header: "Nganh",
+                  header: "Ngành",
                   render: (student) => (
                     <div>
                       <div className="text-sm">{student.majorName}</div>
@@ -125,7 +107,7 @@ export function ClassSectionStudentsDialog({
                 },
                 {
                   key: "enrolledAt",
-                  header: "Ngay dang ky",
+                  header: "Ngày đăng ký",
                   render: (student) => (
                     <span className="text-xs text-muted-foreground">
                       {formatDateTime(student.enrolledAt)}
@@ -134,7 +116,7 @@ export function ClassSectionStudentsDialog({
                 },
                 {
                   key: "status",
-                  header: "Trang thai",
+                  header: "Trạng thái",
                   render: (student) => <StatusBadge value={student.status} />,
                 },
               ]}
@@ -155,8 +137,8 @@ function StudentsSkeleton() {
   );
 }
 
-function formatDateTime(value: string) {
-  if (value.startsWith("Can BE")) return value;
+function formatDateTime(value?: string | null) {
+  if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString("vi-VN", {
@@ -167,3 +149,4 @@ function formatDateTime(value: string) {
     year: "numeric",
   });
 }
+

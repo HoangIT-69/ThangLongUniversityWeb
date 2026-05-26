@@ -1,7 +1,7 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.TeacherRequest;
-import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
+import com.example.ThangLongUniversityWeb.dto.request.TeacherUpdateRequest;
 import com.example.ThangLongUniversityWeb.service.TeacherService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -18,12 +18,11 @@ import org.springframework.web.bind.annotation.*;
 public class TeacherManagementController {
 
     private final TeacherService teacherService;
-    private final TeacherRepository teacherRepository; // Gọi thẳng để lấy danh sách
 
     @Operation(summary = "Lấy danh sách tất cả giảng viên")
     @GetMapping
     public ResponseEntity<?> getAllTeachers() {
-        return ResponseEntity.ok(teacherRepository.findAll());
+        return ResponseEntity.ok(teacherService.getAllTeachers());
     }
 
     @Operation(summary = "Thêm mới một giảng viên")
@@ -34,8 +33,8 @@ public class TeacherManagementController {
 
     @Operation(summary = "Cập nhật thông tin giảng viên")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTeacher(@PathVariable Long id, @RequestBody TeacherRequest request) {
-        return ResponseEntity.ok(teacherService.updateTeacher(id, request));
+    public ResponseEntity<?> updateTeacher(@PathVariable Long id, @RequestBody TeacherUpdateRequest request) {
+        return ResponseEntity.ok(teacherService.updateTeacherPartial(id, request));
     }
 
     @Operation(summary = "Xóa giảng viên")

@@ -37,4 +37,10 @@ public class MajorRequest {
     )
     @Size(max = 1000, message = "Mô tả không được vượt quá 1000 ký tự")
     private String description;
+
+    @Schema(
+            description = "ID khoa/bo mon quan ly nganh",
+            example = "1"
+    )
+    private Long departmentId;
 }

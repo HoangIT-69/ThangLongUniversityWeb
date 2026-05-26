@@ -25,4 +25,16 @@ public class RoomResponse {
             example = "60"
     )
     private Integer capacity;
+
+    @Schema(
+            description = "Loai phong",
+            example = "LECTURE"
+    )
+    private String type;
+
+    @Schema(
+            description = "Trang thai phong",
+            example = "AVAILABLE"
+    )
+    private String status;
 }

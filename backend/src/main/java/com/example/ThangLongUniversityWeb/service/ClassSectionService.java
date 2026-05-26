@@ -2,8 +2,11 @@ package com.example.ThangLongUniversityWeb.service;
 
 import com.example.ThangLongUniversityWeb.dto.request.ClassSectionRequest;
 import com.example.ThangLongUniversityWeb.dto.request.ClassSectionScheduleRequest;
+import com.example.ThangLongUniversityWeb.dto.request.ExamScheduleRequest;
+import com.example.ThangLongUniversityWeb.dto.response.AdminClassSectionStudentResponse;
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionResponse;
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionScheduleResponse;
+import com.example.ThangLongUniversityWeb.dto.response.ExamScheduleResponse;
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
 import com.example.ThangLongUniversityWeb.entity.ClassSectionSchedule;
 import com.example.ThangLongUniversityWeb.entity.Course;
@@ -21,11 +24,13 @@ import com.example.ThangLongUniversityWeb.repository.RoomRepository;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
@@ -223,7 +228,39 @@ public class ClassSectionService {
     public void deleteClassSection(Long id) {
         ClassSection section = classSectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
-        classSectionRepository.delete(section);
+        try {
+            classSectionRepository.delete(section);
+            classSectionRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            throw new RuntimeException("Không thể xóa lớp học phần vì đã được tham chiếu bởi đăng ký, điểm, lịch học hoặc dữ liệu liên quan. Chỉ nên xóa lớp vừa tạo nhầm và chưa phát sinh dữ liệu.");
+        }
+    }
+
+    public List<AdminClassSectionStudentResponse> getClassSectionStudents(Long classSectionId) {
+        ClassSection section = classSectionRepository.findById(classSectionId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
+
+        return enrollmentRepository.findByClassSectionId(section.getId()).stream()
+                .map(enrollment -> {
+                    var student = enrollment.getStudent();
+                    var major = student.getMajor();
+                    var user = student.getUser();
+                    return AdminClassSectionStudentResponse.builder()
+                            .enrollmentId(enrollment.getId())
+                            .studentId(student.getId())
+                            .studentCode(student.getStudentCode())
+                            .fullName(student.getFullName())
+                            .email(user != null ? user.getEmail() : null)
+                            .majorId(major != null ? major.getId() : null)
+                            .majorCode(major != null ? major.getMajorCode() : null)
+                            .majorName(major != null ? major.getName() : null)
+                            .cohort(student.getCohort())
+                            .academicYear(student.getAcademicYear())
+                            .enrolledAt(null)
+                            .status(enrollment.getStatus() != null ? enrollment.getStatus().name() : null)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     public ClassSectionResponse mapToResponse(ClassSection section) {
@@ -289,6 +326,64 @@ public class ClassSectionService {
                 .endTime(schedule.getEndPeriod().getEndTime())
                 .roomId(schedule.getRoom() != null ? schedule.getRoom().getId() : null)
                 .roomName(schedule.getRoom() != null ? schedule.getRoom().getName() : null)
+                .build();
+    }
+
+    @Transactional
+    public ExamScheduleResponse updateExamSchedule(Long classSectionId, ExamScheduleRequest request) {
+        ClassSection section = classSectionRepository.findById(classSectionId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
+        section.setExamAt(request.getExamAt());
+        section.setExamRoom(request.getExamRoom());
+        if (request.getExamType() != null) {
+            section.setExamType(request.getExamType());
+        }
+        classSectionRepository.save(section);
+        return toExamScheduleResponse(section);
+    }
+
+    @Transactional
+    public List<ExamScheduleResponse> batchUpdateExamSchedules(Long semesterId, List<ExamScheduleRequest> requests) {
+        return requests.stream().map(req -> {
+            ClassSection section = classSectionRepository.findById(req.getClassSectionId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần id=" + req.getClassSectionId()));
+            if (!section.getSemester().getId().equals(semesterId)) {
+                throw new RuntimeException("Lớp học phần " + req.getClassSectionId() + " không thuộc học kỳ " + semesterId);
+            }
+            section.setExamAt(req.getExamAt());
+            section.setExamRoom(req.getExamRoom());
+            if (req.getExamType() != null) {
+                section.setExamType(req.getExamType());
+            }
+            classSectionRepository.save(section);
+            return toExamScheduleResponse(section);
+        }).collect(Collectors.toList());
+    }
+
+    public List<ExamScheduleResponse> getExamSchedulesBySemester(Long semesterId) {
+        return classSectionRepository.findBySemesterId(semesterId).stream()
+                .map(this::toExamScheduleResponse)
+                .collect(Collectors.toList());
+    }
+
+    private ExamScheduleResponse toExamScheduleResponse(ClassSection section) {
+        int studentCount = (int) enrollmentRepository.countByClassSectionIdAndStatusIn(
+                section.getId(),
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED)
+        );
+        return ExamScheduleResponse.builder()
+                .classSectionId(section.getId())
+                .classCode(section.getClassCode())
+                .courseName(section.getCourse().getName())
+                .courseCode(section.getCourse().getCode())
+                .credits(section.getCourse().getCredits())
+                .teacherName(section.getTeacher() != null ? section.getTeacher().getFullName() : "Chưa phân công")
+                .examAt(section.getExamAt())
+                .examRoom(section.getExamRoom())
+                .examType(section.getExamType())
+                .studentCount(studentCount)
+                .semesterId(section.getSemester().getId())
+                .semesterName(section.getSemester().getName())
                 .build();
     }
 }

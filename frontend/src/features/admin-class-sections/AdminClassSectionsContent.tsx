@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -12,9 +12,8 @@ import type { AdminClassSectionStatus } from "@/lib/api/types";
 import {
   buildOptionSets,
   mapApiClassSection,
-  mapMockClassSections,
   toClassSectionRequest,
-} from "./classSectionMock";
+} from "./classSectionMappers";
 import { ClassSectionFormDialog } from "./ClassSectionFormDialog";
 import { ClassSectionStudentsDialog } from "./ClassSectionStudentsDialog";
 import { ClassSectionsByMajor } from "./ClassSectionsByMajor";
@@ -67,22 +66,16 @@ export function AdminClassSectionsContent() {
   });
 
   const rows = useMemo(() => {
-    if (classSectionsQuery.data?.length) {
-      return classSectionsQuery.data.map((section) =>
-        mapApiClassSection(section, statusOverrides[String(section.id)]),
-      );
-    }
-    return mapMockClassSections().map((section) => ({
-      ...section,
-      status: statusOverrides[section.id] ?? section.status,
-    }));
+    return (classSectionsQuery.data ?? []).map((section) =>
+      mapApiClassSection(section, statusOverrides[String(section.id)]),
+    );
   }, [classSectionsQuery.data, statusOverrides]);
 
   const rowsWithMajors = useMemo(() => {
     const courseMajorMap = new Map(
       (coursesQuery.data ?? []).map((course) => [
         course.id,
-        course.majorName ?? "Can BE: majorName",
+        course.majorName ?? "-",
       ]),
     );
     return rows.map((row) => ({
@@ -193,8 +186,8 @@ export function AdminClassSectionsContent() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Lop hoc phan"
-        description={`${rowsWithMajors.length} lop hoc phan theo nganh${classSectionsQuery.isError ? " - dang dung du lieu mau" : ""}`}
+        title="Lớp học phần"
+        description={`${rowsWithMajors.length} lớp học phần theo ngành`}
         actions={
           <Button
             className="gap-2"
@@ -204,7 +197,7 @@ export function AdminClassSectionsContent() {
             }}
           >
             <Plus className="h-4 w-4" />
-            Mo lop hoc phan
+            Mở lớp học phần
           </Button>
         }
       />
@@ -212,18 +205,18 @@ export function AdminClassSectionsContent() {
       {classSectionsQuery.isError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Khong tai duoc API lop hoc phan</AlertTitle>
+          <AlertTitle>Không tải được API lớp học phần</AlertTitle>
           <AlertDescription>
-            {classSectionsQuery.error.message}. FE dang hien mock data tam thoi.
+            {classSectionsQuery.error.message}
           </AlertDescription>
         </Alert>
       )}
       {(coursesQuery.isError || semestersQuery.isError) && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Mot so danh muc dang dung fallback</AlertTitle>
+          <AlertTitle>Không tải được một số danh mục</AlertTitle>
           <AlertDescription>
-            Course/Semester API chua on dinh nen form co the lay danh muc tu lop hien co hoac mock.
+            Vui lòng kiểm tra API Course/Semester trước khi tạo hoặc sửa lớp học phần.
           </AlertDescription>
         </Alert>
       )}
@@ -262,14 +255,14 @@ export function AdminClassSectionsContent() {
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(value) => !value && setToDelete(null)}
-        title={toDelete && toDelete.currentSlots > 0 ? "Huy lop hoc phan?" : "Xoa lop hoc phan?"}
+        title={toDelete && toDelete.currentSlots > 0 ? "Hủy lớp học phần?" : "Xóa lớp học phần?"}
         description={
           toDelete && toDelete.currentSlots > 0
-            ? `${toDelete.classCode} da co ${toDelete.currentSlots} sinh vien, FE se chuyen trang thai sang CANCELLED.`
-            : `${toDelete?.classCode ?? ""} se bi xoa khoi he thong.`
+            ? `${toDelete.classCode} đã có ${toDelete.currentSlots} sinh viên, FE sẽ chuyển trạng thái sang CANCELLED.`
+            : `${toDelete?.classCode ?? ""} sẽ bị xóa khỏi hệ thống.`
         }
         destructive
-        confirmText={toDelete && toDelete.currentSlots > 0 ? "Huy lop" : "Xoa"}
+        confirmText={toDelete && toDelete.currentSlots > 0 ? "Hủy lớp" : "Xóa"}
         onConfirm={confirmDelete}
       />
     </div>
@@ -296,3 +289,4 @@ function getNextStatus(status: AdminClassSectionStatus): AdminClassSectionStatus
   if (status === "CLOSED") return "OPEN";
   return "OPEN";
 }
+

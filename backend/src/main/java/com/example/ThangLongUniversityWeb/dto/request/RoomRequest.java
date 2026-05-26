@@ -26,4 +26,16 @@ public class RoomRequest {
     @NotNull(message = "Sức chứa không được để trống")
     @Min(value = 1, message = "Sức chứa phải lớn hơn 0")
     private Integer capacity;
+
+    @Schema(
+            description = "Loai phong: LECTURE, LAB, AUDITORIUM",
+            example = "LECTURE"
+    )
+    private String type;
+
+    @Schema(
+            description = "Trang thai phong: AVAILABLE, MAINTENANCE",
+            example = "AVAILABLE"
+    )
+    private String status;
 }

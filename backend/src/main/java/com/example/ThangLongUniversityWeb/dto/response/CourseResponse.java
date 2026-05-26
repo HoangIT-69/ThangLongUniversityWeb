@@ -4,6 +4,7 @@ import com.example.ThangLongUniversityWeb.enums.CourseType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -49,11 +50,17 @@ public class CourseResponse {
     @Schema(description = "Course type display label", example = "Bắt buộc")
     private String courseTypeLabel;
 
+    @Schema(description = "Major ID", example = "1")
+    private Long majorId;
+
     @Schema(
             description = "Major name",
             example = "Computer Science"
     )
     private String majorName;
+
+    @Schema(description = "List of prerequisite course IDs", example = "[1, 2]")
+    private List<Long> prerequisiteCourseIds;
 
     @Schema(
             description = "List of prerequisite course names",

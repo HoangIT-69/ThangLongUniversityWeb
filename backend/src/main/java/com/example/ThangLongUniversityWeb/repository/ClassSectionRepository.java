@@ -21,6 +21,8 @@ public interface ClassSectionRepository extends JpaRepository<ClassSection, Long
 
     List<ClassSection> findByTeacherIdAndSemesterId(Long teacherId, Long semesterId);
 
+    List<ClassSection> findByTeacherId(Long teacherId);
+
     @Query("select count(cs) from ClassSection cs " +
             "where cs.semester.id = :semesterId " +
             "and cs.room.id = :roomId " +
@@ -54,4 +56,6 @@ public interface ClassSectionRepository extends JpaRepository<ClassSection, Long
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select cs from ClassSection cs where cs.id = :id")
     Optional<ClassSection> findByIdForUpdate(@Param("id") Long id);
+
+    long countBySemesterId(Long semesterId);
 }

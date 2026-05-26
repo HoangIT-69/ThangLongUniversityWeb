@@ -2,9 +2,13 @@ package com.example.ThangLongUniversityWeb.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Thông tin ghi danh sinh viên (Admin view)")
 public class AdminEnrollmentResponse {
@@ -61,5 +65,17 @@ public class AdminEnrollmentResponse {
             example = "REGISTERED"
     )
     private String status;
+
+    @Schema(description = "Tên học kỳ", example = "Học kỳ 1 2024-2025")
+    private String semesterName;
+
+    @Schema(description = "Mã môn học", example = "IT001")
+    private String courseCode;
+
+    @Schema(description = "Số tín chỉ", example = "3")
+    private Integer credits;
+
+    @Schema(description = "Thời gian đăng ký", example = "2024-09-01T10:30:00")
+    private String enrolledAt;
 }
 

@@ -16,6 +16,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Kiểm tra user có tồn tại không (dùng khi đăng ký)
     Boolean existsByUsername(String username);
 
+        Boolean existsByEmail(String email);
+
+        Boolean existsByUsernameAndIdNot(String username, Long id);
+
+        Boolean existsByEmailAndIdNot(String email, Long id);
+
+        @Query("""
+          SELECT DISTINCT u FROM User u
+          LEFT JOIN FETCH u.student
+          LEFT JOIN FETCH u.teacher
+          ORDER BY u.id ASC
+          """)
+        List<User> findAllWithProfiles();
+
     // Tìm kiếm user theo username (dùng cho chat search)
     List<User> findTop20ByUsernameContainingIgnoreCase(String q);
 

@@ -100,6 +100,12 @@ function RetakePage() {
 
   return (
     <div>
+      {currentSemester && !currentSemester.retakeOpen && (
+        <div className="m-6 rounded-lg border bg-amber-100 p-4 text-center text-amber-800">
+          <p className="font-medium">🔴 Chưa mở đăng ký thi lại</p>
+          <p className="text-sm mt-1">Nhà trường chưa mở đăng ký thi lại / nâng điểm cho học kỳ này.</p>
+        </div>
+      )}
       <PageHeader
         title="Đăng ký thi lại / nâng điểm"
         description="Môn dưới 4 điểm: thi lại. Từ 4 đến dưới 8: thi nâng điểm."

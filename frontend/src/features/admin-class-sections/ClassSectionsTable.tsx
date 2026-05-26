@@ -1,9 +1,9 @@
-import { Pencil, RotateCcw, Trash2, Users } from "lucide-react";
+﻿import { Pencil, RotateCcw, Trash2, Users } from "lucide-react";
 import { DataTable } from "@/components/data-table/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { formatClassDay } from "./classSectionMock";
+import { formatClassDay } from "./classSectionMappers";
 import type { ClassSectionRow } from "./types";
 
 interface ClassSectionsTableProps {
@@ -159,3 +159,4 @@ export function ClassSectionsTable({
     </div>
   );
 }
+

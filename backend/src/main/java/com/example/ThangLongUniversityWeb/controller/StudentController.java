@@ -153,13 +153,17 @@ public class StudentController {
     private List<StudentSemesterResponse> getStudentSemesters() {
         return semesterRepository.findAll().stream()
                 .sorted(Comparator.comparing(s -> s.getStartDate() == null ? LocalDate.MIN : s.getStartDate()))
-                .map(s -> new StudentSemesterResponse(
-                        s.getId(),
-                        s.getName(),
-                        s.getStartDate(),
-                        s.getEndDate(),
-                        s.isRegistrationOpen(),
-                        s.isLocked()))
+                .map(s -> StudentSemesterResponse.builder()
+                        .id(s.getId())
+                        .name(s.getName())
+                        .startDate(s.getStartDate())
+                        .endDate(s.getEndDate())
+                        .registrationOpen(s.isRegistrationOpen())
+                        .locked(s.isLocked())
+                        .examPublished(s.isExamPublished())
+                        .retakeOpen(s.isRetakeOpen())
+                        .retakeLocked(s.isRetakeLocked())
+                        .build())
                 .collect(Collectors.toList());
     }
 

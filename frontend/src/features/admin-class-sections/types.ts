@@ -8,7 +8,7 @@ import type {
   RoomResponse,
 } from "@/lib/api/types";
 
-export type ClassSectionSource = "API" | "Mock";
+export type ClassSectionSource = "API";
 
 export interface ClassSectionRow {
   id: string;

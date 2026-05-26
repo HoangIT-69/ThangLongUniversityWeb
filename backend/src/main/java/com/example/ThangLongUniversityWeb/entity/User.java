@@ -3,7 +3,10 @@ package com.example.ThangLongUniversityWeb.entity;
 import com.example.ThangLongUniversityWeb.enums.Role;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -30,6 +33,13 @@ public class User {
     private Role role;
 
     private boolean isActive;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
 
     // Quan hệ 1-1 với Student và Teacher
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)

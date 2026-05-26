@@ -1,5 +1,7 @@
 package com.example.ThangLongUniversityWeb.service;
 
+import com.example.ThangLongUniversityWeb.dto.request.AdminUserUpdateRequest;
+import com.example.ThangLongUniversityWeb.dto.response.AdminUserManagementResponse;
 import com.example.ThangLongUniversityWeb.enums.Role;
 import com.example.ThangLongUniversityWeb.entity.User;
 import com.example.ThangLongUniversityWeb.repository.UserRepository;
@@ -8,6 +10,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -15,6 +19,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RedisTokenService redisTokenService;
+
+    @Transactional(readOnly = true)
+    public List<AdminUserManagementResponse> listUsersForAdmin() {
+        return userRepository.findAllWithProfiles().stream()
+                .map(this::mapToAdminUserResponse)
+                .toList();
+    }
 
     // 1. CHỈ DÙNG ĐỂ TẠO ADMIN MỚI (Student/Teacher đã có Service riêng tạo rồi)
     @Transactional
@@ -51,6 +62,25 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
+    public AdminUserManagementResponse updateUser(Long userId, AdminUserUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay User!"));
+
+        if (userRepository.existsByUsernameAndIdNot(request.getUsername(), userId)) {
+            throw new RuntimeException("Ten dang nhap da ton tai!");
+        }
+        if (userRepository.existsByEmailAndIdNot(request.getEmail(), userId)) {
+            throw new RuntimeException("Email da ton tai!");
+        }
+
+        user.setUsername(request.getUsername().trim());
+        user.setEmail(request.getEmail().trim());
+        applyFullName(user, request.getFullName().trim());
+
+        return mapToAdminUserResponse(userRepository.save(user));
+    }
+
     // 3. XÓA TÀI KHOẢN (Chỉ xóa Admin, nếu xóa SV/GV thì phải xóa từ StudentService)
     @Transactional
     public void deleteAdminUser(Long userId) {
@@ -62,5 +92,52 @@ public class UserService {
         }
 
         userRepository.delete(user);
+    }
+
+    private AdminUserManagementResponse mapToAdminUserResponse(User user) {
+        return AdminUserManagementResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .active(user.isActive())
+                .fullName(resolveFullName(user))
+                .profileId(resolveProfileId(user))
+                .createdAt(user.getCreatedAt())
+                .lastLoginAt(user.getLastLoginAt())
+                .build();
+    }
+
+    private String resolveFullName(User user) {
+        if (user.getRole() == Role.STUDENT && user.getStudent() != null && user.getStudent().getFullName() != null && !user.getStudent().getFullName().isBlank()) {
+            return user.getStudent().getFullName();
+        }
+        if (user.getRole() == Role.TEACHER && user.getTeacher() != null && user.getTeacher().getFullName() != null && !user.getTeacher().getFullName().isBlank()) {
+            return user.getTeacher().getFullName();
+        }
+        if (user.getRole() == Role.ADMIN) {
+            return "Quan tri he thong";
+        }
+        return user.getUsername();
+    }
+
+    private Long resolveProfileId(User user) {
+        if (user.getRole() == Role.STUDENT && user.getStudent() != null) {
+            return user.getStudent().getId();
+        }
+        if (user.getRole() == Role.TEACHER && user.getTeacher() != null) {
+            return user.getTeacher().getId();
+        }
+        return null;
+    }
+
+    private void applyFullName(User user, String fullName) {
+        if (user.getRole() == Role.STUDENT && user.getStudent() != null) {
+            user.getStudent().setFullName(fullName);
+            return;
+        }
+        if (user.getRole() == Role.TEACHER && user.getTeacher() != null) {
+            user.getTeacher().setFullName(fullName);
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.ThangLongUniversityWeb.entity;
 
+import com.example.ThangLongUniversityWeb.enums.ExamType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -57,6 +58,10 @@ public class ClassSection {
 
     private LocalDateTime examAt;
     private String examRoom;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "exam_type")
+    private ExamType examType = ExamType.NORMAL;
 
     // Method to check if this class section overlaps with another class section
     public boolean isOverlapping(ClassSection other) {
