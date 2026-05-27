@@ -38,7 +38,7 @@ export function ClassSectionsByMajor({
 function groupByMajor(rows: ClassSectionRow[]) {
   const groups = new Map<string, ClassSectionRow[]>();
   rows.forEach((row) => {
-    const key = row.majorName || "Chua phan nganh";
+    const key = row.majorName || "Chưa phân ngành";
     groups.set(key, [...(groups.get(key) ?? []), row]);
   });
 

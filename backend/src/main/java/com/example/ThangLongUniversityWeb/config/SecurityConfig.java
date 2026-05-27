@@ -106,6 +106,7 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 // Public student endpoints
                                 "/api/student/tuition/vnpay-return",
+                                "/api/payments/vnpay/return",
                                 // WebSocket
                                 "/ws/**"
                         ).permitAll()

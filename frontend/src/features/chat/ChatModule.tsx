@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
+  ArrowLeft,
   ArrowUp,
   FileText,
   Link as LinkIcon,
@@ -44,23 +45,23 @@ function initials(value?: string | null) {
 }
 
 function personLabel(person?: { code?: string | null; fullName?: string | null; username?: string | null } | null) {
-  if (!person) return "Chat rieng";
+  if (!person) return "Chat riêng";
   const code = person.code || person.username;
   const fullName = person.fullName || person.username;
   if (code && fullName && code !== fullName) return `${code} - ${fullName}`;
-  return fullName || code || "Nguoi dung";
+  return fullName || code || "Người dùng";
 }
 
 function roomTitle(room: ChatRoom, username?: string | null) {
-  if (room.type !== "PRIVATE") return room.name || "Nhom chat";
+  if (room.type !== "PRIVATE") return room.name || "Nhóm chat";
   const otherMember = room.members.find((member) => member.username !== username);
-  return otherMember ? personLabel(otherMember) : room.name || "Chat rieng";
+  return otherMember ? personLabel(otherMember) : room.name || "Chat riêng";
 }
 
 function roomSubtitle(room: ChatRoom) {
   if (room.lastMessagePreview) return room.lastMessagePreview;
-  if (room.type === "PRIVATE") return "Nhan tin rieng";
-  return `${room.memberCount} thanh vien`;
+  if (room.type === "PRIVATE") return "Nhắn tin riêng";
+  return `${room.memberCount} thành viên`;
 }
 
 function mediaHref(url?: string | null) {
@@ -204,6 +205,7 @@ export function ChatModule() {
   const selectRoom = (roomId: number) => {
     setActiveId(roomId);
     setRooms((prev) => prev.map((room) => room.id === roomId ? { ...room, unreadCount: 0 } : room));
+    if (window.innerWidth < 1024) setSidebarOpen(false);
     markRoomRead(roomId)
       .then(() => reloadRooms(roomId))
       .catch(() => undefined);
@@ -270,11 +272,11 @@ export function ChatModule() {
 
   const createGroup = async () => {
     if (selectedMembers.length < 2) {
-      setError("Can chon it nhat 2 thanh vien de tao nhom.");
+      setError("Cần chọn ít nhất 2 thành viên để tạo nhóm.");
       return;
     }
 
-    const room = await createGroupRoom(groupName.trim() || "Nhom chat moi", selectedMembers.map((user) => user.id));
+    const room = await createGroupRoom(groupName.trim() || "Nhóm chat mới", selectedMembers.map((user) => user.id));
     setGroupOpen(false);
     setGroupName("");
     setGroupQuery("");
@@ -322,14 +324,14 @@ export function ChatModule() {
         <div className="border-b bg-background p-4">
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <div className="text-base font-semibold">Tin nhan</div>
-              <div className="text-xs text-muted-foreground">Tim sinh vien, giang vien de bat dau chat</div>
+              <div className="text-base font-semibold">Tin nhắn</div>
+              <div className="text-xs text-muted-foreground">Tìm sinh viên, giảng viên để bắt đầu chat</div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="icon" variant="outline" onClick={() => setSidebarOpen(false)} title="An sidebar">
+              <Button size="icon" variant="outline" onClick={() => setSidebarOpen(false)} title="Ẩn danh sách">
                 <PanelLeftClose className="h-4 w-4" />
               </Button>
-              <Button size="icon" onClick={() => setGroupOpen(true)} title="Tao nhom">
+              <Button size="icon" onClick={() => setGroupOpen(true)} title="Tạo nhóm">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -340,7 +342,7 @@ export function ChatModule() {
             <Input
               value={personQuery}
               onChange={(event) => setPersonQuery(event.target.value)}
-              placeholder="Nhap ma sinh vien hoac ten"
+              placeholder="Nhập mã sinh viên hoặc tên"
               className="h-10 bg-muted/40 pl-9"
             />
             {personQuery.trim().length >= 2 && (
@@ -348,7 +350,7 @@ export function ChatModule() {
                 <UserSuggestionList
                   users={personResults}
                   onSelect={startPrivateChat}
-                  emptyText="Khong tim thay nguoi phu hop."
+                  emptyText="Không tìm thấy người phù hợp."
                 />
               </div>
             )}
@@ -357,9 +359,9 @@ export function ChatModule() {
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {loadingRooms ? (
-            <div className="p-4 text-sm text-muted-foreground">Dang tai danh sach chat...</div>
+            <div className="p-4 text-sm text-muted-foreground">Đang tải danh sách chat...</div>
           ) : rooms.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">Chua co cuoc tro chuyen nao. Hay tim nguoi de nhan tin.</div>
+            <div className="p-6 text-sm text-muted-foreground">Chưa có cuộc trò chuyện nào. Hãy tìm người để nhắn tin.</div>
           ) : (
             <div className="divide-y">
               {rooms.map((room) => {
@@ -397,14 +399,15 @@ export function ChatModule() {
         </div>
       </aside>
 
-      <section className="flex min-h-0 min-w-0 flex-col">
+      <section className={cn("flex min-h-0 min-w-0 flex-col", sidebarOpen && "hidden lg:flex")}>
         {activeRoom ? (
           <>
             <header className="flex h-16 items-center justify-between border-b bg-background px-5">
               <div className="flex min-w-0 items-center gap-3">
                 {!sidebarOpen && (
-                  <Button size="icon" variant="ghost" onClick={() => setSidebarOpen(true)} title="Hien sidebar">
-                    <PanelLeftOpen className="h-4 w-4" />
+                  <Button size="icon" variant="ghost" onClick={() => setSidebarOpen(true)} title="Hiện danh sách">
+                    <ArrowLeft className="h-4 w-4 lg:hidden" />
+                    <PanelLeftOpen className="hidden h-4 w-4 lg:block" />
                   </Button>
                 )}
                 <Avatar className="h-10 w-10">
@@ -413,13 +416,13 @@ export function ChatModule() {
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold">{roomTitle(activeRoom, profile?.username)}</div>
                   <div className="text-xs text-muted-foreground">
-                    {activeRoom.type === "PRIVATE" ? "Tin nhan rieng" : `${activeRoom.memberCount} thanh vien`}
+                    {activeRoom.type === "PRIVATE" ? "Tin nhắn riêng" : `${activeRoom.memberCount} thành viên`}
                   </div>
                 </div>
               </div>
               {activeRoom.type !== "PRIVATE" && (
                 <Button variant="outline" size="sm" onClick={outGroup}>
-                  <LogOut className="mr-2 h-4 w-4" /> Roi nhom
+                  <LogOut className="mr-2 h-4 w-4" /> Rời nhóm
                 </Button>
               )}
             </header>
@@ -436,7 +439,7 @@ export function ChatModule() {
                     <div className="grid h-full place-items-center text-center text-sm text-muted-foreground">
                       <div>
                         <MessageCircle className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-                        Chua co tin nhan. Hay bat dau cuoc tro chuyen.
+                        Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện.
                       </div>
                     </div>
                   ) : (
@@ -452,7 +455,7 @@ export function ChatModule() {
                             )}
                             <div className={cn("max-w-[min(760px,82%)]", mine && "text-right")}>
                               <div className="mb-1 text-[11px] text-muted-foreground">
-                                {mine ? "Ban" : personLabel({ code: message.senderCode, fullName: message.senderFullName, username: message.senderUsername })}
+                                {mine ? "Bạn" : personLabel({ code: message.senderCode, fullName: message.senderFullName, username: message.senderUsername })}
                               </div>
                               <div
                                 className={cn(
@@ -489,7 +492,7 @@ export function ChatModule() {
                 <div className="border-t bg-background p-4">
                   <div className="flex items-center gap-2 rounded-lg border bg-muted/20 p-2">
                     <input ref={fileInputRef} type="file" className="hidden" onChange={(event) => submitFile(event.target.files?.[0])} />
-                    <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} title="Gui file">
+                    <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} title="Gửi file">
                       <Paperclip className="h-4 w-4" />
                     </Button>
                     <Input
@@ -501,10 +504,10 @@ export function ChatModule() {
                           submitMessage();
                         }
                       }}
-                      placeholder="Nhap tin nhan..."
+                      placeholder="Nhập tin nhắn..."
                       className="border-0 bg-transparent shadow-none focus-visible:ring-0"
                     />
-                    <Button size="icon" disabled={!draft.trim()} onClick={submitMessage} title="Gui">
+                    <Button size="icon" disabled={!draft.trim()} onClick={submitMessage} title="Gửi">
                       <ArrowUp className="h-4 w-4" />
                     </Button>
                   </div>
@@ -520,7 +523,7 @@ export function ChatModule() {
                   </TabsList>
                   {activeRoom.type !== "PRIVATE" && (
                     <TabsContent value="members" className="m-0 min-h-0 flex-1 overflow-y-auto p-3">
-                      <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Thanh vien</div>
+                      <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Thành viên</div>
                       {activeRoom.members.map((member) => (
                         <div key={member.userId} className="flex items-center gap-3 rounded-md px-2 py-2">
                           <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{initials(member.fullName)}</AvatarFallback></Avatar>
@@ -533,9 +536,9 @@ export function ChatModule() {
                     </TabsContent>
                   )}
                   <TabsContent value="files" className="m-0 min-h-0 flex-1 overflow-y-auto p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">File da gui</div>
+                    <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">File đã gửi</div>
                     <div className="space-y-2">
-                      {files.length === 0 ? <div className="text-sm text-muted-foreground">Chua co file.</div> : files.map((file) => (
+                      {files.length === 0 ? <div className="text-sm text-muted-foreground">Chưa có file.</div> : files.map((file) => (
                         <a key={file.id} href={mediaHref(file.mediaUrl)} target="_blank" rel="noreferrer" className="block rounded-md border p-2 text-sm hover:bg-muted">
                           <span className="flex min-w-0 gap-2">
                             <FileText className="mt-0.5 h-4 w-4 shrink-0" />
@@ -549,9 +552,9 @@ export function ChatModule() {
                     </div>
                   </TabsContent>
                   <TabsContent value="links" className="m-0 min-h-0 flex-1 overflow-y-auto p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Link da gui</div>
+                    <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Link đã gửi</div>
                     <div className="space-y-2">
-                      {links.length === 0 ? <div className="text-sm text-muted-foreground">Chua co link.</div> : links.map((link) => (
+                      {links.length === 0 ? <div className="text-sm text-muted-foreground">Chưa có link.</div> : links.map((link) => (
                         <a key={link.id} href={extractFirstUrl(link.content) || "#"} target="_blank" rel="noreferrer" className="block truncate rounded-md border p-2 text-sm hover:bg-muted">
                           <span className="block truncate">{extractFirstUrl(link.content) || link.content}</span>
                           <span className="mt-1 block text-[10px] text-muted-foreground">{formatTime(link)}</span>
@@ -568,11 +571,11 @@ export function ChatModule() {
             <div>
               {!sidebarOpen && (
                 <Button className="mb-4" variant="outline" onClick={() => setSidebarOpen(true)}>
-                  <PanelLeftOpen className="mr-2 h-4 w-4" /> Hien danh sach chat
+                  <PanelLeftOpen className="mr-2 h-4 w-4" /> Hiện danh sách chat
                 </Button>
               )}
               <MessageCircle className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-              {error || "Tim sinh vien, giang vien de bat dau chat."}
+              {error || "Tìm sinh viên, giảng viên để bắt đầu chat."}
             </div>
           </div>
         )}
@@ -581,16 +584,16 @@ export function ChatModule() {
       <Dialog open={groupOpen} onOpenChange={setGroupOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Tao nhom chat</DialogTitle>
+            <DialogTitle>Tạo nhóm chat</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <Input value={groupName} onChange={(event) => setGroupName(event.target.value)} placeholder="Ten nhom" />
+            <Input value={groupName} onChange={(event) => setGroupName(event.target.value)} placeholder="Tên nhóm" />
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={groupQuery}
                 onChange={(event) => setGroupQuery(event.target.value)}
-                placeholder="Nhap ma sinh vien, ten sinh vien hoac giang vien"
+                placeholder="Nhập mã sinh viên, tên sinh viên hoặc giảng viên"
                 className="pl-9"
               />
             </div>
@@ -612,13 +615,13 @@ export function ChatModule() {
               <UserSuggestionList
                 users={groupResults.filter((user) => !selectedMembers.some((item) => item.id === user.id))}
                 onSelect={(user) => setSelectedMembers((prev) => [...prev, user])}
-                emptyText={groupQuery.trim().length < 2 ? "Nhap it nhat 2 ky tu de tim." : "Khong tim thay nguoi phu hop."}
+                emptyText={groupQuery.trim().length < 2 ? "Nhập ít nhất 2 ký tự để tìm." : "Không tìm thấy người phù hợp."}
               />
             </div>
           </div>
           <DialogFooter>
             <Button onClick={createGroup} disabled={selectedMembers.length < 2}>
-              Tao nhom
+              Tạo nhóm
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -121,8 +121,8 @@ function CurriculumPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả loại môn</SelectItem>
-              <SelectItem value="REQUIRED">Tín bắt buộc</SelectItem>
-              <SelectItem value="ELECTIVE">Tín tự do</SelectItem>
+              <SelectItem value="REQUIRED">Tín chỉ bắt buộc</SelectItem>
+              <SelectItem value="ELECTIVE">Tín chỉ tự chọn</SelectItem>
             </SelectContent>
           </Select>
         </div>

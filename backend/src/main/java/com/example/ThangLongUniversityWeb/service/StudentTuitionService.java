@@ -31,6 +31,17 @@ import java.util.*;
 @RequiredArgsConstructor
 public class StudentTuitionService {
 
+    public record VNPayReturnResult(
+            boolean success,
+            String message,
+            String transactionNo,
+            String txnRef,
+            String responseCode,
+            String transactionStatus,
+            String amount,
+            String bankCode
+    ) {}
+
     private final TuitionBillRepository tuitionBillRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
@@ -200,6 +211,11 @@ public class StudentTuitionService {
     // 3. HỨNG KẾT QUẢ TỪ VNPAY VÀ CẬP NHẬT DATABASE
     @Transactional
     public String processVNPayReturn(HttpServletRequest request) {
+        return processVNPayReturnResult(request).message();
+    }
+
+    @Transactional
+    public VNPayReturnResult processVNPayReturnResult(HttpServletRequest request) {
         Map<String, String> fields = new HashMap<>();
         for (Enumeration<String> params = request.getParameterNames(); params.hasMoreElements(); ) {
             String fieldName = params.nextElement();
@@ -210,6 +226,12 @@ public class StudentTuitionService {
         }
 
         String vnp_SecureHash = request.getParameter("vnp_SecureHash");
+        String transactionNo = request.getParameter("vnp_TransactionNo");
+        String txnRef = request.getParameter("vnp_TxnRef");
+        String responseCode = request.getParameter("vnp_ResponseCode");
+        String transactionStatus = request.getParameter("vnp_TransactionStatus");
+        String amount = request.getParameter("vnp_Amount");
+        String bankCode = request.getParameter("vnp_BankCode");
         fields.remove("vnp_SecureHashType");
         fields.remove("vnp_SecureHash");
 
@@ -232,18 +254,22 @@ public class StudentTuitionService {
                 }
             }
         } catch (Exception e) {
-            return "Lỗi giải mã dữ liệu VNPAY!";
+            return new VNPayReturnResult(false, "Lỗi giải mã dữ liệu VNPAY!", transactionNo, txnRef, responseCode, transactionStatus, amount, bankCode);
         }
 
         String signValue = vnPayConfig.hmacSHA512(vnPayConfig.getSecretKey(), hashData.toString());
 
         if (signValue.equals(vnp_SecureHash)) {
             // Mã "00" có nghĩa là giao dịch thành công bên phía Ngân hàng
-            if ("00".equals(request.getParameter("vnp_TransactionStatus"))) {
+            if ("00".equals(transactionStatus)) {
 
                 // Lấy ID hóa đơn ra từ vnp_TxnRef (Ví dụ: "5_92837482" -> Lấy số 5)
-                String txnRef = request.getParameter("vnp_TxnRef");
-                Long billId = Long.parseLong(txnRef.split("_")[0]);
+                Long billId;
+                try {
+                    billId = Long.parseLong(txnRef.split("_")[0]);
+                } catch (Exception e) {
+                    return new VNPayReturnResult(false, "Không xác định được hóa đơn thanh toán.", transactionNo, txnRef, responseCode, transactionStatus, amount, bankCode);
+                }
 
                 TuitionBill bill = tuitionBillRepository.findById(billId)
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn!"));
@@ -253,12 +279,12 @@ public class StudentTuitionService {
                 bill.setPaidAmount(bill.getTotalAmount());
                 tuitionBillRepository.save(bill);
 
-                return "Giao dịch thành công! Mã giao dịch: " + request.getParameter("vnp_TransactionNo");
+                return new VNPayReturnResult(true, "Giao dịch thành công!", transactionNo, txnRef, responseCode, transactionStatus, amount, bankCode);
             } else {
-                return "Giao dịch không thành công hoặc bị hủy (Mã lỗi: " + request.getParameter("vnp_TransactionStatus") + ").";
+                return new VNPayReturnResult(false, "Giao dịch không thành công hoặc bị hủy.", transactionNo, txnRef, responseCode, transactionStatus, amount, bankCode);
             }
         } else {
-            return "Lỗi bảo mật: Chữ ký dữ liệu không hợp lệ!";
+            return new VNPayReturnResult(false, "Lỗi bảo mật: Chữ ký dữ liệu không hợp lệ!", transactionNo, txnRef, responseCode, transactionStatus, amount, bankCode);
         }
     }
 }

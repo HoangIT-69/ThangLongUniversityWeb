@@ -1,4 +1,4 @@
-import { apiRequest, jsonBody } from "./client";
+import { apiRequest, downloadApiFile, jsonBody } from "./client";
 import type {
   AdminUserUpdateRequest,
   AdminClassSectionRequest,
@@ -171,6 +171,21 @@ export const adminApi = {
     `/api/admin/export/exam-schedules/semester/${semesterId}`,
   exportRetakesUrl: (semesterId: number | string) =>
     `/api/admin/export/retakes/semester/${semesterId}`,
+  exportEnrollments: (semesterId: number | string) =>
+    downloadApiFile(
+      `/api/admin/export/enrollments/semester/${semesterId}`,
+      `enrollments-semester-${semesterId}.xlsx`,
+    ),
+  exportExamSchedules: (semesterId: number | string) =>
+    downloadApiFile(
+      `/api/admin/export/exam-schedules/semester/${semesterId}`,
+      `exam-schedules-semester-${semesterId}.xlsx`,
+    ),
+  exportRetakes: (semesterId: number | string) =>
+    downloadApiFile(
+      `/api/admin/export/retakes/semester/${semesterId}`,
+      `retakes-semester-${semesterId}.xlsx`,
+    ),
 
   listClassSections: () => apiRequest<ClassSectionResponse[]>("/api/admin/class-sections"),
   createClassSection: (request: AdminClassSectionRequest) =>

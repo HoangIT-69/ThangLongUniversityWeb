@@ -15,10 +15,10 @@ public class VNPayConfig {
     @Value("${vnpay.tmn-code}")
     private String vnp_TmnCode;
 
-    @Value("${vnpay.secret-key}")
+    @Value("${vnpay.hash-secret:${vnpay.secret-key:}}")
     private String secretKey;
 
-    @Value("${vnpay.pay-url}")
+    @Value("${vnpay.payment-url:${vnpay.pay-url:}}")
     private String vnp_PayUrl;
 
     @Value("${vnpay.return-url}")

@@ -67,7 +67,7 @@ const statusMeta: Record<AttendanceStatus, { label: string; short: string; class
     className: "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
   },
   UNMARKED: {
-    label: "Chưa điểm",
+    label: "Chưa điểm danh",
     short: "-",
     className: "border-border bg-background text-muted-foreground hover:bg-muted",
   },

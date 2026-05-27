@@ -17,12 +17,12 @@ export function validateClassSectionPlan({
   const endPeriod = findPeriodNumber(periods, values.endPeriodId);
 
   if (startPeriod >= endPeriod) {
-    return "Tiet bat dau phai nho hon tiet ket thuc.";
+    return "Tiết bắt đầu phải nhỏ hơn tiết kết thúc.";
   }
 
   const selectedRoom = rooms.find((room) => room.id === values.roomId);
   if (selectedRoom && values.maxSlots > selectedRoom.capacity) {
-    return `Si so toi da vuot suc chua phong ${selectedRoom.name} (${selectedRoom.capacity}).`;
+    return `Sĩ số tối đa vượt sức chứa phòng ${selectedRoom.name} (${selectedRoom.capacity}).`;
   }
 
   const conflictingRows = rows.filter(
@@ -36,12 +36,12 @@ export function validateClassSectionPlan({
 
   const roomConflict = conflictingRows.find((row) => row.roomId === values.roomId);
   if (roomConflict) {
-    return `Phong ${roomConflict.roomName} da co lop ${roomConflict.classCode} cung khung gio trong hoc ky nay.`;
+    return `Phòng ${roomConflict.roomName} đã có lớp ${roomConflict.classCode} cùng khung giờ trong học kỳ này.`;
   }
 
   const teacherConflict = conflictingRows.find((row) => row.teacherId === values.teacherId);
   if (teacherConflict) {
-    return `Giang vien ${teacherConflict.teacherName} da co lop ${teacherConflict.classCode} cung khung gio trong hoc ky nay.`;
+    return `Giảng viên ${teacherConflict.teacherName} đã có lớp ${teacherConflict.classCode} cùng khung giờ trong học kỳ này.`;
   }
 
   return null;

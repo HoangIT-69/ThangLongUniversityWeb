@@ -28,15 +28,15 @@ import type { ClassSectionFormValues, ClassSectionOptionSets, ClassSectionRow } 
 const statuses: AdminClassSectionStatus[] = ["DRAFT", "OPEN", "CLOSED", "CANCELLED"];
 
 const classSectionSchema = z.object({
-  classCode: z.string().trim().min(1, "Ma lop khong duoc de trong"),
-  courseId: z.coerce.number().min(1, "Bat buoc chon mon hoc"),
-  semesterId: z.coerce.number().min(1, "Bat buoc chon hoc ky"),
-  teacherId: z.coerce.number().min(1, "Bat buoc chon giang vien"),
-  roomId: z.coerce.number().min(1, "Bat buoc chon phong hoc"),
+  classCode: z.string().trim().min(1, "Mã lớp không được để trống"),
+  courseId: z.coerce.number().min(1, "Bắt buộc chọn môn học"),
+  semesterId: z.coerce.number().min(1, "Bắt buộc chọn học kỳ"),
+  teacherId: z.coerce.number().min(1, "Bắt buộc chọn giảng viên"),
+  roomId: z.coerce.number().min(1, "Bắt buộc chọn phòng học"),
   dayOfWeek: z.coerce.number().min(2).max(8),
-  startPeriodId: z.coerce.number().min(1, "Bat buoc chon tiet bat dau"),
-  endPeriodId: z.coerce.number().min(1, "Bat buoc chon tiet ket thuc"),
-  maxSlots: z.coerce.number().int().min(1, "Si so toi da phai lon hon 0"),
+  startPeriodId: z.coerce.number().min(1, "Bắt buộc chọn tiết bắt đầu"),
+  endPeriodId: z.coerce.number().min(1, "Bắt buộc chọn tiết kết thúc"),
+  maxSlots: z.coerce.number().int().min(1, "Sĩ số tối đa phải lớn hơn 0"),
   status: z.enum(["DRAFT", "OPEN", "CLOSED", "CANCELLED"]),
 });
 
@@ -70,9 +70,9 @@ export function ClassSectionFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{editing ? "Sua lop hoc phan" : "Mo lop hoc phan"}</DialogTitle>
+          <DialogTitle>{editing ? "Sửa lớp học phần" : "Mở lớp học phần"}</DialogTitle>
           <DialogDescription>
-            Chon mon hoc, hoc ky, giang vien, phong hoc va lich hoc cho lop hoc phan.
+            Chọn môn học, học kỳ, giảng viên, phòng học và lịch học cho lớp học phần.
           </DialogDescription>
         </DialogHeader>
 
@@ -84,7 +84,7 @@ export function ClassSectionFormDialog({
                 name="classCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ma lop hoc phan</FormLabel>
+                    <FormLabel>Mã lớp học phần</FormLabel>
                     <FormControl>
                       <Input placeholder="JAVA101-01" {...field} />
                     </FormControl>
@@ -95,13 +95,13 @@ export function ClassSectionFormDialog({
               <ClassSectionSelectField
                 control={form.control}
                 name="status"
-                label="Trang thai"
+                label="Trạng thái"
                 options={statuses.map((status) => ({ value: status, label: status }))}
               />
               <ClassSectionSelectField
                 control={form.control}
                 name="courseId"
-                label="Mon hoc"
+                label="Môn học"
                 options={options.courses.map((course) => ({
                   value: course.id,
                   label: `${course.code} - ${course.name}`,
@@ -110,7 +110,7 @@ export function ClassSectionFormDialog({
               <ClassSectionSelectField
                 control={form.control}
                 name="semesterId"
-                label="Hoc ky"
+                label="Học kỳ"
                 options={options.semesters.map((semester) => ({
                   value: semester.id,
                   label: semester.name,
@@ -119,7 +119,7 @@ export function ClassSectionFormDialog({
               <ClassSectionSelectField
                 control={form.control}
                 name="teacherId"
-                label="Giang vien"
+                label="Giảng viên"
                 options={options.teachers.map((teacher) => ({
                   value: teacher.id,
                   label: teacher.name,
@@ -128,7 +128,7 @@ export function ClassSectionFormDialog({
               <ClassSectionSelectField
                 control={form.control}
                 name="roomId"
-                label="Phong hoc"
+                label="Phòng học"
                 options={options.rooms.map((room) => ({
                   value: room.id,
                   label: `${room.name} (${room.capacity})`,
@@ -137,15 +137,15 @@ export function ClassSectionFormDialog({
               <ClassSectionSelectField
                 control={form.control}
                 name="dayOfWeek"
-                label="Thu hoc"
+                label="Thứ học"
                 options={[
-                  { value: 2, label: "Thu 2" },
-                  { value: 3, label: "Thu 3" },
-                  { value: 4, label: "Thu 4" },
-                  { value: 5, label: "Thu 5" },
-                  { value: 6, label: "Thu 6" },
-                  { value: 7, label: "Thu 7" },
-                  { value: 8, label: "Chu nhat" },
+                  { value: 2, label: "Thứ 2" },
+                  { value: 3, label: "Thứ 3" },
+                  { value: 4, label: "Thứ 4" },
+                  { value: 5, label: "Thứ 5" },
+                  { value: 6, label: "Thứ 6" },
+                  { value: 7, label: "Thứ 7" },
+                  { value: 8, label: "Chủ nhật" },
                 ]}
               />
               <FormField
@@ -153,7 +153,7 @@ export function ClassSectionFormDialog({
                 name="maxSlots"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Si so toi da</FormLabel>
+                    <FormLabel>Sĩ số tối đa</FormLabel>
                     <FormControl>
                       <Input type="number" min={1} {...field} />
                     </FormControl>
@@ -164,7 +164,7 @@ export function ClassSectionFormDialog({
               <ClassSectionSelectField
                 control={form.control}
                 name="startPeriodId"
-                label="Tiet bat dau"
+                label="Tiết bắt đầu"
                 options={options.periods.map((period) => ({
                   value: period.id,
                   label: period.label,
@@ -173,7 +173,7 @@ export function ClassSectionFormDialog({
               <ClassSectionSelectField
                 control={form.control}
                 name="endPeriodId"
-                label="Tiet ket thuc"
+                label="Tiết kết thúc"
                 options={options.periods.map((period) => ({
                   value: period.id,
                   label: period.label,
@@ -183,11 +183,11 @@ export function ClassSectionFormDialog({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Huy
+                Hủy
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editing ? "Luu thay doi" : "Mo lop"}
+                {editing ? "Lưu thay đổi" : "Mở lớp"}
               </Button>
             </DialogFooter>
           </form>

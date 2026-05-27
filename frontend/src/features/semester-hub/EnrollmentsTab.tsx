@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Download, Search } from "lucide-react";
+import { toast } from "sonner";
 
 interface Props {
   semesterId: number;
@@ -73,12 +74,18 @@ export function EnrollmentsTab({ semesterId }: Props) {
               className="pl-8 h-8 w-48"
             />
           </div>
-          <a href={adminApi.exportEnrollmentsUrl(semesterId)} download>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-1" />
-              Xuất Excel
-            </Button>
-          </a>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              void adminApi
+                .exportEnrollments(semesterId)
+                .catch((error) => toast.error(error instanceof Error ? error.message : "Không xuất được Excel"))
+            }
+          >
+            <Download className="h-4 w-4 mr-1" />
+            Xuất Excel
+          </Button>
         </div>
       </div>
 

@@ -4,12 +4,11 @@ import { adminApi } from "@/lib/api/admin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, BookOpen, CalendarCheck, CalendarDays, ClipboardList, Layers, RotateCcw } from "lucide-react";
+import { ArrowLeft, BookOpen, CalendarCheck, CalendarDays, ClipboardList, Layers } from "lucide-react";
 import { OverviewTab } from "@/features/semester-hub/OverviewTab";
 import { ClassSectionsTab } from "@/features/semester-hub/ClassSectionsTab";
 import { EnrollmentsTab } from "@/features/semester-hub/EnrollmentsTab";
 import { ExamSchedulesTab } from "@/features/semester-hub/ExamSchedulesTab";
-import { RetakeRegistrationsTab } from "@/features/semester-hub/RetakeRegistrationsTab";
 
 export const Route = createFileRoute("/admin/semesters/$id")({ component: SemesterHubPage });
 
@@ -76,7 +75,7 @@ function SemesterHubPage() {
 
       {/* Hub tabs */}
       <Tabs defaultValue="overview">
-        <TabsList className="grid w-full grid-cols-5 h-11 bg-muted/50 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-4 h-11 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5">
             <BookOpen className="h-3.5 w-3.5" /> Tổng quan
           </TabsTrigger>
@@ -88,9 +87,6 @@ function SemesterHubPage() {
           </TabsTrigger>
           <TabsTrigger value="exam-schedules" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5">
             <CalendarCheck className="h-3.5 w-3.5" /> Lịch thi
-          </TabsTrigger>
-          <TabsTrigger value="retakes" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5">
-            <RotateCcw className="h-3.5 w-3.5" /> Thi lại
           </TabsTrigger>
         </TabsList>
 
@@ -105,9 +101,6 @@ function SemesterHubPage() {
         </TabsContent>
         <TabsContent value="exam-schedules" className="mt-6">
           <ExamSchedulesTab semesterId={semesterId} />
-        </TabsContent>
-        <TabsContent value="retakes" className="mt-6">
-          <RetakeRegistrationsTab semesterId={semesterId} />
         </TabsContent>
       </Tabs>
     </div>

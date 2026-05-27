@@ -92,7 +92,7 @@ const adminNavGroups: NavGroup[] = [
   {
     heading: "AI Chatbot",
     items: [
-      { to: "/admin/knowledge", label: "Knowledge Base", icon: Brain },
+      { to: "/admin/knowledge", label: "Cơ sở tri thức", icon: Brain },
     ],
   },
 ];

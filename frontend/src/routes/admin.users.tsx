@@ -39,9 +39,9 @@ type AdminUserRow = {
 };
 
 const roleLabels: Record<Role, string> = {
-  ADMIN: "Quan tri he thong",
-  TEACHER: "Giang vien",
-  STUDENT: "Sinh vien",
+  ADMIN: "Quản trị hệ thống",
+  TEACHER: "Giảng viên",
+  STUDENT: "Sinh viên",
 };
 
 function UsersPage() {
@@ -55,11 +55,12 @@ function UsersPage() {
     email: "",
     fullName: "",
     role: "ADMIN" as Role,
-    password: "password123",
+    password: "",
     teacherCode: "",
     studentCode: "",
     majorId: "",
     academicYear: String(new Date().getFullYear()),
+    dob: "",
   });
   const [editForm, setEditForm] = useState({
     username: "",
@@ -108,7 +109,7 @@ function UsersPage() {
 
       if (form.role === "TEACHER") {
         if (!form.teacherCode.trim() || !form.fullName.trim()) {
-          throw new Error("Vui long nhap ma giang vien va ho ten");
+          throw new Error("Vui lòng nhập mã giảng viên và họ tên");
         }
         return adminApi.createTeacher({
           username: form.username,
@@ -120,10 +121,10 @@ function UsersPage() {
       }
 
       if (!form.studentCode.trim() || !form.fullName.trim()) {
-        throw new Error("Vui long nhap ma sinh vien va ho ten");
+        throw new Error("Vui lòng nhập mã sinh viên và họ tên");
       }
       if (!form.majorId) {
-        throw new Error("Vui long chon nganh cho sinh vien");
+        throw new Error("Vui lòng chọn ngành cho sinh viên");
       }
 
       return adminApi.createStudent({
@@ -132,24 +133,25 @@ function UsersPage() {
         password: form.password,
         studentCode: form.studentCode.trim(),
         fullName: form.fullName.trim(),
-        dob: "2000-01-01",
+        dob: form.dob || "2000-01-01",
         majorId: Number(form.majorId),
         academicYear: Number(form.academicYear) || new Date().getFullYear(),
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      toast.success("Da tao tai khoan");
+      toast.success("Đã tạo tài khoản");
       setForm({
         username: "",
         email: "",
         fullName: "",
         role: "ADMIN",
-        password: "password123",
+        password: "",
         teacherCode: "",
         studentCode: "",
         majorId: "",
         academicYear: String(new Date().getFullYear()),
+        dob: "",
       });
       setOpen(false);
     },
@@ -160,7 +162,7 @@ function UsersPage() {
     mutationFn: adminApi.toggleUserStatus,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      toast.success("Da cap nhat trang thai tai khoan");
+      toast.success("Đã cập nhật trạng thái tài khoản");
     },
     onError: (error) => toast.error(error.message),
   });
@@ -175,7 +177,7 @@ function UsersPage() {
     }) => adminApi.updateUser(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      toast.success("Da cap nhat tai khoan");
+      toast.success("Đã cập nhật tài khoản");
       setEditingUser(null);
     },
     onError: (error) => toast.error(error.message),
@@ -184,23 +186,23 @@ function UsersPage() {
   const deleteMutation = useMutation({
     mutationFn: (user: AdminUserRow) => {
       if (user.role === "ADMIN") {
-        if (!user.numericId) throw new Error("Khong tim thay id tai khoan ADMIN");
+        if (!user.numericId) throw new Error("Không tìm thấy id tài khoản ADMIN");
         return adminApi.deleteAdminUser(user.numericId);
       }
       if (user.role === "STUDENT") {
-        if (!user.profileId) throw new Error("Khong tim thay student id de xoa");
+        if (!user.profileId) throw new Error("Không tìm thấy student id để xóa");
         return adminApi.deleteStudent(user.profileId);
       }
-      if (!user.profileId) throw new Error("Khong tim thay teacher id de xoa");
+      if (!user.profileId) throw new Error("Không tìm thấy teacher id để xóa");
       return adminApi.deleteTeacher(user.profileId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      toast.success("Da xoa tai khoan");
+      toast.success("Đã xóa tài khoản");
       setToDelete(null);
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Khong xoa duoc tai khoan"),
+      toast.error(error instanceof Error ? error.message : "Không xóa được tài khoản"),
   });
 
   const submit = async () => {
@@ -209,7 +211,7 @@ function UsersPage() {
 
   const submitEdit = async () => {
     if (!editingUser?.numericId) {
-      toast.error("Khong tim thay tai khoan can cap nhat");
+      toast.error("Không tìm thấy tài khoản cần cập nhật");
       return;
     }
     await updateMutation.mutateAsync({
@@ -233,24 +235,24 @@ function UsersPage() {
 
   return (
     <div>
-      <PageHeader title="Quan ly tai khoan" />
+      <PageHeader title="Quản lý tài khoản" />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Tai khoan trong he thong"
+          label="Tài khoản trong hệ thống"
           value={stats.total}
           icon={Users}
           tone="primary"
         />
         <StatCard label="TK admin" value={stats.admins} icon={User} tone="warning" />
         <StatCard
-          label="Tai khoan giang vien"
+          label="Tài khoản giảng viên"
           value={stats.teachers}
           icon={GraduationCap}
           tone="info"
         />
         <StatCard
-          label="Tai khoan sinh vien"
+          label="Tài khoản sinh viên"
           value={stats.students}
           icon={UserRound}
           tone="success"
@@ -260,14 +262,14 @@ function UsersPage() {
       <DataTable
         data={filteredRows}
         rowKey={(user) => user.id}
-        searchPlaceholder="Tim theo username, ho ten, email, role..."
+        searchPlaceholder="Tìm theo username, họ tên, email, role..."
         searchSlot={
           <Select value={roleFilter} onValueChange={(value) => setRoleFilter(toRoleFilter(value))}>
             <SelectTrigger className="w-[170px]">
-              <SelectValue placeholder="Loc vai tro" />
+              <SelectValue placeholder="Lọc vai trò" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Tat ca vai tro</SelectItem>
+              <SelectItem value="ALL">Tất cả vai trò</SelectItem>
               <SelectItem value="ADMIN">Admin</SelectItem>
               <SelectItem value="TEACHER">Teacher</SelectItem>
               <SelectItem value="STUDENT">Student</SelectItem>
@@ -277,7 +279,7 @@ function UsersPage() {
         toolbar={
           <Button onClick={() => setOpen(true)} className="gap-2">
             <Plus className="h-4 w-4" />
-            Them tai khoan
+            Thêm tài khoản
           </Button>
         }
         columns={[
@@ -288,7 +290,7 @@ function UsersPage() {
           },
           {
             key: "fullName",
-            header: "Ho ten",
+            header: "Họ tên",
             render: (user) => (
               <div className="min-w-44 space-y-1">
                 <div className="font-medium">{user.fullName}</div>
@@ -302,7 +304,7 @@ function UsersPage() {
           },
           {
             key: "role",
-            header: "Vai tro",
+            header: "Vai trò",
             accessor: (user) => `${user.role} ${roleLabels[user.role]}`,
             render: (user) => (
               <div className="space-y-1">
@@ -313,7 +315,7 @@ function UsersPage() {
           },
           {
             key: "active",
-            header: "Trang thai",
+            header: "Trạng thái",
             render: (user) => (
               <div className="flex items-center gap-2">
                 <Switch
@@ -329,7 +331,7 @@ function UsersPage() {
           },
           {
             key: "createdAt",
-            header: "Tao luc",
+            header: "Tạo lúc",
             render: (user) => (
               <div className="text-xs text-muted-foreground">
                 <div>{user.createdAt}</div>
@@ -338,7 +340,7 @@ function UsersPage() {
           },
           {
             key: "lastLogin",
-            header: "Dang nhap gan nhat",
+            header: "Đăng nhập gần nhất",
             render: (user) => (
               <span className="text-xs text-muted-foreground">{user.lastLogin}</span>
             ),
@@ -367,7 +369,7 @@ function UsersPage() {
                   onClick={() => setToDelete(user)}
                 >
                   <Trash2 className="h-4 w-4" />
-                  Xoa
+                  Xóa
                 </Button>
               </div>
             ),
@@ -378,8 +380,8 @@ function UsersPage() {
       <EntityFormDialog
         open={open}
         onOpenChange={setOpen}
-        title="Them tai khoan"
-        description="Ho tro tao tai khoan ADMIN, TEACHER, STUDENT tu mot form"
+        title="Thêm tài khoản"
+        description="Hỗ trợ tạo tài khoản ADMIN, TEACHER, STUDENT từ một form"
         onSubmit={submit}
       >
         <div className="grid gap-3 sm:grid-cols-2">
@@ -401,7 +403,7 @@ function UsersPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Mat khau</Label>
+            <Label>Mật khẩu</Label>
             <Input
               type="password"
               value={form.password}
@@ -410,7 +412,7 @@ function UsersPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Vai tro</Label>
+            <Label>Vai trò</Label>
             <Select
               value={form.role}
               onValueChange={(value) =>
@@ -427,15 +429,15 @@ function UsersPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="TEACHER">Teacher</SelectItem>
-                <SelectItem value="STUDENT">Student</SelectItem>
+                <SelectItem value="ADMIN">Quản trị viên</SelectItem>
+                <SelectItem value="TEACHER">Giảng viên</SelectItem>
+                <SelectItem value="STUDENT">Sinh viên</SelectItem>
               </SelectContent>
             </Select>
           </div>
           {form.role !== "ADMIN" && (
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>Ho ten hien thi</Label>
+              <Label>Họ tên hiển thị</Label>
               <Input
                 value={form.fullName}
                 onChange={(e) => setForm({ ...form, fullName: e.target.value })}
@@ -445,7 +447,7 @@ function UsersPage() {
           )}
           {form.role === "TEACHER" && (
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>Ma giang vien</Label>
+              <Label>Mã giảng viên</Label>
               <Input
                 value={form.teacherCode}
                 onChange={(e) => setForm({ ...form, teacherCode: e.target.value })}
@@ -456,7 +458,7 @@ function UsersPage() {
           {form.role === "STUDENT" && (
             <>
               <div className="space-y-1.5">
-                <Label>Ma sinh vien</Label>
+                <Label>Mã sinh viên</Label>
                 <Input
                   value={form.studentCode}
                   onChange={(e) => setForm({ ...form, studentCode: e.target.value })}
@@ -464,7 +466,15 @@ function UsersPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Nien khoa</Label>
+                <Label>Ngày sinh</Label>
+                <Input
+                  type="date"
+                  value={form.dob}
+                  onChange={(e) => setForm({ ...form, dob: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Niên khóa</Label>
                 <Input
                   type="number"
                   value={form.academicYear}
@@ -473,13 +483,13 @@ function UsersPage() {
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Nganh</Label>
+                <Label>Ngành</Label>
                 <Select
                   value={form.majorId}
                   onValueChange={(value) => setForm({ ...form, majorId: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Chon nganh" />
+                    <SelectValue placeholder="Chọn ngành" />
                   </SelectTrigger>
                   <SelectContent>
                     {(majorsQuery.data ?? []).map((major) => (
@@ -498,8 +508,8 @@ function UsersPage() {
       <EntityFormDialog
         open={!!editingUser}
         onOpenChange={(value) => !value && setEditingUser(null)}
-        title="Sua tai khoan"
-        description="Cap nhat username, email va ho ten hien thi"
+        title="Sửa tài khoản"
+        description="Cập nhật username, email và họ tên hiển thị"
         onSubmit={submitEdit}
         submitText="Luu thay doi"
       >
@@ -522,7 +532,7 @@ function UsersPage() {
             />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label>Ho ten hien thi</Label>
+            <Label>Họ tên hiển thị</Label>
             <Input
               value={editForm.fullName}
               onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
@@ -535,10 +545,10 @@ function UsersPage() {
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(value) => !value && setToDelete(null)}
-        title="Xoa tai khoan?"
-        description={`Hanh dong nay khong the hoan tac. Tai khoan: ${toDelete?.username}. Neu tai khoan da phat sinh du lieu lien ket (hoc phi, diem, dang ky mon), he thong se tu choi xoa va tra ve ly do cu the.`}
+        title="Xóa tài khoản?"
+        description={`Hành động này không thể hoàn tác. Tài khoản: ${toDelete?.username}. Nếu tài khoản đã phát sinh dữ liệu liên kết (học phí, điểm, đăng ký môn), hệ thống sẽ từ chối xóa và trả về lý do cụ thể.`}
         destructive
-        confirmText="Xoa"
+        confirmText="Xóa"
         onConfirm={() => {
           if (toDelete) deleteMutation.mutate(toDelete);
         }}
@@ -558,7 +568,7 @@ function mapApiUser(user: AdminUserResponse): AdminUserRow {
     role: user.role,
     active: user.active,
     createdAt: formatDateTime(user.createdAt),
-    lastLogin: formatDateTime(user.lastLoginAt, "Chua dang nhap"),
+    lastLogin: formatDateTime(user.lastLoginAt, "Chưa đăng nhập"),
     source: "API",
   };
 }
