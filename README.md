@@ -135,3 +135,23 @@ Initial schema: [`backend/sql/schema.sql`](backend/sql/schema.sql)
 ## Environment Variables
 
 Copy `.env.example` to `.env` in each sub-folder and fill in the values. **Never commit `.env` files.**
+
+---
+
+## 💳 Hướng dẫn Test Thanh toán VNPay
+
+Sử dụng thông tin thẻ test dưới đây tại giao diện thanh toán của ứng dụng.
+
+### Chọn ngân hàng:
+
+- Click vào logo ngân hàng **NCB**.
+
+### Điền thông tin thẻ:
+
+- **Số thẻ**: `9704198526191432198`
+- **Tên chủ thẻ**: `NGUYEN VAN A`
+- **Ngày phát hành**: `07/15`
+- **Mã OTP**: `123456`
+
+---
+

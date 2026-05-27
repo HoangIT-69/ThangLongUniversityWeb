@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Download } from "lucide-react";
+import { toast } from "sonner";
 
 interface Props {
   semesterId: number;
@@ -38,10 +39,10 @@ export function RetakeRegistrationsTab({ semesterId }: Props) {
       {/* Summary */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <SumCard label="Tổng đăng ký" value={summary.total} gradient="from-blue-500 to-blue-600" />
-          <SumCard label="Chờ duyệt" value={summary.pending} gradient="from-amber-500 to-amber-600" />
-          <SumCard label="Đã xác nhận" value={summary.registered} gradient="from-emerald-500 to-emerald-600" />
-          <SumCard label="Tổng phí" value={`${(summary.totalFeeCharged ?? 0).toLocaleString("vi-VN")}₫`} gradient="from-purple-500 to-purple-600" />
+          <SumCard label="Tổng đăng ký" value={summary.total} />
+          <SumCard label="Chờ duyệt" value={summary.pending} />
+          <SumCard label="Đã xác nhận" value={summary.registered} />
+          <SumCard label="Tổng phí" value={`${(summary.totalFeeCharged ?? 0).toLocaleString("vi-VN")}₫`} />
         </div>
       )}
 
@@ -56,12 +57,18 @@ export function RetakeRegistrationsTab({ semesterId }: Props) {
             <SelectItem value="REGISTERED">Đã xác nhận</SelectItem>
           </SelectContent>
         </Select>
-        <a href={adminApi.exportRetakesUrl(semesterId)} download>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-1" />
-            Xuất Excel
-          </Button>
-        </a>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            void adminApi
+              .exportRetakes(semesterId)
+              .catch((error) => toast.error(error instanceof Error ? error.message : "Không xuất được Excel"))
+          }
+        >
+          <Download className="h-4 w-4 mr-1" />
+          Xuất Excel
+        </Button>
       </div>
 
       {listQuery.isLoading && <Skeleton className="h-64 w-full" />}
@@ -109,15 +116,11 @@ export function RetakeRegistrationsTab({ semesterId }: Props) {
   );
 }
 
-function SumCard({ label, value, gradient }: { label: string; value: string | number; gradient: string }) {
+function SumCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg overflow-hidden border">
-      <div className={`p-3 bg-gradient-to-br ${gradient} text-white`}>
-        <div className="text-2xl font-bold">{value}</div>
-      </div>
-      <div className="px-3 py-2">
-        <div className="text-xs text-muted-foreground">{label}</div>
-      </div>
+    <div className="rounded-lg border bg-card p-4 shadow-sm">
+      <div className="text-2xl font-semibold tabular-nums">{value}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
     </div>
   );
 }

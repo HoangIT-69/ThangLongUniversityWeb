@@ -35,6 +35,7 @@ import { Route as StudentTuitionRouteImport } from './routes/student.tuition'
 import { Route as StudentScheduleRouteImport } from './routes/student.schedule'
 import { Route as StudentRetakeRegistrationRouteImport } from './routes/student.retake-registration'
 import { Route as StudentProfileRouteImport } from './routes/student.profile'
+import { Route as StudentPaymentResultRouteImport } from './routes/student.payment-result'
 import { Route as StudentNotificationsRouteImport } from './routes/student.notifications'
 import { Route as StudentGradesRouteImport } from './routes/student.grades'
 import { Route as StudentExamsRouteImport } from './routes/student.exams'
@@ -197,6 +198,11 @@ const StudentRetakeRegistrationRoute =
 const StudentProfileRoute = StudentProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentPaymentResultRoute = StudentPaymentResultRouteImport.update({
+  id: '/payment-result',
+  path: '/payment-result',
   getParentRoute: () => StudentRoute,
 } as any)
 const StudentNotificationsRoute = StudentNotificationsRouteImport.update({
@@ -406,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/student/exams': typeof StudentExamsRoute
   '/student/grades': typeof StudentGradesRoute
   '/student/notifications': typeof StudentNotificationsRoute
+  '/student/payment-result': typeof StudentPaymentResultRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/retake-registration': typeof StudentRetakeRegistrationRoute
   '/student/schedule': typeof StudentScheduleRoute
@@ -464,6 +471,7 @@ export interface FileRoutesByTo {
   '/student/exams': typeof StudentExamsRoute
   '/student/grades': typeof StudentGradesRoute
   '/student/notifications': typeof StudentNotificationsRoute
+  '/student/payment-result': typeof StudentPaymentResultRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/retake-registration': typeof StudentRetakeRegistrationRoute
   '/student/schedule': typeof StudentScheduleRoute
@@ -525,6 +533,7 @@ export interface FileRoutesById {
   '/student/exams': typeof StudentExamsRoute
   '/student/grades': typeof StudentGradesRoute
   '/student/notifications': typeof StudentNotificationsRoute
+  '/student/payment-result': typeof StudentPaymentResultRoute
   '/student/profile': typeof StudentProfileRoute
   '/student/retake-registration': typeof StudentRetakeRegistrationRoute
   '/student/schedule': typeof StudentScheduleRoute
@@ -587,6 +596,7 @@ export interface FileRouteTypes {
     | '/student/exams'
     | '/student/grades'
     | '/student/notifications'
+    | '/student/payment-result'
     | '/student/profile'
     | '/student/retake-registration'
     | '/student/schedule'
@@ -645,6 +655,7 @@ export interface FileRouteTypes {
     | '/student/exams'
     | '/student/grades'
     | '/student/notifications'
+    | '/student/payment-result'
     | '/student/profile'
     | '/student/retake-registration'
     | '/student/schedule'
@@ -705,6 +716,7 @@ export interface FileRouteTypes {
     | '/student/exams'
     | '/student/grades'
     | '/student/notifications'
+    | '/student/payment-result'
     | '/student/profile'
     | '/student/retake-registration'
     | '/student/schedule'
@@ -921,6 +933,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/student/profile'
       preLoaderRoute: typeof StudentProfileRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/payment-result': {
+      id: '/student/payment-result'
+      path: '/payment-result'
+      fullPath: '/student/payment-result'
+      preLoaderRoute: typeof StudentPaymentResultRouteImport
       parentRoute: typeof StudentRoute
     }
     '/student/notifications': {
@@ -1235,6 +1254,7 @@ interface StudentRouteChildren {
   StudentExamsRoute: typeof StudentExamsRoute
   StudentGradesRoute: typeof StudentGradesRoute
   StudentNotificationsRoute: typeof StudentNotificationsRoute
+  StudentPaymentResultRoute: typeof StudentPaymentResultRoute
   StudentProfileRoute: typeof StudentProfileRoute
   StudentRetakeRegistrationRoute: typeof StudentRetakeRegistrationRoute
   StudentScheduleRoute: typeof StudentScheduleRoute
@@ -1250,6 +1270,7 @@ const StudentRouteChildren: StudentRouteChildren = {
   StudentExamsRoute: StudentExamsRoute,
   StudentGradesRoute: StudentGradesRoute,
   StudentNotificationsRoute: StudentNotificationsRoute,
+  StudentPaymentResultRoute: StudentPaymentResultRoute,
   StudentProfileRoute: StudentProfileRoute,
   StudentRetakeRegistrationRoute: StudentRetakeRegistrationRoute,
   StudentScheduleRoute: StudentScheduleRoute,

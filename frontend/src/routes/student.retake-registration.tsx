@@ -225,7 +225,7 @@ function RetakePage() {
       <div className="rounded-xl border bg-card shadow-sm">
         <div className="border-b px-4 py-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold">Danh sách môn đủ điều kiện</h2>
-          <span className="text-xs text-muted-foreground">Phí lấy từ backend theo từng môn</span>
+          <span className="text-xs text-muted-foreground">Phí sẽ được xác nhận khi đăng ký</span>
         </div>
         <div className="divide-y">
           {eligibleQuery.isLoading ? (

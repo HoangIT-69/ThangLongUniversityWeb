@@ -9,11 +9,8 @@ import {
   AlertCircle,
   BookOpen,
   CheckCircle2,
-  GraduationCap,
   Loader2,
-  ShieldCheck,
   Sparkles,
-  UserCog,
   WifiOff,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,12 +23,6 @@ type BackendStatus = "checking" | "online" | "offline";
 type Credentials = {
   username: string;
   password: string;
-};
-
-const QUICK_CREDENTIALS: Record<Role, Credentials> = {
-  ADMIN: { username: "admin", password: "password123" },
-  TEACHER: { username: "gv101", password: "password123" },
-  STUDENT: { username: "sv001", password: "password123" },
 };
 
 export const Route = createFileRoute("/login")({
@@ -74,12 +65,11 @@ const HERO_STATS = [
 function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("password123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("checking");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeQuickRole, setActiveQuickRole] = useState<Role | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -94,9 +84,8 @@ function LoginPage() {
     };
   }, []);
 
-  const submitLogin = async (credentials: Credentials, quickRole?: Role) => {
+  const submitLogin = async (credentials: Credentials) => {
     setIsSubmitting(true);
-    setActiveQuickRole(quickRole ?? null);
     setErrorMessage(null);
 
     try {
@@ -105,25 +94,16 @@ function LoginPage() {
       navigate({ to: resolveDashboard(role) });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Đăng nhập thất bại";
-      console.error("[Login]", error);
       setErrorMessage(message);
       toast.error(message);
     } finally {
       setIsSubmitting(false);
-      setActiveQuickRole(null);
     }
   };
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void submitLogin({ username, password });
-  };
-
-  const loginAs = (role: Role) => {
-    const credentials = QUICK_CREDENTIALS[role];
-    setUsername(credentials.username);
-    setPassword(credentials.password);
-    void submitLogin(credentials, role);
   };
 
   const statusIcon =
@@ -239,7 +219,7 @@ function LoginPage() {
                   id="username"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
-                  placeholder="admin / gv101 / sv001"
+                  placeholder="Nhập tên đăng nhập"
                   autoComplete="username"
                   className="h-11"
                 />
@@ -265,59 +245,12 @@ function LoginPage() {
               )}
 
               <Button type="submit" className="h-11 w-full text-sm font-semibold" disabled={isSubmitting}>
-                {isSubmitting && !activeQuickRole ? (
+                {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 Đăng nhập
               </Button>
             </form>
-
-            <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
-              <div className="h-px flex-1 bg-border" />
-              Đăng nhập nhanh
-              <div className="h-px flex-1 bg-border" />
-            </div>
-
-            <div className="grid gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 justify-start"
-                onClick={() => loginAs("ADMIN")}
-                disabled={isSubmitting}
-              >
-                <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
-                Quản trị viên
-                <span className="ml-auto text-xs text-muted-foreground">admin</span>
-                {activeQuickRole === "ADMIN" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 justify-start"
-                onClick={() => loginAs("TEACHER")}
-                disabled={isSubmitting}
-              >
-                <UserCog className="mr-2 h-4 w-4 text-blue-500" />
-                Giảng viên
-                <span className="ml-auto text-xs text-muted-foreground">gv101</span>
-                {activeQuickRole === "TEACHER" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 justify-start"
-                onClick={() => loginAs("STUDENT")}
-                disabled={isSubmitting}
-              >
-                <GraduationCap className="mr-2 h-4 w-4 text-emerald-500" />
-                Sinh viên
-                <span className="ml-auto text-xs text-muted-foreground">sv001</span>
-                {activeQuickRole === "STUDENT" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              </Button>
-            </div>
 
             <p className="mt-8 text-center text-xs text-muted-foreground">
               © {new Date().getFullYear()} Trường Đại học Thăng Long. Bảo lưu mọi quyền.

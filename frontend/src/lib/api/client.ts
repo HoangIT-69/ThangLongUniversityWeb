@@ -1,6 +1,6 @@
 import type { AuthResponse } from "./types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 const STORAGE_KEY = "tlu-auth";
 
 export interface StoredAuth {
@@ -56,6 +56,45 @@ function tryParseJson(text: string): unknown {
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   return apiRequestWithRetry<T>(path, init, true);
+}
+
+export function apiUrl(path: string) {
+  return `${API_BASE_URL}${path}`;
+}
+
+export async function downloadApiFile(path: string, fallbackFilename: string) {
+  const auth = getStoredAuth();
+  const headers = new Headers();
+  if (auth?.accessToken) headers.set("Authorization", `Bearer ${auth.accessToken}`);
+
+  const response = await fetch(apiUrl(path), { headers });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || response.statusText || "Khong tai duoc file");
+  }
+
+  const blob = await response.blob();
+  const filename = getDownloadFilename(response.headers.get("Content-Disposition")) ?? fallbackFilename;
+  triggerBrowserDownload(blob, filename);
+}
+
+export function triggerBrowserDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getDownloadFilename(contentDisposition: string | null) {
+  if (!contentDisposition) return null;
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) return decodeURIComponent(utf8Match[1]);
+  const asciiMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+  return asciiMatch?.[1] ?? null;
 }
 
 async function apiRequestWithRetry<T>(path: string, init: RequestInit, allowRefresh: boolean): Promise<T> {

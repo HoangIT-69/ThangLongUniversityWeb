@@ -38,7 +38,7 @@ function TeacherDashboardPage() {
 
   const classesQuery = useQuery({
     queryKey: ["teacher", "classes", semesterId],
-    queryFn: () => teacherApi.getMyClasses(semesterId as number),
+    queryFn: () => teacherApi.listMyClasses(semesterId as number),
     enabled: semesterId != null,
     retry: false,
   });

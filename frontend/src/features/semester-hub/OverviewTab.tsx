@@ -83,31 +83,27 @@ export function OverviewTab({ semesterId }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Gradient stat cards */}
+      {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <GradientCard
           icon={<BookOpen className="h-5 w-5" />}
           value={s.classSectionCount}
           label="Lớp học phần"
-          gradient="from-blue-500 to-blue-600"
         />
         <GradientCard
           icon={<Users className="h-5 w-5" />}
           value={s.enrollmentCount}
           label="Lượt đăng ký"
-          gradient="from-emerald-500 to-emerald-600"
         />
         <GradientCard
           icon={<CalendarCheck className="h-5 w-5" />}
           value={`${s.examScheduledCount}/${s.classSectionCount}`}
           label="Lớp có lịch thi"
-          gradient="from-amber-500 to-amber-600"
         />
         <GradientCard
           icon={<RotateCcw className="h-5 w-5" />}
           value={s.retakeRegistrations}
           label="Đăng ký thi lại"
-          gradient="from-purple-500 to-purple-600"
         />
       </div>
 
@@ -266,24 +262,22 @@ function GradientCard({
   icon,
   value,
   label,
-  gradient,
 }: {
   icon: React.ReactNode;
   value: number | string;
   label: string;
-  gradient: string;
 }) {
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className={cn("p-4 text-white bg-gradient-to-br", gradient)}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="opacity-90">{icon}</div>
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-3xl font-semibold tabular-nums">{value}</div>
+            <p className="mt-1 text-xs text-muted-foreground">{label}</p>
           </div>
-          <div className="text-3xl font-bold">{value}</div>
-        </div>
-        <div className="px-4 py-2">
-          <p className="text-xs text-muted-foreground">{label}</p>
+          <div className="grid h-10 w-10 place-items-center rounded-lg border bg-muted/40 text-muted-foreground">
+            {icon}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -337,4 +331,3 @@ function StepCard({
     </div>
   );
 }
-

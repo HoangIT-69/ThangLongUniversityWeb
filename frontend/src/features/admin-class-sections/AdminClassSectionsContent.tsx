@@ -114,7 +114,7 @@ export function AdminClassSectionsContent() {
     onSuccess: (section, values) => {
       setStatusOverrides((current) => ({ ...current, [String(section.id)]: values.status }));
       queryClient.invalidateQueries({ queryKey: classSectionsKey });
-      toast.success("Da mo lop hoc phan");
+      toast.success("Đã mở lớp học phần");
       closeForm();
     },
     onError: (error) => toast.error(error.message),
@@ -129,7 +129,7 @@ export function AdminClassSectionsContent() {
         [String(section.id)]: variables.values.status,
       }));
       queryClient.invalidateQueries({ queryKey: classSectionsKey });
-      toast.success("Da cap nhat lop hoc phan");
+      toast.success("Đã cập nhật lớp học phần");
       closeForm();
     },
     onError: (error) => toast.error(error.message),
@@ -139,7 +139,7 @@ export function AdminClassSectionsContent() {
     mutationFn: (id: number) => adminApi.deleteClassSection(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: classSectionsKey });
-      toast.success("Da xoa lop hoc phan");
+      toast.success("Đã xóa lớp học phần");
       setToDelete(null);
     },
     onError: (error) => toast.error(error.message),
@@ -166,7 +166,7 @@ export function AdminClassSectionsContent() {
     if (toDelete.currentSlots > 0) {
       setStatusOverrides((current) => ({ ...current, [toDelete.id]: "CANCELLED" }));
       queryClient.invalidateQueries({ queryKey: classSectionsKey });
-      toast.success("Lop da co sinh vien, da chuyen sang CANCELLED");
+      toast.success("Lớp đã có sinh viên, đã chuyển sang CANCELLED");
       setToDelete(null);
       return;
     }
@@ -178,7 +178,7 @@ export function AdminClassSectionsContent() {
     const nextStatus = getNextStatus(row.status);
     setStatusOverrides((current) => ({ ...current, [row.id]: nextStatus }));
     queryClient.invalidateQueries({ queryKey: classSectionsKey });
-    toast.success(`Da chuyen ${row.classCode} sang ${nextStatus}`);
+    toast.success(`Đã chuyển ${row.classCode} sang ${nextStatus}`);
   };
 
   if (classSectionsQuery.isPending) return <ClassSectionsSkeleton />;
