@@ -53,6 +53,7 @@ import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminPeriodsRouteImport } from './routes/admin.periods'
 import { Route as AdminMajorsRouteImport } from './routes/admin.majors'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
+import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
 import { Route as AdminHomeroomsRouteImport } from './routes/admin.homerooms'
 import { Route as AdminExamSchedulesRouteImport } from './routes/admin.exam-schedules'
 import { Route as AdminExamRegistrationsRouteImport } from './routes/admin.exam-registrations'
@@ -289,6 +290,11 @@ const AdminLandingRoute = AdminLandingRouteImport.update({
   path: '/landing',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminKnowledgeRoute = AdminKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHomeroomsRoute = AdminHomeroomsRouteImport.update({
   id: '/homerooms',
   path: '/homerooms',
@@ -381,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/admin/exam-registrations': typeof AdminExamRegistrationsRoute
   '/admin/exam-schedules': typeof AdminExamSchedulesRoute
   '/admin/homerooms': typeof AdminHomeroomsRoute
+  '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
   '/admin/periods': typeof AdminPeriodsRoute
@@ -439,6 +446,7 @@ export interface FileRoutesByTo {
   '/admin/exam-registrations': typeof AdminExamRegistrationsRoute
   '/admin/exam-schedules': typeof AdminExamSchedulesRoute
   '/admin/homerooms': typeof AdminHomeroomsRoute
+  '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
   '/admin/periods': typeof AdminPeriodsRoute
@@ -498,6 +506,7 @@ export interface FileRoutesById {
   '/admin/exam-registrations': typeof AdminExamRegistrationsRoute
   '/admin/exam-schedules': typeof AdminExamSchedulesRoute
   '/admin/homerooms': typeof AdminHomeroomsRoute
+  '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
   '/admin/periods': typeof AdminPeriodsRoute
@@ -559,6 +568,7 @@ export interface FileRouteTypes {
     | '/admin/exam-registrations'
     | '/admin/exam-schedules'
     | '/admin/homerooms'
+    | '/admin/knowledge'
     | '/admin/landing'
     | '/admin/majors'
     | '/admin/periods'
@@ -617,6 +627,7 @@ export interface FileRouteTypes {
     | '/admin/exam-registrations'
     | '/admin/exam-schedules'
     | '/admin/homerooms'
+    | '/admin/knowledge'
     | '/admin/landing'
     | '/admin/majors'
     | '/admin/periods'
@@ -675,6 +686,7 @@ export interface FileRouteTypes {
     | '/admin/exam-registrations'
     | '/admin/exam-schedules'
     | '/admin/homerooms'
+    | '/admin/knowledge'
     | '/admin/landing'
     | '/admin/majors'
     | '/admin/periods'
@@ -1037,6 +1049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLandingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/knowledge': {
+      id: '/admin/knowledge'
+      path: '/knowledge'
+      fullPath: '/admin/knowledge'
+      preLoaderRoute: typeof AdminKnowledgeRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/homerooms': {
       id: '/admin/homerooms'
       path: '/homerooms'
@@ -1156,6 +1175,7 @@ interface AdminRouteChildren {
   AdminExamRegistrationsRoute: typeof AdminExamRegistrationsRoute
   AdminExamSchedulesRoute: typeof AdminExamSchedulesRoute
   AdminHomeroomsRoute: typeof AdminHomeroomsRoute
+  AdminKnowledgeRoute: typeof AdminKnowledgeRoute
   AdminLandingRoute: typeof AdminLandingRoute
   AdminMajorsRoute: typeof AdminMajorsRoute
   AdminPeriodsRoute: typeof AdminPeriodsRoute
@@ -1178,6 +1198,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminExamRegistrationsRoute: AdminExamRegistrationsRoute,
   AdminExamSchedulesRoute: AdminExamSchedulesRoute,
   AdminHomeroomsRoute: AdminHomeroomsRoute,
+  AdminKnowledgeRoute: AdminKnowledgeRoute,
   AdminLandingRoute: AdminLandingRoute,
   AdminMajorsRoute: AdminMajorsRoute,
   AdminPeriodsRoute: AdminPeriodsRoute,

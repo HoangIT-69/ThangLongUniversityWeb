@@ -30,13 +30,11 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import com.example.ThangLongUniversityWeb.service.CloudinaryService;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -56,6 +54,7 @@ public class ChatController {
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
     private final UserRepository userRepository;
+    private final CloudinaryService cloudinaryService;
 
     @GetMapping("/rooms")
     public ResponseEntity<?> getMyRooms(
@@ -143,21 +142,14 @@ public class ChatController {
         String originalName = Path.of(file.getOriginalFilename() == null ? "file" : file.getOriginalFilename())
                 .getFileName()
                 .toString();
-        String storedName = UUID.randomUUID() + "-" + originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
-        Path dir = Path.of("uploads", "chat", String.valueOf(roomId)).toAbsolutePath().normalize();
-        Files.createDirectories(dir);
-        Path target = dir.resolve(storedName).normalize();
-        if (!target.startsWith(dir)) {
-            throw new RuntimeException("Ten file khong hop le");
-        }
-        file.transferTo(target);
 
-        String encodedName = URLEncoder.encode(storedName, StandardCharsets.UTF_8).replace("+", "%20");
+        String secureUrl = cloudinaryService.uploadFile(file);
+
         ChatMessageRequest request = ChatMessageRequest.builder()
                 .chatRoomId(roomId)
                 .content(originalName)
                 .type(MessageType.FILE)
-                .mediaUrl("/api/chat/files/" + roomId + "/" + encodedName)
+                .mediaUrl(secureUrl)
                 .fileName(originalName)
                 .fileSize(file.getSize())
                 .build();

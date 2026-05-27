@@ -113,6 +113,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
                         .requestMatchers("/api/teacher/**").hasRole("TEACHER")
                         .requestMatchers("/api/chat/**").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+                        .requestMatchers("/api/chatbot/**").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 // 5. Stateless session
