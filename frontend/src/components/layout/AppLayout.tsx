@@ -6,6 +6,7 @@ import {
   BookCheck,
   BookMarked,
   BookOpen,
+  Brain,
   Building2,
   CalendarCheck,
   CalendarDays,
@@ -50,6 +51,7 @@ import {
   markNotificationRead,
 } from "@/lib/api/notifications";
 import { cn } from "@/lib/utils";
+import { ChatbotWidget } from "@/features/chatbot/ChatbotWidget";
 
 type Item = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 type NavGroup = { heading: string; items: Item[] };
@@ -85,6 +87,12 @@ const adminNavGroups: NavGroup[] = [
     heading: "Quản lý lớp",
     items: [
       { to: "/admin/semesters", label: "Quản lý học kỳ", icon: CalendarDays },
+    ],
+  },
+  {
+    heading: "AI Chatbot",
+    items: [
+      { to: "/admin/knowledge", label: "Knowledge Base", icon: Brain },
     ],
   },
 ];
@@ -465,6 +473,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
         <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
       </div>
+      <ChatbotWidget />
     </div>
   );
 }

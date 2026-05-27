@@ -511,15 +511,15 @@ export function ChatModule() {
                 </div>
               </div>
 
-              <aside className="hidden border-l bg-background xl:block">
-                <Tabs defaultValue={activeRoom.type === "PRIVATE" ? "files" : "members"} className="h-full">
-                  <TabsList className={cn("grid h-11 w-full rounded-none border-b bg-muted/30", activeRoom.type === "PRIVATE" ? "grid-cols-2" : "grid-cols-3")}>
+              <aside className="hidden min-h-0 border-l bg-background xl:block">
+                <Tabs defaultValue={activeRoom.type === "PRIVATE" ? "files" : "members"} className="flex h-full min-h-0 flex-col">
+                  <TabsList className={cn("grid h-11 w-full shrink-0 rounded-none border-b bg-muted/30", activeRoom.type === "PRIVATE" ? "grid-cols-2" : "grid-cols-3")}>
                     {activeRoom.type !== "PRIVATE" && <TabsTrigger value="members"><Users className="h-4 w-4" /></TabsTrigger>}
                     <TabsTrigger value="files"><FileText className="h-4 w-4" /></TabsTrigger>
                     <TabsTrigger value="links"><LinkIcon className="h-4 w-4" /></TabsTrigger>
                   </TabsList>
                   {activeRoom.type !== "PRIVATE" && (
-                    <TabsContent value="members" className="m-0 p-3">
+                    <TabsContent value="members" className="m-0 min-h-0 flex-1 overflow-y-auto p-3">
                       <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Thanh vien</div>
                       {activeRoom.members.map((member) => (
                         <div key={member.userId} className="flex items-center gap-3 rounded-md px-2 py-2">
@@ -532,28 +532,32 @@ export function ChatModule() {
                       ))}
                     </TabsContent>
                   )}
-                  <TabsContent value="files" className="m-0 space-y-2 p-3">
+                  <TabsContent value="files" className="m-0 min-h-0 flex-1 overflow-y-auto p-3">
                     <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">File da gui</div>
-                    {files.length === 0 ? <div className="text-sm text-muted-foreground">Chua co file.</div> : files.map((file) => (
-                      <a key={file.id} href={mediaHref(file.mediaUrl)} target="_blank" rel="noreferrer" className="block rounded-md border p-2 text-sm hover:bg-muted">
-                        <span className="flex min-w-0 gap-2">
-                          <FileText className="mt-0.5 h-4 w-4 shrink-0" />
-                          <span className="min-w-0 truncate">{file.fileName || file.content}</span>
-                        </span>
-                        <span className="mt-1 block pl-6 text-[10px] text-muted-foreground">
-                          {formatSize(file.fileSize)} {formatTime(file)}
-                        </span>
-                      </a>
-                    ))}
+                    <div className="space-y-2">
+                      {files.length === 0 ? <div className="text-sm text-muted-foreground">Chua co file.</div> : files.map((file) => (
+                        <a key={file.id} href={mediaHref(file.mediaUrl)} target="_blank" rel="noreferrer" className="block rounded-md border p-2 text-sm hover:bg-muted">
+                          <span className="flex min-w-0 gap-2">
+                            <FileText className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span className="min-w-0 truncate">{file.fileName || file.content}</span>
+                          </span>
+                          <span className="mt-1 block pl-6 text-[10px] text-muted-foreground">
+                            {formatSize(file.fileSize)} {formatTime(file)}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
                   </TabsContent>
-                  <TabsContent value="links" className="m-0 space-y-2 p-3">
+                  <TabsContent value="links" className="m-0 min-h-0 flex-1 overflow-y-auto p-3">
                     <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Link da gui</div>
-                    {links.length === 0 ? <div className="text-sm text-muted-foreground">Chua co link.</div> : links.map((link) => (
-                      <a key={link.id} href={extractFirstUrl(link.content) || "#"} target="_blank" rel="noreferrer" className="block truncate rounded-md border p-2 text-sm hover:bg-muted">
-                        <span className="block truncate">{extractFirstUrl(link.content) || link.content}</span>
-                        <span className="mt-1 block text-[10px] text-muted-foreground">{formatTime(link)}</span>
-                      </a>
-                    ))}
+                    <div className="space-y-2">
+                      {links.length === 0 ? <div className="text-sm text-muted-foreground">Chua co link.</div> : links.map((link) => (
+                        <a key={link.id} href={extractFirstUrl(link.content) || "#"} target="_blank" rel="noreferrer" className="block truncate rounded-md border p-2 text-sm hover:bg-muted">
+                          <span className="block truncate">{extractFirstUrl(link.content) || link.content}</span>
+                          <span className="mt-1 block text-[10px] text-muted-foreground">{formatTime(link)}</span>
+                        </a>
+                      ))}
+                    </div>
                   </TabsContent>
                 </Tabs>
               </aside>

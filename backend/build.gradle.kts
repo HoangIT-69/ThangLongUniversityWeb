@@ -51,6 +51,8 @@ dependencies {
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 	implementation("com.bucket4j:bucket4j-core:8.10.1")
 	implementation("org.apache.poi:poi-ooxml:5.3.0")
+	implementation("com.cloudinary:cloudinary-http45:1.39.0")
+	implementation("org.jsoup:jsoup:1.18.3")
 }
 
 tasks.withType<Test> {
