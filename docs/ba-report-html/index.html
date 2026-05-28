@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo Cáo Phân Tích Nghiệp Vụ (BA) — ThangLong University Web</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Mermaid.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        background: '#1a2030',
+        primaryColor: '#c8102e',
+        primaryTextColor: '#e2e8f0',
+        lineColor: '#3b82f6',
+        secondaryColor: '#1e2535',
+        tertiaryColor: '#161b27'
+      }
+    });
+  </script>
+</head>
+<body>
+  <!-- Progress Bar -->
+  <div id="progress"></div>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <div class="dot">TLU</div>
+      <span>TLU Portal<br><small style="color:var(--muted); font-size:10px; font-weight:normal;">Business Analyst Report</small></span>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" id="search-input" placeholder="Tìm kiếm tài liệu...">
+    </div>
+    <nav>
+      <ul>
+        <li class="nav-section">Tổng quan</li>
+        <li><a href="#tong-quan" class="active"><span class="icon">📊</span> Tổng quan dự án</a></li>
+        <li><a href="#nghiep-vu"><span class="icon">💼</span> Phân tích nghiệp vụ</a></li>
+        
+        <li class="nav-section">Yêu cầu</li>
+        <li><a href="#chuc-nang"><span class="icon">⚙️</span> Yêu cầu chức năng</a></li>
+        <li><a href="#phi-chuc-nang"><span class="icon">🔒</span> Yêu cầu phi chức năng</a></li>
+        
+        <li class="nav-section">Thiết kế & Luồng</li>
+        <li><a href="#use-case"><span class="icon">🎭</span> Sơ đồ Use Case</a></li>
+        <li><a href="#quy-trinh"><span class="icon">🔄</span> Quy trình nghiệp vụ</a></li>
+        <li><a href="#api-endpoints"><span class="icon">🔌</span> API & Luồng dữ liệu</a></li>
+        <li><a href="#du-lieu"><span class="icon">🗄️</span> Mô hình dữ liệu</a></li>
+        
+        <li class="nav-section">UX/UI & Đánh giá</li>
+        <li><a href="#giao-dien"><span class="icon">🖥️</span> Giao diện & UX</a></li>
+        <li><a href="#kiem-thu"><span class="icon">🧪</span> Kịch bản kiểm thử</a></li>
+        <li><a href="#danh-gia"><span class="icon">💡</span> Đánh giá & Cải tiến</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div style="flex: 1; display: flex; flex-direction: column;">
+    <!-- Header -->
+    <header id="header">
+      <div class="header-left">
+        <button class="menu-btn">☰</button>
+        <div class="breadcrumb">
+          Tài liệu / <span>Tổng quan dự án</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn-icon" id="theme-toggle" title="Chuyển giao diện">☀️</button>
+        <button class="btn-icon" id="print-report" title="In báo cáo">🖨️</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main">
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="hero-badge">✨ Tài liệu Business Analyst chuyên nghiệp</div>
+        <h1>ThangLong <span>University Web</span> Portal</h1>
+        <p>Hệ thống quản lý đào tạo trực tuyến tích hợp Đăng ký học phần bất đồng bộ qua Kafka, Thanh toán học phí VNPay và Trợ lý AI chatbot RAG thông minh.</p>
+        <div class="hero-tags">
+          <span class="tag">Java 17</span>
+          <span class="tag">Spring Boot 3.x</span>
+          <span class="tag">PostgreSQL</span>
+          <span class="tag">Apache Kafka</span>
+          <span class="tag">Redis</span>
+          <span class="tag">React 19</span>
+          <span class="tag">Vite 7</span>
+          <span class="tag">TanStack Query</span>
+          <span class="tag">Groq AI (RAG)</span>
+        </div>
+      </section>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card" style="--card-accent: var(--accent);">
+          <div class="stat-icon">📦</div>
+          <div class="stat-num">20</div>
+          <div class="stat-label">Modules Nghiệp vụ</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--accent2);">
+          <div class="stat-icon">⚙️</div>
+          <div class="stat-num">85</div>
+          <div class="stat-label">Yêu Cầu Chức Năng</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--green);">
+          <div class="stat-icon">🔌</div>
+          <div class="stat-num">60+</div>
+          <div class="stat-label">API Endpoints</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--purple);">
+          <div class="stat-icon">🗄️</div>
+          <div class="stat-num">22</div>
+          <div class="stat-label">Thực thể CSDL</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--yellow);">
+          <div class="stat-icon">🧪</div>
+          <div class="stat-num">50</div>
+          <div class="stat-label">Kịch bản Test Cases</div>
+        </div>
+      </div>
+
+      <!-- ================= SECTION 00: TỔNG QUAN ================= -->
+      <section id="tong-quan" class="section">
+        <h2 class="section-title"><span class="icon">📊</span> 00. Tổng Quan Dự Án</h2>
+        <p class="section-desc">Phạm vi, cấu trúc dự án và danh sách các modules nghiệp vụ cốt lõi.</p>
+        
+        <div class="grid-2">
+          <div class="card">
+            <h3>Mục Tiêu & Phạm Vi</h3>
+            <p>Hệ thống được thiết kế nhằm hiện đại hóa quy trình học vụ tại Trường Đại học Thăng Long, giải quyết bài toán tải cao khi đăng ký học phần tập trung, tự động hóa tính toán điểm GPA/CPA, cung cấp cổng thanh toán trực tuyến bảo mật và hỗ trợ giải đáp thông tin tự động qua Chatbot AI.</p>
+          </div>
+          <div class="card">
+            <h3>Kiến Trúc Hệ Thống</h3>
+            <p>Hệ thống sử dụng mô hình Layered Architecture 4 lớp cho Backend (Spring Boot), Single Page Application (React) cho Frontend, giao tiếp thông qua RESTful APIs và WebSocket. Hệ thống xử lý hàng đợi qua Apache Kafka và lưu trữ cache qua Redis.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Hệ thống 20 Modules Nghiệp Vụ Cốt Lõi</h3>
+          <div class="module-grid">
+            <div class="module-card">
+              <span class="module-num">01</span>
+              <div class="module-info">
+                <span class="module-name">Xác Thực (Auth)</span>
+                <span class="module-desc">JWT, login, refresh, logout, token blacklist</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">02</span>
+              <div class="module-info">
+                <span class="module-name">Tài Khoản (Users)</span>
+                <span class="module-desc">Profile, active status, change password</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">03</span>
+              <div class="module-info">
+                <span class="module-name">Sinh Viên (Students)</span>
+                <span class="module-desc">Quản lý hồ sơ, lớp niên chế, trạng thái học</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">04</span>
+              <div class="module-info">
+                <span class="module-name">Giảng Viên (Teachers)</span>
+                <span class="module-desc">Hồ sơ giảng viên, học vị, gán khoa giảng dạy</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">05</span>
+              <div class="module-info">
+                <span class="module-name">Học Kỳ (Semesters)</span>
+                <span class="module-desc">Quản lý vòng đời học kỳ, toggle flags</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">06</span>
+              <div class="module-info">
+                <span class="module-name">Môn Học (Courses)</span>
+                <span class="module-desc">Môn học, số tín chỉ, môn tiên quyết</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">07</span>
+              <div class="module-info">
+                <span class="module-name">Lớp Học Phần (Class Sections)</span>
+                <span class="module-desc">Tạo lớp HP, phân phòng, gán GV, slot tối đa</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">08</span>
+              <div class="module-info">
+                <span class="module-name">Đăng Ký Học Phần</span>
+                <span class="module-desc">Hàng đợi Kafka, kiểm tra điều kiện trùng lịch</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">09</span>
+              <div class="module-info">
+                <span class="module-name">Bảng Điểm (Grades)</span>
+                <span class="module-desc">Nhập điểm 10-30-60, tính total, letter, GPA4</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">10</span>
+              <div class="module-info">
+                <span class="module-name">Điểm Danh (Attendance)</span>
+                <span class="module-desc">Ghi nhận vắng, muộn cho từng buổi học</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">11</span>
+              <div class="module-info">
+                <span class="module-name">Đăng Ký Thi Lại (Retakes)</span>
+                <span class="module-desc">Môn trượt (RETAKE), cải thiện điểm (IMPROVE)</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">12</span>
+              <div class="module-info">
+                <span class="module-name">Thanh Toán Học Phí</span>
+                <span class="module-desc">Cổng VNPay, tạo txn_ref, đối soát signature</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">13</span>
+              <div class="module-info">
+                <span class="module-name">Lịch Thi (Exams)</span>
+                <span class="module-desc">Xếp lịch, phòng thi, ngày giờ thi, công bố</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">14</span>
+              <div class="module-info">
+                <span class="module-name">Chat Nội Bộ</span>
+                <span class="module-desc">Phòng chat nhóm, chat riêng, WebSocket</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">15</span>
+              <div class="module-info">
+                <span class="module-name">Chatbot AI</span>
+                <span class="module-desc">RAG (Groq, embeddings vector), chat history</span>
+              </div>
+            </div>
+            <div class="module-card">
+              <span class="module-num">16</span>
+              <div class="module-info">
+                <span class="module-name">Bài Viết (Articles)</span>
+                <span class="module-desc">Landing news, website chính thức (stub data)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 01: PHÂN TÍCH NGHIỆP VỤ ================= -->
+      <section id="nghiep-vu" class="section">
+        <h2 class="section-title"><span class="icon">💼</span> 01. Phân Tích Nghiệp Vụ</h2>
+        <p class="section-desc">Phân vai tác nhân hệ thống và các luật nghiệp vụ cốt lõi.</p>
+
+        <div class="actor-grid" style="margin-bottom: 24px;">
+          <div class="actor-card" style="border-top: 3px solid var(--accent);">
+            <div class="actor-icon">👑</div>
+            <h3>Quản Trị Viên (Admin)</h3>
+            <span class="role-badge badge-admin">ADMIN</span>
+            <ul>
+              <li>Quản lý người dùng, học kỳ, lớp HP</li>
+              <li>Cài đặt lịch thi, xuất báo cáo Excel</li>
+              <li>Nhập tài liệu chatbot AI</li>
+            </ul>
+          </div>
+          <div class="actor-card" style="border-top: 3px solid var(--accent2);">
+            <div class="actor-icon">👨‍🏫</div>
+            <h3>Giảng Viên (Teacher)</h3>
+            <span class="role-badge badge-teacher">TEACHER</span>
+            <ul>
+              <li>Xem danh sách lớp được phân công</li>
+              <li>Điểm danh từng buổi, khóa buổi</li>
+              <li>Nhập điểm thành phần, khóa điểm</li>
+            </ul>
+          </div>
+          <div class="actor-card" style="border-top: 3px solid var(--green);">
+            <div class="actor-icon">👨‍🎓</div>
+            <h3>Sinh Viên (Student)</h3>
+            <span class="role-badge badge-student">STUDENT</span>
+            <ul>
+              <li>Đăng ký học phần trực tuyến (Kafka)</li>
+              <li>Xem TKB, xem bảng điểm, lịch thi</li>
+              <li>Thanh toán học phí VNPay, hỏi AI Chatbot</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Luật Nghiệp Vụ Cốt Lõi (Business Rules)</h3>
+          <div class="br-grid">
+            <div class="br-item">
+              <span class="br-code">BR-01</span>
+              <div class="br-text"><strong>Công thức điểm tích lũy:</strong> Điểm HP = CD×0.1 + GK×0.3 + CK×0.6. Điểm chữ quy đổi tự động (A, B, C, D, F).</div>
+            </div>
+            <div class="br-item">
+              <span class="br-code">BR-02</span>
+              <div class="br-text"><strong>Điều kiện thi lại (RETAKE):</strong> Sinh viên bị điểm F (&lt;4.0) bắt buộc phải đăng ký thi lại trong học kỳ mở retake.</div>
+            </div>
+            <div class="br-item">
+              <span class="br-code">BR-03</span>
+              <div class="br-text"><strong>Khóa điểm (Grade Locking):</strong> Bảng điểm lớp HP sau khi được Giảng viên ấn "Khóa" sẽ không thể chỉnh sửa trừ khi có yêu cầu đặc biệt gửi Admin.</div>
+            </div>
+            <div class="br-item">
+              <span class="br-code">BR-04</span>
+              <div class="br-text"><strong>Ràng buộc Đăng ký HP:</strong> Phải trong học kỳ mở đăng ký, lớp học phần còn slot trống, sinh viên không bị trùng lịch học/lịch thi và đạt môn tiên quyết.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 02: YÊU CẦU CHỨC NĂNG ================= -->
+      <section id="chuc-nang" class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span> 02. Yêu Cầu Chức Năng (FR)</h2>
+        <p class="section-desc">Danh sách các yêu cầu chức năng chính được trích xuất trực tiếp từ API và giao diện thực tế.</p>
+        
+        <div class="card">
+          <h3>Danh sách Functional Requirements chính</h3>
+          <div class="fr-list">
+            <div class="fr-item">
+              <span class="fr-code">FR-001</span>
+              <div class="fr-text">Đăng nhập tài khoản với 3 roles (ADMIN, TEACHER, STUDENT) bằng JWT tokens.<small>Nguồn: AuthController, SecurityConfig</small></div>
+            </div>
+            <div class="fr-item">
+              <span class="fr-code">FR-015</span>
+              <div class="fr-text">Tạo học kỳ mới, cập nhật thời gian mở đăng ký học phần, mở thi lại.<small>Nguồn: AdminController (Semesters API)</small></div>
+            </div>
+            <div class="fr-item">
+              <span class="fr-code">FR-022</span>
+              <div class="fr-text">Tạo lớp học phần, gán giảng viên, phòng học, tiết học và số lượng slot tối đa.<small>Nguồn: AdminController (Class Sections API)</small></div>
+            </div>
+            <div class="fr-item">
+              <span class="fr-code">FR-035</span>
+              <div class="fr-text">Đăng ký học phần bất đồng bộ (Kafka queue) nhằm tránh nghẽn mạng khi số lượng truy cập lớn.<small>Nguồn: StudentController, Kafka topic 'enrollment-requests'</small></div>
+            </div>
+            <div class="fr-item">
+              <span class="fr-code">FR-048</span>
+              <div class="fr-text">Giảng viên nhập điểm chuyên cần, giữa kỳ, cuối kỳ; tự động tính tổng kết và khóa bảng điểm.<small>Nguồn: TeacherGradeController</small></div>
+            </div>
+            <div class="fr-item">
+              <span class="fr-code">FR-062</span>
+              <div class="fr-text">Tạo hóa đơn học phí tự động cho sinh viên, thanh toán an toàn thông qua redirect cổng VNPay Sandbox.<small>Nguồn: PaymentController, StudentTuitionService</small></div>
+            </div>
+            <div class="fr-item">
+              <span class="fr-code">FR-075</span>
+              <div class="fr-text">Nhập tài liệu/văn bản PDF/URL để nạp tri thức (ingest RAG vector) phục vụ AI Chatbot phản hồi tự động.<small>Nguồn: RetrieverService, ChatbotController</small></div>
+            </div>
+            <div class="fr-item">
+              <span class="fr-code">FR-082</span>
+              <div class="fr-text">Chat thời gian thực (WebSocket STOMP) giữa Sinh viên với Giảng viên và gửi đính kèm tập tin.<small>Nguồn: ChatWebSocketController</small></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 03: YÊU CẦU PHI CHỨC NĂNG ================= -->
+      <section id="phi-chuc-nang" class="section">
+        <h2 class="section-title"><span class="icon">🔒</span> 03. Yêu Cầu Phi Chức Năng (NFR)</h2>
+        <p class="section-desc">Tiêu chuẩn phi chức năng về hiệu năng, bảo mật và khả năng mở rộng.</p>
+        
+        <div class="nfr-grid">
+          <div class="nfr-card" style="--nfr-color: var(--accent);">
+            <h4>🛡️ Bảo Mật & Xác Thực</h4>
+            <ul>
+              <li><strong>JWT authentication:</strong> Token ngắn hạn kèm Refresh Token rotation được quản lý trong Redis để hủy token khi logout.</li>
+              <li><strong>Mã hóa mật khẩu:</strong> Hash mật khẩu bằng <strong>BCrypt</strong>.</li>
+              <li><strong>RBAC Phân quyền:</strong> Bảo vệ API ở cấp độ Spring Security <code>@PreAuthorize</code>.</li>
+            </ul>
+          </div>
+          <div class="nfr-card" style="--nfr-color: var(--accent2);">
+            <h4>⚡ Hiệu Năng & Tải Cao</h4>
+            <ul>
+              <li><strong>Kafka Queue:</strong> Đăng ký học phần xử lý bất đồng bộ, chịu tải &gt;5000 requests/giây mà không treo DB.</li>
+              <li><strong>Caching:</strong> Dùng Redis lưu trữ cache session, JWT blacklist và thông tin ít thay đổi.</li>
+              <li><strong>Index CSDL:</strong> Thiết lập INDEX trên các khóa ngoại hay query (student_id, class_section_id).</li>
+            </ul>
+          </div>
+          <div class="nfr-card" style="--nfr-color: var(--green);">
+            <h4>🔄 Tính Khả Dụng & Mở Rộng</h4>
+            <ul>
+              <li><strong>Docker Compose:</strong> Đóng gói độc lập toàn bộ hạ tầng (Postgres, Redis, Kafka, Spring Boot).</li>
+              <li><strong>API RESTful chuẩn:</strong> Dễ dàng scale theo chiều ngang (Horizontal Scaling) bằng cách nhân bản instances.</li>
+              <li><strong>TanStack Query:</strong> Caching phía client, hạn chế gọi API trùng lặp.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 04: USE CASE ================= -->
+      <section id="use-case" class="section">
+        <h2 class="section-title"><span class="icon">🎭</span> 04. Sơ Đồ Use Case</h2>
+        <p class="section-desc">Sơ đồ tương tác use case tổng quan giữa các tác nhân và hệ thống.</p>
+        
+        <div class="mermaid-wrap">
+          <div class="mermaid">
+classDiagram
+    class User {
+        +id: bigserial
+        +username: varchar
+        +password_hash: varchar
+        +email: varchar
+        +role: varchar
+        +is_active: boolean
+    }
+    class Student {
+        +id: bigserial
+        +student_code: varchar
+        +full_name: varchar
+        +dob: date
+        +major_id: bigint
+        +academic_year: int
+        +homeroom_id: bigint
+    }
+    class Teacher {
+        +id: bigserial
+        +teacher_code: varchar
+        +full_name: varchar
+        +department_id: bigint
+        +degree: varchar
+    }
+    class ClassSection {
+        +id: bigserial
+        +class_code: varchar
+        +course_id: bigint
+        +semester_id: bigint
+        +teacher_id: bigint
+        +room_id: bigint
+        +max_slots: int
+        +current_slots: int
+    }
+    class Enrollment {
+        +id: bigserial
+        +student_id: bigint
+        +class_section_id: bigint
+        +status: varchar
+    }
+    class Grade {
+        +id: bigserial
+        +enrollment_id: bigint
+        +participation_score: float
+        +midterm_score: float
+        +final_score: float
+        +total_score: float
+        +letter_grade: varchar
+    }
+
+    User <|-- Student
+    User <|-- Teacher
+    Student "1" *-- "many" Enrollment
+    ClassSection "1" *-- "many" Enrollment
+    Enrollment "1" -- "1" Grade
+          </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <div class="uc-grid">
+            <div class="uc-card">
+              <div class="uc-id">UC-S01</div>
+              <div class="uc-name">Đăng Nhập</div>
+              <div class="uc-desc">Đăng nhập tài khoản, nhận Access Token JWT để thực hiện các phiên làm việc tiếp theo.</div>
+            </div>
+            <div class="uc-card">
+              <div class="uc-id">UC-S03</div>
+              <div class="uc-name">Đăng Ký Học Phần</div>
+              <div class="uc-desc">Sinh viên đăng ký lớp HP, gửi yêu cầu vào Kafka, hệ thống kiểm tra slot và xung đột lịch.</div>
+            </div>
+            <div class="uc-card">
+              <div class="uc-id">UC-T06</div>
+              <div class="uc-name">Nhập & Khóa Điểm</div>
+              <div class="uc-desc">Giảng viên nhập các thành phần điểm và ấn khóa. Điểm số tự tính GPA hệ 4, xếp loại chữ.</div>
+            </div>
+            <div class="uc-card">
+              <div class="uc-id">UC-S09</div>
+              <div class="uc-name">Thanh Toán Học Phí</div>
+              <div class="uc-desc">Sinh viên thanh toán hóa đơn thông qua cổng đối soát bảo mật VNPay Sandbox.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 05: QUY TRÌNH NGHIỆP VỤ ================= -->
+      <section id="quy-trinh" class="section">
+        <h2 class="section-title"><span class="icon">🔄</span> 05. Quy Trình Nghiệp Vụ</h2>
+        <p class="section-desc">Sơ đồ luồng xử lý và tương tác bất đồng bộ của các quy trình nghiệp vụ cốt lõi.</p>
+
+        <div class="card">
+          <h3>Luồng Đăng Ký Học Phần (Kafka Async Process)</h3>
+          <div class="mermaid-wrap">
+            <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor SV as Sinh viên
+    participant FE as Frontend (React)
+    participant API as Spring Boot API
+    participant K as Kafka Broker
+    participant C as Kafka Consumer
+    participant DB as Postgres CSDL
+
+    SV->>FE: Click "Đăng ký" lớp học phần
+    FE->>API: POST /api/student/enroll/{classId}
+    API->>K: Publish request (enrollment-requests)
+    API-->>FE: Trả về 202 Accepted {requestId, status: PENDING}
+    
+    par Consumer xử lý song song
+        K->>C: Nhận request đăng ký
+        C->>DB: Kiểm tra slot, trùng lịch học
+        alt ✅ Đạt điều kiện
+            C->>DB: INSERT enrollment & UPDATE current_slots
+            C->>DB: Đánh dấu status = SUCCESS
+        else ❌ Không đạt
+            C->>DB: Đánh dấu status = FAILED (Lý do)
+        end
+    and Client Polling
+        loop Mỗi 2 giây
+            FE->>API: GET /api/student/enrollments/status/{requestId}
+            API->>DB: Đọc trạng thái yêu cầu
+            DB-->>API: Trạng thái hiện tại
+            API-->>FE: Trả về status (PROCESSING/SUCCESS/FAILED)
+        end
+    end
+    FE-->>SV: Hiển thị kết quả đăng ký thành công/thất bại
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 06: API ENDPOINTS ================= -->
+      <section id="api-endpoints" class="section">
+        <h2 class="section-title"><span class="icon">🔌</span> 06. API & Luồng Dữ Liệu</h2>
+        <p class="section-desc">Hệ thống danh sách API RESTful chính kết nối dữ liệu giữa Frontend và Backend.</p>
+        
+        <div class="card">
+          <h3>Các Endpoint API Quan Trọng</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>API Endpoint</th>
+                  <th>Vai trò</th>
+                  <th>Mô tả chức năng</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge badge-post">POST</span></td>
+                  <td><code>/api/auth/login</code></td>
+                  <td><span class="badge badge-all">PUBLIC</span></td>
+                  <td>Đăng nhập hệ thống, lấy JWT tokens.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-get">GET</span></td>
+                  <td><code>/api/student/dashboard</code></td>
+                  <td><span class="badge badge-student">STUDENT</span></td>
+                  <td>Lấy thông tin tổng hợp trang chủ sinh viên (TKB, điểm, học phí).</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-post">POST</span></td>
+                  <td><code>/api/student/enroll/{classSectionId}</code></td>
+                  <td><span class="badge badge-student">STUDENT</span></td>
+                  <td>Gửi yêu cầu đăng ký học phần vào Kafka queue.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-get">GET</span></td>
+                  <td><code>/api/student/enrollments/status/{requestId}</code></td>
+                  <td><span class="badge badge-student">STUDENT</span></td>
+                  <td>Lấy trạng thái xử lý đăng ký học phần bất đồng bộ.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-get">GET</span></td>
+                  <td><code>/api/student/grades</code></td>
+                  <td><span class="badge badge-student">STUDENT</span></td>
+                  <td>Xem điểm học tập chi tiết của sinh viên.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-post">POST</span></td>
+                  <td><code>/api/student/tuition/{semesterId}/vnpay-url</code></td>
+                  <td><span class="badge badge-student">STUDENT</span></td>
+                  <td>Tạo link redirect sang cổng thanh toán trực tuyến VNPay.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-get">GET</span></td>
+                  <td><code>/api/teacher/my-classes/semester/{id}</code></td>
+                  <td><span class="badge badge-teacher">TEACHER</span></td>
+                  <td>Lấy danh sách các lớp học phần được phân công dạy.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-put">PUT</span></td>
+                  <td><code>/api/teacher/grades/{enrollmentId}</code></td>
+                  <td><span class="badge badge-teacher">TEACHER</span></td>
+                  <td>Giảng viên cập nhật điểm chuyên cần, giữa kỳ, cuối kỳ.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-post">POST</span></td>
+                  <td><code>/api/teacher/grades/class/{id}/lock</code></td>
+                  <td><span class="badge badge-teacher">TEACHER</span></td>
+                  <td>Khóa điểm của lớp học phần, không cho phép giảng viên tự sửa.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-post">POST</span></td>
+                  <td><code>/api/admin/semesters</code></td>
+                  <td><span class="badge badge-admin">ADMIN</span></td>
+                  <td>Admin tạo học kỳ mới và cấu hình trạng thái.</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-post">POST</span></td>
+                  <td><code>/api/admin/knowledge/ingest</code></td>
+                  <td><span class="badge badge-admin">ADMIN</span></td>
+                  <td>Nhập văn bản tri thức để nạp cơ sở tri thức cho chatbot AI (RAG).</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-ws">WS</span></td>
+                  <td><code>/ws/chat</code></td>
+                  <td><span class="badge badge-all">ALL</span></td>
+                  <td>WebSocket kết nối trò chuyện trực tuyến thời gian thực.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 07: MÔ HÌNH DỮ LIỆU ================= -->
+      <section id="du-lieu" class="section">
+        <h2 class="section-title"><span class="icon">🗄️</span> 07. Mô Hinh Dữ Liệu CSDL</h2>
+        <p class="section-desc">Mô hình thực thể liên kết (ERD) và các ràng buộc dữ liệu chính trong PostgreSQL.</p>
+        
+        <div class="mermaid-wrap">
+          <div class="mermaid">
+erDiagram
+    users {
+        bigserial id PK
+        varchar username UK
+        varchar password_hash
+        varchar email UK
+        varchar role
+        boolean is_active
+    }
+    students {
+        bigserial id PK
+        bigint user_id FK
+        varchar student_code UK
+        varchar full_name
+        bigint major_id FK
+    }
+    teachers {
+        bigserial id PK
+        bigint user_id FK
+        varchar teacher_code UK
+        varchar full_name
+    }
+    courses {
+        bigserial id PK
+        varchar code UK
+        varchar name
+        integer credits
+    }
+    class_sections {
+        bigserial id PK
+        varchar class_code UK
+        bigint course_id FK
+        bigint semester_id FK
+        bigint teacher_id FK
+        integer max_slots
+        integer current_slots
+    }
+    enrollments {
+        bigserial id PK
+        bigint student_id FK
+        bigint class_section_id FK
+        varchar status
+    }
+    grades {
+        bigserial id PK
+        bigint enrollment_id FK
+        float participation_score
+        float midterm_score
+        float final_score
+        float total_score
+        varchar letter_grade
+    }
+
+    users ||--o| students : "1-1"
+    users ||--o| teachers : "1-1"
+    students ||--o{ enrollments : "đăng ký"
+    class_sections ||--o{ enrollments : "chứa"
+    courses ||--o{ class_sections : "mở lớp"
+    enrollments ||--o| grades : "có điểm"
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+          <h3>Các Thực Thể Quan Trọng Nhất</h3>
+          <p>Hệ thống bao gồm 22 bảng cơ sở dữ liệu. Bảng <code>users</code> đóng vai trò lưu tài khoản đăng nhập và được mở rộng 1-1 qua bảng <code>students</code> hoặc <code>teachers</code>. Mối quan hệ giữa sinh viên và lớp học phần được thể hiện qua thực thể trung gian <code>enrollments</code>. Bảng <code>grades</code> lưu kết quả điểm số và liên kết 1-1 với <code>enrollments</code>, giúp phân tách rõ ràng lịch sử đăng ký học phần và kết quả điểm số.</p>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 08: UX/UI ================= -->
+      <section id="giao-dien" class="section">
+        <h2 class="section-title"><span class="icon">🖥️</span> 08. Giao Diện & Trải Nghiệm Người Dùng</h2>
+        <p class="section-desc">Cấu trúc các màn hình và đặc điểm thiết kế UX/UI cho các đối tượng người dùng.</p>
+        
+        <div class="grid-2">
+          <div class="card">
+            <h3>Đặc Điểm Thiết Kế Landing & Marketing</h3>
+            <p>Trang chủ (Landing Page) sử dụng bộ màu thương hiệu Đại học Thăng Long với tone màu đỏ làm điểm nhấn, kết hợp xám ngà và trắng. Trang sử dụng hiệu ứng hover grayscale sang color, slideshow hero 5s mượt mà, layout chia lưới responsive hoàn hảo trên mọi thiết bị di động.</p>
+          </div>
+          <div class="card">
+            <h3>Portal Tiện Ích Cho Sinh Viên & Giảng Viên</h3>
+            <p>Sử dụng thư viện Shadcn/UI kết hợp Radix UI cung cấp các thành phần giao diện hiện đại, dễ tiếp cận. Dashboard sinh viên hiển thị trực quan các thẻ tóm tắt điểm số GPA, CPA, trạng thái nợ học phí và thời khóa biểu trong tuần. Giảng viên sở hữu form nhập điểm nhanh và quản lý điểm danh trực tiếp tiện lợi.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 09: KIỂM THỬ ================= -->
+      <section id="kiem-thu" class="section">
+        <h2 class="section-title"><span class="icon">🧪</span> 09. Kịch Bản Kiểm Thử (Test Cases)</h2>
+        <p class="section-desc">Kịch bản kiểm thử mẫu nhằm đảm bảo chất lượng hệ thống cho các luồng nghiệp vụ nhạy cảm.</p>
+        
+        <div class="card">
+          <h3>Kịch Bản Kiểm Thử Nghiệp Vụ Cốt Lõi</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã TC</th>
+                  <th>Nhóm chức năng</th>
+                  <th>Điều kiện kiểm thử</th>
+                  <th>Các bước thực hiện</th>
+                  <th>Kết quả mong đợi</th>
+                  <th>Ưu tiên</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>TC-001</strong></td>
+                  <td>Xác thực (Auth)</td>
+                  <td>Tài khoản admin tồn tại và đang active.</td>
+                  <td>1. Vào /login<br>2. Nhập user: "admin", pass: "Admin@123"<br>3. Click Đăng nhập.</td>
+                  <td>Redirect sang /admin/dashboard, lưu JWT token thành công.</td>
+                  <td><span class="badge badge-high">🔴 CAO</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-011</strong></td>
+                  <td>Đăng ký HP</td>
+                  <td>Kỳ mở đăng ký, lớp học phần còn slot, sinh viên không trùng lịch học.</td>
+                  <td>1. Vào /student/course-registration<br>2. Chọn lớp HP phù hợp<br>3. Click Đăng ký và chờ xử lý.</td>
+                  <td>Gửi yêu cầu vào Kafka, nhận status = SUCCESS, slot giảm 1.</td>
+                  <td><span class="badge badge-high">🔴 CAO</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-014</strong></td>
+                  <td>Đăng ký HP</td>
+                  <td>Sinh viên đã có một môn học khác trùng tiết/ngày trong TKB.</td>
+                  <td>1. Chọn lớp trùng lịch học với môn đã đăng ký.<br>2. Click Đăng ký.</td>
+                  <td>Yêu cầu bị từ chối, Kafka consumer báo status = FAILED (Xung đột lịch).</td>
+                  <td><span class="badge badge-high">🔴 CAO</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-023</strong></td>
+                  <td>Điểm số</td>
+                  <td>Lớp chưa khóa điểm, tài khoản là giảng viên được phân công.</td>
+                  <td>1. Vào quản lý lớp HP<br>2. Nhập điểm chuyên cần, giữa kỳ, cuối kỳ<br>3. Lưu.</td>
+                  <td>Điểm số được cập nhật, total_score tự tính chính xác.</td>
+                  <td><span class="badge badge-high">🔴 CAO</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-031</strong></td>
+                  <td>Học phí</td>
+                  <td>Sinh viên có hóa đơn chưa thanh toán.</td>
+                  <td>1. Click Thanh toán học phí<br>2. Chọn VNPay NCB Test card<br>3. Thực hiện giao dịch thành công.</td>
+                  <td>Redirect về portal, hóa đơn đổi trạng thái đã thanh toán.</td>
+                  <td><span class="badge badge-high">🔴 CAO</span></td>
+                </tr>
+                <tr>
+                  <td><strong>TC-047</strong></td>
+                  <td>AI Chatbot</td>
+                  <td>Hệ thống đã nạp tri thức về quy chế đào tạo.</td>
+                  <td>1. Vào AI Chatbot<br>2. Hỏi: "Cách tính điểm thi lại như thế nào?"</td>
+                  <td>AI đọc dữ liệu từ RAG vector và trả lời chính xác, không bịa đặt.</td>
+                  <td><span class="badge badge-med">🟡 TRUNG BÌNH</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ================= SECTION 10: ĐÁNH GIÁ & CẢI TIẾN ================= -->
+      <section id="danh-gia" class="section">
+        <h2 class="section-title"><span class="icon">💡</span> 10. Đánh Giá & Đề Xuất Cải Tiến</h2>
+        <p class="section-desc">Phân tích điểm mạnh, điểm yếu hiện tại và lộ trình phát triển tối ưu hệ thống.</p>
+        
+        <div class="sw-grid" style="margin-bottom: 24px;">
+          <div class="sw-card strength">
+            <h3>🟢 Điểm Mạnh (Strengths)</h3>
+            <ul>
+              <li>Kiến trúc phân lớp tốt, sạch sẽ và dễ dàng bảo trì.</li>
+              <li>Hạ tầng xử lý tải cao bền bỉ nhờ hàng đợi Apache Kafka.</li>
+              <li>Tích hợp đa dịch vụ chất lượng: VNPay, AI RAG Chatbot, WebSocket Chat.</li>
+              <li>Dữ liệu type-safe chặt chẽ từ database schema đến TypeScript contracts.</li>
+            </ul>
+          </div>
+          <div class="sw-card weakness">
+            <h3>🔴 Điểm Hạn Chế (Weaknesses)</h3>
+            <ul>
+              <li>Module Tin tức (Articles) chỉ là mock data tĩnh ở frontend, chưa có CMS API backend.</li>
+              <li>Chưa có hệ thống tự động gửi thông báo qua Email khi có sự kiện quan trọng.</li>
+              <li>Sử dụng polling để kiểm tra trạng thái đăng ký học phần thay vì đẩy qua WebSocket.</li>
+              <li>Một vài màn hình admin phụ như quản lý lớp học phần còn ở dạng placeholder.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 32px;">
+          <h3>Đánh Giá Điểm Số Hệ Thống (Overall Score)</h3>
+          <div class="score-grid">
+            <div class="score-card">
+              <div class="sc-label">Kiến Trúc Kỹ Thuật</div>
+              <div class="sc-stars">⭐⭐⭐⭐⭐</div>
+              <div class="sc-score">5.0 / 5.0 (Excellent)</div>
+            </div>
+            <div class="score-card">
+              <div class="sc-label">Độ Bao Phủ Nghiệp Vụ</div>
+              <div class="sc-stars">⭐⭐⭐⭐</div>
+              <div class="sc-score">4.0 / 5.0 (Good)</div>
+            </div>
+            <div class="score-card">
+              <div class="sc-label">An Toàn Bảo Mật</div>
+              <div class="sc-stars">⭐⭐⭐⭐</div>
+              <div class="sc-score">4.0 / 5.0 (Good)</div>
+            </div>
+            <div class="score-card">
+              <div class="sc-label">Mức Độ Hoàn Thiện</div>
+              <div class="sc-stars">⭐⭐⭐</div>
+              <div class="sc-score">3.5 / 5.0 (Fair)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Lộ Trình Cải Tiến Phát Triển (Roadmap 2026)</h3>
+          <div class="timeline">
+            <div class="timeline-item" style="--dot-color: var(--accent);">
+              <div class="timeline-header">
+                <span class="timeline-phase">Giai đoạn 1</span>
+                <span class="timeline-title">Hoàn Thiện Tính Năng Cốt Lõi</span>
+                <span class="timeline-date">Tháng 05 - 06/2026</span>
+              </div>
+              <div class="timeline-body">
+                <ul>
+                  <li>Xây dựng CMS Article Backend hoàn thiện cho trang tin tức tuyển sinh.</li>
+                  <li>Tích hợp hệ thống thông báo gửi tự động qua email (JavaMail/SendGrid).</li>
+                  <li>Thay đổi mật khẩu mặc định an toàn cho toàn bộ tài khoản seed data.</li>
+                  <li>Quản lý phiên bản CSDL chặt chẽ bằng Flyway DB Migration.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="timeline-item" style="--dot-color: var(--accent2);">
+              <div class="timeline-header">
+                <span class="timeline-phase">Giai đoạn 2</span>
+                <span class="timeline-title">Nâng Cao Trải Nghiệm UX/UI</span>
+                <span class="timeline-date">Tháng 07 - 08/2026</span>
+              </div>
+              <div class="timeline-body">
+                <ul>
+                  <li>Chuyển đổi trạng thái đăng ký học phần từ Polling sang đẩy real-time qua WebSockets.</li>
+                  <li>Tích hợp giao diện Dark Mode toàn diện cho cả portal sinh viên và giảng viên.</li>
+                  <li>Xây dựng quy trình Admin phê duyệt mở khóa điểm số (unlock grades) có lưu audit logs.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="timeline-item" style="--dot-color: var(--green);">
+              <div class="timeline-header">
+                <span class="timeline-phase">Giai đoạn 3</span>
+                <span class="timeline-title">Kiểm Thử & Phát Triển Tính Năng Mới</span>
+                <span class="timeline-date">Tháng 09 - 10/2026</span>
+              </div>
+              <div class="timeline-body">
+                <ul>
+                  <li>Tăng độ bao phủ kiểm thử tự động (Unit test, Integration test) đạt trên 80%.</li>
+                  <li>Cho phép cập nhật ảnh đại diện cá nhân lưu trữ qua Cloudinary.</li>
+                  <li>Hỗ trợ xuất file PDF bảng điểm chính thức phục vụ in ấn trực tiếp.</li>
+                  <li>Tích hợp đồng bộ thời khóa biểu trực tiếp với Google Calendar API.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer style="text-align: center; padding: 40px 0; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); margin-top: 40px;">
+        © 2026 Đại học Thăng Long — Ban Phát Triển Hệ Thống Quản Lý Đào Tạo Đội Ngũ ACV. Tất cả quyền được bảo lưu.
+      </footer>
+    </main>
+  </div>
+
+  <!-- Back to Top Button -->
+  <button id="back-top" title="Lên đầu trang">▲</button>
+
+  <!-- Script -->
+  <script src="script.js"></script>
+</body>
+</html>
