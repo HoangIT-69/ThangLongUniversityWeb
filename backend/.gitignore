@@ -37,7 +37,7 @@ out/
 .vscode/
 
 ### Environment & Secrets ###
-.env
+# NOTE: .env is intentionally committed (private repo)
 *.log
 boot_run.log
 output.log
