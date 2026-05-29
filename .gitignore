@@ -3,7 +3,7 @@
 # ──────────────────────────────────────────
 # Environment & Secrets
 # ──────────────────────────────────────────
-.env
+# NOTE: .env is intentionally committed (private repo) — do NOT push to public repos
 *.local
 
 # ──────────────────────────────────────────
