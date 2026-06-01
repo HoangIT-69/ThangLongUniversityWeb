@@ -91,8 +91,9 @@ public class GradeService {
     @Transactional(readOnly = true)
     public List<GradeResponse> getClassSectionGrades(Long classSectionId) {
         // 1. Sinh viên học chính thức (qua Enrollment)
-        List<GradeResponse> regularGrades = gradeRepository.findByClassSectionId(classSectionId).stream()
-                .map(this::mapToResponse)
+        List<GradeResponse> regularGrades = enrollmentRepository.findByClassSectionId(classSectionId).stream()
+                .filter(enrollment -> enrollment.getStatus() != EnrollmentStatus.PENDING)
+                .map(enrollment -> mapToResponse(enrollment, enrollment.getGrade()))
                 .collect(Collectors.toList());
 
         // 2. Sinh viên thi lại/cải thiện (qua ExamRegistration)
@@ -249,6 +250,10 @@ public class GradeService {
      */
     private GradeResponse mapToResponse(Grade grade) {
         Enrollment enrollment = grade.getEnrollment();
+        return mapToResponse(enrollment, grade);
+    }
+
+    private GradeResponse mapToResponse(Enrollment enrollment, Grade grade) {
         Student student = enrollment.getStudent();
         ClassSection classSection = enrollment.getClassSection();
         Course course = classSection.getCourse();
@@ -258,7 +263,7 @@ public class GradeService {
                 enrollment.getId(), com.example.ThangLongUniversityWeb.enums.AttendanceStatus.ABSENT);
 
         return GradeResponse.builder()
-                .id(grade.getId())
+                .id(grade != null ? grade.getId() : null)
                 .enrollmentId(enrollment.getId())
                 .studentId(student.getId())
                 .studentCode(student.getStudentCode())
@@ -270,20 +275,20 @@ public class GradeService {
                 .credits(course.getCredits())
                 .semesterId(semester.getId())
                 .semesterName(semester.getName())
-                .participationScore(grade.getParticipationScore())
-                .midtermScore(grade.getMidtermScore())
-                .finalScore(grade.getFinalScore())
-                .retestScore(grade.getRetestScore())
-                .attemptNumber(grade.getAttemptNumber())
-                .enrollmentType(grade.getEnrollmentType() != null ? grade.getEnrollmentType().name() : null)
-                .totalScore(grade.getTotalScore())
-                .letterGrade(grade.getLetterGrade())
-                .gpa4(grade.getGpa4())
-                .gradePoint(grade.getGpa4())
+                .participationScore(grade != null ? grade.getParticipationScore() : null)
+                .midtermScore(grade != null ? grade.getMidtermScore() : null)
+                .finalScore(grade != null ? grade.getFinalScore() : null)
+                .retestScore(grade != null ? grade.getRetestScore() : null)
+                .attemptNumber(grade != null ? grade.getAttemptNumber() : 1)
+                .enrollmentType(grade != null && grade.getEnrollmentType() != null ? grade.getEnrollmentType().name() : "ORDINARY")
+                .totalScore(grade != null ? grade.getTotalScore() : null)
+                .letterGrade(grade != null ? grade.getLetterGrade() : null)
+                .gpa4(grade != null ? grade.getGpa4() : null)
+                .gradePoint(grade != null ? grade.getGpa4() : null)
                 .courseStatus(enrollment.getCourseStatus() != null ? enrollment.getCourseStatus().name() : null)
                 .absenceCount(absences)
-                .createdAt(grade.getCreatedAt())
-                .updatedAt(grade.getUpdatedAt())
+                .createdAt(grade != null ? grade.getCreatedAt() : null)
+                .updatedAt(grade != null ? grade.getUpdatedAt() : null)
                 .build();
     }
 }

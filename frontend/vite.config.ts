@@ -15,4 +15,23 @@ export default defineConfig({
     }),
     react(),
   ],
+  build: {
+    minify: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
+            return "vendor-react";
+          }
+          if (id.includes("node_modules/recharts")) {
+            return "vendor-recharts";
+          }
+          if (id.includes("node_modules/@radix-ui/") || id.includes("node_modules/@tanstack/")) {
+            return "vendor-framework";
+          }
+          return undefined;
+        },
+      },
+    },
+  },
 });

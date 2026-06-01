@@ -7,7 +7,6 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth";
-import { LandingContentProvider } from "@/lib/landing-content";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { Toaster } from "@/components/ui/sonner";
 import type { ReactNode } from "react";
@@ -29,7 +28,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "dns-prefetch", href: "https://images.unsplash.com" },
+      { rel: "stylesheet", href: appCss },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -61,10 +65,8 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <LandingContentProvider>
-          <PublicShell />
-          <Toaster position="top-right" richColors />
-        </LandingContentProvider>
+        <PublicShell />
+        <Toaster position="top-right" richColors />
       </AuthProvider>
     </QueryClientProvider>
   );
