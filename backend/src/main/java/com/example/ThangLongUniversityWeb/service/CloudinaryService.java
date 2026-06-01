@@ -16,7 +16,7 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
 
-    public String uploadFile(MultipartFile file) throws IOException {
+    public String uploadFile(MultipartFile file) {
         String originalName = file.getOriginalFilename() == null ? "file" : file.getOriginalFilename();
         String safeOriginalName = originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
         String contentType = file.getContentType();
@@ -33,10 +33,18 @@ public class CloudinaryService {
             options.put("filename_override", safeOriginalName);
         }
 
-        Map<?, ?> result = cloudinary.uploader().upload(
-                file.getBytes(),
-            options
-        );
-        return result.get("secure_url").toString();
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    options
+            );
+            return result.get("secure_url").toString();
+        } catch (IOException | RuntimeException ex) {
+            throw new RuntimeException(
+                    "Upload file len Cloudinary that bai. Kiem tra CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY va CLOUDINARY_API_SECRET. Chi tiet: "
+                            + ex.getMessage(),
+                    ex
+            );
+        }
     }
 }

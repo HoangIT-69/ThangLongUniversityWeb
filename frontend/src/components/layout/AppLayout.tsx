@@ -31,7 +31,7 @@ import {
   UserCog,
   Users,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,7 +51,12 @@ import {
   markNotificationRead,
 } from "@/lib/api/notifications";
 import { cn } from "@/lib/utils";
-import { ChatbotWidget } from "@/features/chatbot/ChatbotWidget";
+
+const ChatbotWidget = lazy(() =>
+  import("@/features/chatbot/ChatbotWidget").then((module) => ({
+    default: module.ChatbotWidget,
+  })),
+);
 
 type Item = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 type NavGroup = { heading: string; items: Item[] };
@@ -473,7 +478,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
         <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
       </div>
-      <ChatbotWidget />
+      <Suspense fallback={null}>
+        <ChatbotWidget />
+      </Suspense>
     </div>
   );
 }

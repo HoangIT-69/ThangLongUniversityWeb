@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Locale;
+
 @Configuration
 public class CloudinaryConfig {
 
@@ -20,10 +22,12 @@ public class CloudinaryConfig {
 
     @Bean
     public Cloudinary cloudinary() {
+        String normalizedCloudName = cloudName == null ? "" : cloudName.trim().toLowerCase(Locale.ROOT);
+
         return new Cloudinary(ObjectUtils.asMap(
-                "cloud_name", cloudName,
-                "api_key", apiKey,
-                "api_secret", apiSecret,
+                "cloud_name", normalizedCloudName,
+                "api_key", apiKey == null ? "" : apiKey.trim(),
+                "api_secret", apiSecret == null ? "" : apiSecret.trim(),
                 "secure", true
         ));
     }

@@ -34,7 +34,7 @@ Trong [ChatController.java](file:///d:/universityweb/backend/src/main/java/com/e
 Thay vì lưu file local, upload lên Cloudinary để nhận public URL.
 
 **Cloudinary credentials:**
-- `cloud_name`: `University`
+- `cloud_name`: lay tu Cloudinary Dashboard, vi du `drdim9z1v`
 - `api_key`: `922634196268182`
 - `api_secret`: `dtBJsk3Cy_GEatZp27TQPL6HY-s`
 
@@ -120,9 +120,9 @@ Cloudinary URL bắt đầu bằng `https://` → `mediaHref()` trả về nguy�
 # ===============================
 # CLOUDINARY
 # ===============================
-cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME:University}
-cloudinary.api-key=${CLOUDINARY_API_KEY:922634196268182}
-cloudinary.api-secret=${CLOUDINARY_API_SECRET:dtBJsk3Cy_GEatZp27TQPL6HY-s}
+cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME:}
+cloudinary.api-key=${CLOUDINARY_API_KEY:}
+cloudinary.api-secret=${CLOUDINARY_API_SECRET:}
 ```
 
 ---
@@ -587,7 +587,7 @@ Thay vì chỉ dùng system prompt tĩnh, chatbot sẽ:
 ### Automated Tests
 
 1. **File sharing fix**:
-   - Upload file trong chat → kiểm tra `mediaUrl` trong response là Cloudinary URL (`https://res.cloudinary.com/University/...`)
+   - Upload file trong chat → kiểm tra `mediaUrl` trong response là Cloudinary URL (`https://res.cloudinary.com/<cloud_name>/...`)
    - Mở Cloudinary URL trong browser incognito → file accessible (không cần auth)
    - Test các loại: `.txt`, `.pdf`, `.png`, `.mp4`
 
