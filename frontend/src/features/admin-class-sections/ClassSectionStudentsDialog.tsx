@@ -63,9 +63,7 @@ export function ClassSectionStudentsDialog({
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Chưa tải được danh sách sinh viên</AlertTitle>
-                <AlertDescription>
-                  {studentsQuery.error.message}
-                </AlertDescription>
+                <AlertDescription>{studentsQuery.error.message}</AlertDescription>
               </Alert>
             )}
 
@@ -149,4 +147,3 @@ function formatDateTime(value?: string | null) {
     year: "numeric",
   });
 }
-

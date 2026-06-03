@@ -8,42 +8,42 @@
 
 ## Module Status Overview
 
-| Module | Status | Completion | Notes |
-|--------|--------|-----------|-------|
-| **Authentication** | ✅ Implemented | 95% | Login, logout, JWT, role-based access |
-| **Admin Dashboard** | 🟡 Partial | 40% | Stats displayed, no real API integration |
-| **Admin Users** | 🟡 Partial | 30% | UI complete, uses mock data |
-| **Admin Students** | 🟡 Partial | 30% | UI complete, uses mock data |
-| **Admin Courses** | ⏳ Stub | 5% | Route exists, no implementation |
-| **Admin Majors** | ⏳ Stub | 20% | API calls exist, UI minimal |
-| **Admin Rooms** | ⏳ Stub | 20% | API calls exist, UI minimal |
-| **Admin Periods** | ⏳ Stub | 20% | API calls exist, UI minimal |
-| **Admin Semesters** | ⏳ Stub | 10% | Route only |
-| **Admin Class Sections** | ⏳ Stub | 10% | Route only |
-| **Admin Enrollments** | ⏳ Stub | 10% | Route only |
-| **Admin Academic Results** | ⏳ Stub | 10% | Route only |
-| **Admin Chat** | ⏳ Stub | 10% | Route only |
-| **Admin Profile** | ⏳ Stub | 10% | Route only |
-| **Student Dashboard** | ✅ Implemented | 85% | Real API calls, GPA + schedule display |
-| **Student Grades** | ⏳ Stub | 10% | Route only |
-| **Student Schedule** | ⏳ Stub | 10% | Route only |
-| **Student Exams** | ⏳ Stub | 10% | Route only |
-| **Student Course Registration** | ⏳ Stub | 10% | Route only |
-| **Student Retake Registration** | ⏳ Stub | 10% | Route only |
-| **Student Tuition** | ⏳ Stub | 10% | Route only |
-| **Student Academic Results** | ⏳ Stub | 10% | Route only |
-| **Student Curriculum** | ⏳ Stub | 10% | Route only |
-| **Student Notifications** | ⏳ Stub | 10% | Route only |
-| **Student Chat** | ⏳ Stub | 10% | Route only |
-| **Student Profile** | ⏳ Stub | 10% | Route only |
-| **Teacher Dashboard** | ⏳ Stub | 10% | Route only |
-| **Teacher Classes** | ⏳ Stub | 10% | Route only |
-| **Teacher Class Students** | ⏳ Stub | 10% | Route only |
-| **Teacher Grades** | ⏳ Stub | 10% | Route only |
-| **Teacher Chat** | ⏳ Stub | 10% | Route only |
-| **Teacher Profile** | ⏳ Stub | 10% | Route only |
-| **Landing Page** | ⏳ Stub | 30% | Basic layout, mock content |
-| **Login Page** | ✅ Implemented | 90% | Functional, needs error display improvement |
+| Module                          | Status         | Completion | Notes                                       |
+| ------------------------------- | -------------- | ---------- | ------------------------------------------- |
+| **Authentication**              | ✅ Implemented | 95%        | Login, logout, JWT, role-based access       |
+| **Admin Dashboard**             | 🟡 Partial     | 40%        | Stats displayed, no real API integration    |
+| **Admin Users**                 | 🟡 Partial     | 30%        | UI complete, uses mock data                 |
+| **Admin Students**              | 🟡 Partial     | 30%        | UI complete, uses mock data                 |
+| **Admin Courses**               | ⏳ Stub        | 5%         | Route exists, no implementation             |
+| **Admin Majors**                | ⏳ Stub        | 20%        | API calls exist, UI minimal                 |
+| **Admin Rooms**                 | ⏳ Stub        | 20%        | API calls exist, UI minimal                 |
+| **Admin Periods**               | ⏳ Stub        | 20%        | API calls exist, UI minimal                 |
+| **Admin Semesters**             | ⏳ Stub        | 10%        | Route only                                  |
+| **Admin Class Sections**        | ⏳ Stub        | 10%        | Route only                                  |
+| **Admin Enrollments**           | ⏳ Stub        | 10%        | Route only                                  |
+| **Admin Academic Results**      | ⏳ Stub        | 10%        | Route only                                  |
+| **Admin Chat**                  | ⏳ Stub        | 10%        | Route only                                  |
+| **Admin Profile**               | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Dashboard**           | ✅ Implemented | 85%        | Real API calls, GPA + schedule display      |
+| **Student Grades**              | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Schedule**            | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Exams**               | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Course Registration** | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Retake Registration** | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Tuition**             | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Academic Results**    | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Curriculum**          | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Notifications**       | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Chat**                | ⏳ Stub        | 10%        | Route only                                  |
+| **Student Profile**             | ⏳ Stub        | 10%        | Route only                                  |
+| **Teacher Dashboard**           | ⏳ Stub        | 10%        | Route only                                  |
+| **Teacher Classes**             | ⏳ Stub        | 10%        | Route only                                  |
+| **Teacher Class Students**      | ⏳ Stub        | 10%        | Route only                                  |
+| **Teacher Grades**              | ⏳ Stub        | 10%        | Route only                                  |
+| **Teacher Chat**                | ⏳ Stub        | 10%        | Route only                                  |
+| **Teacher Profile**             | ⏳ Stub        | 10%        | Route only                                  |
+| **Landing Page**                | ⏳ Stub        | 30%        | Basic layout, mock content                  |
+| **Login Page**                  | ✅ Implemented | 90%        | Functional, needs error display improvement |
 
 ---
 
@@ -61,6 +61,7 @@
 ### ✅ Status: Implemented
 
 **Files:**
+
 - `src/lib/auth.tsx` - AuthContext + useAuth hook
 - `src/lib/api/auth.ts` - Login, getMe, logout
 - `src/lib/api/client.ts` - JWT token handling + refresh logic
@@ -68,6 +69,7 @@
 - `src/components/layout/ProtectedOutlet.tsx` - Role protection
 
 **Features:**
+
 - ✅ Login with username/password
 - ✅ JWT token refresh on 401
 - ✅ localStorage persistence
@@ -76,6 +78,7 @@
 - ✅ Auto-fetch user profile on startup
 
 **TODO:**
+
 - [ ] Password reset flow
 - [ ] Two-factor authentication
 - [ ] Social login (if needed)
@@ -91,6 +94,7 @@
 **File:** `src/routes/admin.dashboard.tsx`
 
 **Implemented:**
+
 - ✅ Page header with semester info
 - ✅ StatCard grid showing:
   - Total students
@@ -103,11 +107,13 @@
 - ✅ Semester distribution chart
 
 **Uses Mock Data:**
+
 - `students.length`, `teachers.length`, `courses.length` from mock
 - Recent enrollments from mock
 - No real API calls
 
 **TODO:**
+
 - [ ] Replace mock data with real API
 - [ ] Add search/filter functionality
 - [ ] Add export to PDF
@@ -122,15 +128,18 @@
 **File:** `src/routes/admin.users.tsx`
 
 **Implemented:**
+
 - ✅ DataTable with search
 - ✅ Add user button
 - ✅ Edit/Delete buttons with dialogs
 - ✅ User columns: username, email, role, status
 
 **Uses Mock Data:**
+
 - All user data from mock
 
 **TODO:**
+
 - [ ] Replace mock with real API endpoints
 - [ ] Implement create user form
 - [ ] Implement edit user form
@@ -147,6 +156,7 @@
 **File:** `src/routes/admin.students.tsx`
 
 **Implemented:**
+
 - ✅ DataTable with search
 - ✅ Add/Edit/Delete dialogs
 - ✅ Form with: code, fullName, email, majorId, cohort
@@ -154,9 +164,11 @@
 - ✅ Toast notifications
 
 **Uses Mock Data:**
+
 - All student data from mock
 
 **TODO:**
+
 - [ ] Create real API endpoints
 - [ ] Implement bulk import (CSV)
 - [ ] Add GPA/CPA display
@@ -170,15 +182,18 @@
 **Status:** ⏳ Stub (20%)
 
 **Files:**
+
 - `src/routes/admin.majors.tsx`
 - `src/routes/admin.rooms.tsx`
 - `src/routes/admin.periods.tsx`
 
 **Implemented:**
+
 - ✅ Route pages (stubs)
 - ✅ API calls in `src/lib/api/admin.ts`
 
 **TODO:**
+
 - [ ] Create proper list pages with DataTable
 - [ ] Implement add/edit/delete dialogs
 - [ ] Form validation
@@ -193,6 +208,7 @@
 **Files:** Routes exist but no implementation
 
 **TODO:**
+
 - [ ] Create list/detail pages
 - [ ] Implement CRUD operations
 - [ ] Add proper forms
@@ -209,6 +225,7 @@
 **File:** `src/routes/student.dashboard.tsx`
 
 **Implemented:**
+
 - ✅ Fetches real data from API:
   - Semesters list
   - Current semester selection
@@ -222,18 +239,21 @@
 - ✅ Proper error/loading states
 
 **Uses Real API:**
+
 - `studentApi.listSemesters()`
 - `studentApi.getGrades(semesterId)`
 - `studentApi.getSchedule(semesterId)`
 - `studentApi.getTuition(semesterId)`
 
 **Quality:**
+
 - ✅ Proper TypeScript typing
 - ✅ Query dependency management
 - ✅ Responsive layout
 - ✅ Vietnamese formatting (number format, day names)
 
 **TODO:**
+
 - [ ] Add past semesters selector
 - [ ] Add semester comparison chart
 - [ ] Add grade distribution pie chart
@@ -248,9 +268,11 @@
 **File:** `src/routes/student.grades.tsx`
 
 **Implemented:**
+
 - Route exists
 
 **TODO:**
+
 - [ ] Display grades by semester
 - [ ] Filter by semester dropdown
 - [ ] Show course details: name, code, credits, scores
@@ -267,6 +289,7 @@
 **File:** `src/routes/student.schedule.tsx`
 
 **TODO:**
+
 - [ ] Display schedule grid (week view or list)
 - [ ] Show: course name, class code, room, time, instructor
 - [ ] Add calendar view
@@ -282,6 +305,7 @@
 **File:** `src/routes/student.exams.tsx`
 
 **TODO:**
+
 - [ ] Display exam schedule
 - [ ] Show: course, exam date/time, room, seat
 - [ ] Add filter by semester
@@ -296,6 +320,7 @@
 **File:** `src/routes/student.course-registration.tsx`
 
 **TODO:**
+
 - [ ] List available courses by semester
 - [ ] Show: code, name, credits, instructor, schedule, capacity
 - [ ] Implement enrollment button with confirmation
@@ -312,6 +337,7 @@
 **File:** `src/routes/student.retake-registration.tsx`
 
 **TODO:**
+
 - [ ] List retake-eligible courses
 - [ ] Implement registration form
 - [ ] Show course codes and grades needing retake
@@ -327,6 +353,7 @@
 **File:** `src/routes/student.tuition.tsx`
 
 **TODO:**
+
 - [ ] Display tuition bill details
 - [ ] Show: courses, credits, price per credit, total
 - [ ] Implement VNPay payment integration
@@ -342,6 +369,7 @@
 **File:** `src/routes/student.academic-results.tsx`
 
 **TODO:**
+
 - [ ] Display learning results page
 - [ ] Show cumulative GPA
 - [ ] Show semester-by-semester breakdown
@@ -356,6 +384,7 @@
 **Files:** Routes exist but no implementation
 
 **TODO:**
+
 - [ ] Implement curriculum view
 - [ ] Implement notification center
 - [ ] Implement chat interface
@@ -370,6 +399,7 @@
 **Status:** ⏳ Stub (10%)
 
 **Files:**
+
 - `src/routes/teacher.tsx` (layout)
 - `src/routes/teacher.dashboard.tsx`
 - `src/routes/teacher.classes.tsx`
@@ -379,6 +409,7 @@
 - `src/routes/teacher.profile.tsx`
 
 **TODO:**
+
 - [ ] Implement teacher dashboard (class overview)
 - [ ] Implement class list with student count
 - [ ] Implement student roster with grades entry
@@ -396,10 +427,12 @@
 **File:** `src/routes/index.tsx`
 
 **Implemented:**
+
 - ✅ Basic layout structure
 - ✅ Navigation links
 
 **TODO:**
+
 - [ ] Hero section with call-to-action
 - [ ] Features showcase
 - [ ] Statistics about university
@@ -411,6 +444,7 @@
 ### Other Public Pages
 
 **Files:**
+
 - `src/routes/about.tsx` - About page (stub)
 - `src/routes/programs.tsx` - Programs/majors list (stub)
 - `src/routes/news.tsx` - News/announcements (stub)
@@ -420,6 +454,7 @@
 **Status:** ⏳ Stub (10-30%)
 
 **TODO:**
+
 - [ ] Implement with proper content
 - [ ] Add forms where needed
 - [ ] Add SEO optimization
@@ -431,6 +466,7 @@
 ### ✅ Implemented
 
 **Components:**
+
 - ✅ AppLayout with sidebar + header
 - ✅ DataTable with search + pagination
 - ✅ EntityFormDialog for CRUD modals
@@ -440,6 +476,7 @@
 - ✅ Error handling + loading states
 
 **API:**
+
 - ✅ Centralized fetch wrapper
 - ✅ JWT token management
 - ✅ Token refresh on 401
@@ -447,17 +484,20 @@
 - ✅ Type-safe responses
 
 **Routing:**
+
 - ✅ TanStack Router setup
 - ✅ File-based routes
 - ✅ Protected routes by role
 - ✅ Breadcrumbs
 
 **Forms:**
+
 - ✅ react-hook-form integration
 - ✅ Zod validation
 - ✅ Form error display
 
 **Styling:**
+
 - ✅ shadcn/ui components
 - ✅ TailwindCSS utilities
 - ✅ Responsive design
@@ -467,19 +507,19 @@
 
 ## 7. TODO: High-Priority Items
 
-| Task | Priority | Complexity | Estimated Time |
-|------|----------|-----------|-----------------|
-| Student Grades page | HIGH | Medium | 4 hours |
-| Student Schedule page | HIGH | Medium | 4 hours |
-| Course Registration flow | HIGH | High | 8 hours |
-| Admin: Real API integration | HIGH | Medium | 6 hours |
-| Teacher Dashboard | MEDIUM | Medium | 6 hours |
-| Tuition payment (VNPay) | MEDIUM | High | 8 hours |
-| Chat system (WebSocket) | MEDIUM | High | 12 hours |
-| Notifications system | MEDIUM | Medium | 6 hours |
-| Retake registration | LOW | Medium | 4 hours |
-| Bulk import (CSV) | LOW | Medium | 6 hours |
-| Export to PDF | LOW | Medium | 4 hours |
+| Task                        | Priority | Complexity | Estimated Time |
+| --------------------------- | -------- | ---------- | -------------- |
+| Student Grades page         | HIGH     | Medium     | 4 hours        |
+| Student Schedule page       | HIGH     | Medium     | 4 hours        |
+| Course Registration flow    | HIGH     | High       | 8 hours        |
+| Admin: Real API integration | HIGH     | Medium     | 6 hours        |
+| Teacher Dashboard           | MEDIUM   | Medium     | 6 hours        |
+| Tuition payment (VNPay)     | MEDIUM   | High       | 8 hours        |
+| Chat system (WebSocket)     | MEDIUM   | High       | 12 hours       |
+| Notifications system        | MEDIUM   | Medium     | 6 hours        |
+| Retake registration         | LOW      | Medium     | 4 hours        |
+| Bulk import (CSV)           | LOW      | Medium     | 6 hours        |
+| Export to PDF               | LOW      | Medium     | 4 hours        |
 
 ---
 
@@ -518,6 +558,7 @@
 - ⛔ None implemented
 
 **TODO:**
+
 - [ ] Add Jest + React Testing Library
 - [ ] Test components in isolation
 - [ ] Test API client
@@ -528,6 +569,7 @@
 - ⛔ None implemented
 
 **TODO:**
+
 - [ ] Add Playwright E2E tests
 - [ ] Test user flows (login → view grades → logout)
 - [ ] Test error scenarios
@@ -616,4 +658,3 @@ When implementing a new feature, follow this checklist:
 - Update completion percentage honestly
 - Add new discovered issues/TODO items
 - Link to related files/commits
-

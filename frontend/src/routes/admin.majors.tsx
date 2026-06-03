@@ -122,7 +122,12 @@ function MajorFormDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+          >
             Huy
           </Button>
           <Button
@@ -185,7 +190,8 @@ function MajorsPage() {
       setEditItem(null);
       toast.success("Da cap nhat nganh");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Cap nhat nganh that bai"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Cap nhat nganh that bai"),
   });
 
   const deleteMutation = useMutation({
@@ -212,15 +218,14 @@ function MajorsPage() {
 
   const departments = departmentsQuery.data ?? [];
   const filteredData = useMemo(() => {
-    return data.filter((major) => departmentFilter === "all" || major.departmentName === departmentFilter);
+    return data.filter(
+      (major) => departmentFilter === "all" || major.departmentName === departmentFilter,
+    );
   }, [data, departmentFilter]);
 
   return (
     <div>
-      <PageHeader
-        title="Nganh hoc"
-        description={`${filteredData.length} / ${data.length} nganh`}
-      />
+      <PageHeader title="Nganh hoc" description={`${filteredData.length} / ${data.length} nganh`} />
       <DataTable
         data={filteredData}
         rowKey={(m) => m.id}
@@ -247,30 +252,68 @@ function MajorsPage() {
           </Button>
         }
         columns={[
-          { key: "code", header: "Ma nganh", render: (m) => <span className="font-mono text-xs">{m.code}</span> },
-          { key: "name", header: "Ten nganh", render: (m) => <span className="font-medium">{m.name}</span> },
-          { key: "departmentName", header: "Khoa", render: (m) => <span className="text-xs">{m.departmentName || "-"}</span> },
+          {
+            key: "code",
+            header: "Ma nganh",
+            render: (m) => <span className="font-mono text-xs">{m.code}</span>,
+          },
+          {
+            key: "name",
+            header: "Ten nganh",
+            render: (m) => <span className="font-medium">{m.name}</span>,
+          },
+          {
+            key: "departmentName",
+            header: "Khoa",
+            render: (m) => <span className="text-xs">{m.departmentName || "-"}</span>,
+          },
           {
             key: "description",
             header: "Mo ta",
-            render: (m) => <span className="text-xs text-muted-foreground">{m.description || "-"}</span>,
+            render: (m) => (
+              <span className="text-xs text-muted-foreground">{m.description || "-"}</span>
+            ),
           },
-          { key: "students", header: "Sinh vien", render: (m) => <span className="tabular-nums">{m.students.toLocaleString()}</span> },
-          { key: "courses", header: "Mon hoc", render: (m) => <span className="tabular-nums">{m.courses}</span> },
-          { key: "actions", header: "", className: "w-24 text-right", searchable: false, render: (m) => (
-            <div className="flex justify-end gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setEditItem(query.data?.find((item) => String(item.id) === m.id) ?? null)}
-                disabled={query.isError}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setToDelete(m)} disabled={query.isError}><Trash2 className="h-4 w-4" /></Button>
-            </div>
-          )},
+          {
+            key: "students",
+            header: "Sinh vien",
+            render: (m) => <span className="tabular-nums">{m.students.toLocaleString()}</span>,
+          },
+          {
+            key: "courses",
+            header: "Mon hoc",
+            render: (m) => <span className="tabular-nums">{m.courses}</span>,
+          },
+          {
+            key: "actions",
+            header: "",
+            className: "w-24 text-right",
+            searchable: false,
+            render: (m) => (
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() =>
+                    setEditItem(query.data?.find((item) => String(item.id) === m.id) ?? null)
+                  }
+                  disabled={query.isError}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={() => setToDelete(m)}
+                  disabled={query.isError}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ),
+          },
         ]}
       />
       <MajorFormDialog

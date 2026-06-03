@@ -12,13 +12,13 @@
 
 ```typescript
 // ✅ REQUIRED
-import { studentApi } from '@/lib/api/student'
+import { studentApi } from "@/lib/api/student";
 
-const grades = await studentApi.getGrades(semesterId)
-const semesters = await studentApi.listSemesters()
+const grades = await studentApi.getGrades(semesterId);
+const semesters = await studentApi.listSemesters();
 
 // ❌ FORBIDDEN
-const grades = await fetch('/api/student/grades').then(r => r.json())
+const grades = await fetch("/api/student/grades").then((r) => r.json());
 ```
 
 ### 2. Wrap in useQuery (Server State)
@@ -45,15 +45,15 @@ const { mutate } = useMutation({
   mutationFn: (data) => studentApi.enrollClass(data.classId),
   onSuccess: () => {
     // REQUIRED: Invalidate related queries
-    queryClient.invalidateQueries({ queryKey: ['student', 'enrollments'] })
-    toast.success('Enrolled!')
+    queryClient.invalidateQueries({ queryKey: ["student", "enrollments"] });
+    toast.success("Enrolled!");
   },
   onError: (error) => {
-    toast.error(error.message)
-  }
-})
+    toast.error(error.message);
+  },
+});
 
-mutate({ classId: 123 })
+mutate({ classId: 123 });
 ```
 
 ---
@@ -65,6 +65,7 @@ mutate({ classId: 123 })
 **Internal use only - DO NOT import in components**
 
 Handles:
+
 - ✅ Automatic `Authorization: Bearer {token}` header
 - ✅ Automatic token refresh on 401
 - ✅ JWT token storage/retrieval from localStorage
@@ -90,29 +91,29 @@ All API response types centralized here.
 ```typescript
 // Example types
 export interface StudentGradeItemResponse {
-  enrollmentId: number
-  semesterId: number
-  classCode: string
-  courseName: string
-  credits: number
-  midtermScore?: number | null
-  finalScore?: number | null
-  totalScore?: number | null
-  gradePoint?: number | null
+  enrollmentId: number;
+  semesterId: number;
+  classCode: string;
+  courseName: string;
+  credits: number;
+  midtermScore?: number | null;
+  finalScore?: number | null;
+  totalScore?: number | null;
+  gradePoint?: number | null;
 }
 
 export interface StudentGradesSummaryResponse {
-  semesterId?: number | null
-  semesterGpa: number
-  cumulativeGpa: number
-  items: StudentGradeItemResponse[]
+  semesterId?: number | null;
+  semesterGpa: number;
+  cumulativeGpa: number;
+  items: StudentGradeItemResponse[];
 }
 ```
 
 **When to use:** Import for typing components and forms
 
 ```typescript
-import type { StudentGradeItemResponse } from '@/lib/api/types'
+import type { StudentGradeItemResponse } from "@/lib/api/types";
 
 function GradesDisplay({ grades }: { grades: StudentGradeItemResponse[] }) {
   // ...
@@ -128,29 +129,29 @@ function GradesDisplay({ grades }: { grades: StudentGradeItemResponse[] }) {
 Handles login, authentication, logout.
 
 ```typescript
-export function login(username: string, password: string): Promise<AuthResponse>
-export function getMe(): Promise<UserProfile>
-export function logout(): Promise<string>
+export function login(username: string, password: string): Promise<AuthResponse>;
+export function getMe(): Promise<UserProfile>;
+export function logout(): Promise<string>;
 ```
 
 **Usage:**
 
 ```typescript
 // ✅ Via auth context (recommended)
-const { login, logout } = useAuth()
-await login(username, password)
+const { login, logout } = useAuth();
+await login(username, password);
 
 // Direct call (rare)
-import { authApi } from '@/lib/api/auth'
+import { authApi } from "@/lib/api/auth";
 ```
 
 **Response:**
 
 ```typescript
 interface AuthResponse {
-  accessToken: string      // JWT token
-  refreshToken: string     // For refresh endpoint
-  role: "ADMIN" | "STUDENT" | "TEACHER"
+  accessToken: string; // JWT token
+  refreshToken: string; // For refresh endpoint
+  role: "ADMIN" | "STUDENT" | "TEACHER";
 }
 ```
 
@@ -196,25 +197,25 @@ export const studentApi = {
 ```typescript
 // Get semesters
 const { data: semesters } = useQuery({
-  queryKey: ['student', 'semesters'],
-  queryFn: studentApi.listSemesters
-})
+  queryKey: ["student", "semesters"],
+  queryFn: studentApi.listSemesters,
+});
 
 // Get grades for specific semester
 const { data: grades } = useQuery({
-  queryKey: ['student', 'grades', semesterId],
+  queryKey: ["student", "grades", semesterId],
   queryFn: () => studentApi.getGrades(semesterId),
-  enabled: semesterId != null
-})
+  enabled: semesterId != null,
+});
 
 // Enroll in class (mutation)
 const { mutate: enrollClass } = useMutation({
   mutationFn: (classId) => studentApi.enrollClass(classId),
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['student', 'enrollments'] })
-    toast.success('Enrolled!')
-  }
-})
+    queryClient.invalidateQueries({ queryKey: ["student", "enrollments"] });
+    toast.success("Enrolled!");
+  },
+});
 ```
 
 ---
@@ -243,17 +244,17 @@ export const adminApi = {
 
 ```typescript
 const { data: majors } = useQuery({
-  queryKey: ['admin', 'majors'],
-  queryFn: adminApi.listMajors
-})
+  queryKey: ["admin", "majors"],
+  queryFn: adminApi.listMajors,
+});
 
 const { mutate: deleteMajor } = useMutation({
   mutationFn: (id) => adminApi.deleteMajor(id),
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['admin', 'majors'] })
-    toast.success('Deleted')
-  }
-})
+    queryClient.invalidateQueries({ queryKey: ["admin", "majors"] });
+    toast.success("Deleted");
+  },
+});
 ```
 
 ---
@@ -265,7 +266,7 @@ Chat system operations (WebSocket + REST).
 ```typescript
 export const chatApi = {
   // To be implemented based on backend endpoints
-}
+};
 ```
 
 ---
@@ -331,8 +332,8 @@ POST /api/auth/refresh
 ### 4. Logout → Clear Tokens
 
 ```typescript
-const { logout } = useAuth()
-await logout()
+const { logout } = useAuth();
+await logout();
 
 // Calls POST /api/auth/logout
 // Clears localStorage
@@ -475,7 +476,7 @@ GET /api/admin/periods
 DELETE /api/admin/periods/:id
   Response: "Deleted"
 
-// TODO: More endpoints for users, students, teachers, courses, semesters, 
+// TODO: More endpoints for users, students, teachers, courses, semesters,
 //       class-sections, enrollments, academic-results
 ```
 
@@ -488,8 +489,8 @@ DELETE /api/admin/periods/:id
 ```typescript
 // src/lib/api/types.ts
 export interface NewEntityResponse {
-  id: number
-  name: string
+  id: number;
+  name: string;
   // ... other fields
 }
 ```
@@ -500,21 +501,20 @@ export interface NewEntityResponse {
 // src/lib/api/student.ts (or admin.ts, etc)
 export const studentApi = {
   // Existing endpoints...
-  
+
   // New endpoint
-  getNewEntity: (id: number) => 
-    apiRequest<NewEntityResponse>(`/api/student/new-entity/${id}`)
-}
+  getNewEntity: (id: number) => apiRequest<NewEntityResponse>(`/api/student/new-entity/${id}`),
+};
 ```
 
 ### Step 3: Use in Component
 
 ```typescript
 const { data } = useQuery({
-  queryKey: ['student', 'newEntity', id],
+  queryKey: ["student", "newEntity", id],
   queryFn: () => studentApi.getNewEntity(id),
-  enabled: id != null
-})
+  enabled: id != null,
+});
 ```
 
 ---
@@ -539,7 +539,7 @@ VITE_API_BASE_URL=https://api.yourdomain.com
 
 ```typescript
 // Automatically used in src/lib/api/client.ts
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 ```
 
 ---
@@ -581,34 +581,34 @@ curl -X GET http://localhost:8080/api/student/semesters \
 ```typescript
 // Dashboard: Load related data
 const { data: semesters } = useQuery({
-  queryKey: ['student', 'semesters'],
-  queryFn: studentApi.listSemesters
-})
+  queryKey: ["student", "semesters"],
+  queryFn: studentApi.listSemesters,
+});
 
-const semesterId = semesters?.[0]?.id
+const semesterId = semesters?.[0]?.id;
 
 const { data: grades } = useQuery({
-  queryKey: ['student', 'grades', semesterId],
+  queryKey: ["student", "grades", semesterId],
   queryFn: () => studentApi.getGrades(semesterId),
-  enabled: semesterId != null
-})
+  enabled: semesterId != null,
+});
 
 const { data: schedule } = useQuery({
-  queryKey: ['student', 'schedule', semesterId],
+  queryKey: ["student", "schedule", semesterId],
   queryFn: () => studentApi.getSchedule(semesterId),
-  enabled: semesterId != null
-})
+  enabled: semesterId != null,
+});
 ```
 
 ### Pagination
 
 ```typescript
-const [page, setPage] = useState(1)
+const [page, setPage] = useState(1);
 
 const { data } = useQuery({
-  queryKey: ['items', page],
-  queryFn: () => api.listItems(page, 10)
-})
+  queryKey: ["items", page],
+  queryFn: () => api.listItems(page, 10),
+});
 
 // Query key includes page → auto-refetch on page change
 ```
@@ -616,49 +616,47 @@ const { data } = useQuery({
 ### Search & Filter
 
 ```typescript
-const [searchTerm, setSearchTerm] = useState('')
+const [searchTerm, setSearchTerm] = useState("");
 
 const { data } = useQuery({
-  queryKey: ['items', searchTerm],
-  queryFn: () => api.searchItems(searchTerm)
-})
+  queryKey: ["items", searchTerm],
+  queryFn: () => api.searchItems(searchTerm),
+});
 
 // Client-side filtering (if data is small)
-const filtered = data?.filter(item => 
-  item.name.includes(searchTerm)
-)
+const filtered = data?.filter((item) => item.name.includes(searchTerm));
 ```
 
 ### Polling
 
 ```typescript
 const { data } = useQuery({
-  queryKey: ['enrollments', 'status', requestId],
+  queryKey: ["enrollments", "status", requestId],
   queryFn: () => studentApi.getEnrollmentStatus(requestId),
-  refetchInterval: 2000  // Poll every 2 seconds
-})
+  refetchInterval: 2000, // Poll every 2 seconds
+});
 ```
 
 ---
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| **401 Unauthorized** | Token expired or invalid. Refresh token via `POST /api/auth/refresh` |
-| **CORS error** | Backend must have CORS enabled. Check Spring Security config |
-| **Network error** | Backend not running. Start with `./gradlew bootRun` |
-| **Type mismatch** | Response structure doesn't match type. Check `types.ts` and Swagger |
-| **Stale data** | Add to cache invalidation: `queryClient.invalidateQueries({ queryKey: [...] })` |
-| **Query not firing** | Check `enabled` guard - ensure dependencies are not undefined |
+| Issue                | Solution                                                                        |
+| -------------------- | ------------------------------------------------------------------------------- |
+| **401 Unauthorized** | Token expired or invalid. Refresh token via `POST /api/auth/refresh`            |
+| **CORS error**       | Backend must have CORS enabled. Check Spring Security config                    |
+| **Network error**    | Backend not running. Start with `./gradlew bootRun`                             |
+| **Type mismatch**    | Response structure doesn't match type. Check `types.ts` and Swagger             |
+| **Stale data**       | Add to cache invalidation: `queryClient.invalidateQueries({ queryKey: [...] })` |
+| **Query not firing** | Check `enabled` guard - ensure dependencies are not undefined                   |
 
 ---
 
 ## API Documentation
 
 **OpenAPI/Swagger:**
+
 - **JSON:** http://localhost:8080/v3/api-docs
 - **UI:** http://localhost:8080/swagger-ui/index.html
 
 **Backend readme:** [backend/docs/SWAGGER_SETUP_GUIDE.md](../backend/docs/SWAGGER_SETUP_GUIDE.md)
-

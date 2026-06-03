@@ -47,10 +47,7 @@ export function ChatbotPanel({ sessionId, onClose }: Props) {
 
     try {
       const res = await sendChatbotMessage(text, sessionId);
-      setMessages((prev) => [
-        ...prev.slice(0, -1),
-        { role: "ASSISTANT", content: res.answer },
-      ]);
+      setMessages((prev) => [...prev.slice(0, -1), { role: "ASSISTANT", content: res.answer }]);
     } catch {
       setMessages((prev) => [
         ...prev.slice(0, -1),
@@ -85,7 +82,9 @@ export function ChatbotPanel({ sessionId, onClose }: Props) {
         </div>
         <div className="flex-1">
           <p className="text-sm font-semibold text-primary-foreground">Trợ lý Sinh viên TLU</p>
-          <p className="text-[11px] text-primary-foreground/70">Hỗ trợ học vụ & dịch vụ sinh viên</p>
+          <p className="text-[11px] text-primary-foreground/70">
+            Hỗ trợ học vụ & dịch vụ sinh viên
+          </p>
         </div>
         <Button
           variant="ghost"

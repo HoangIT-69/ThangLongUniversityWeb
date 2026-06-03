@@ -103,7 +103,9 @@ function RetakePage() {
       {currentSemester && !currentSemester.retakeOpen && (
         <div className="m-6 rounded-lg border bg-amber-100 p-4 text-center text-amber-800">
           <p className="font-medium">🔴 Chưa mở đăng ký thi lại</p>
-          <p className="text-sm mt-1">Nhà trường chưa mở đăng ký thi lại / nâng điểm cho học kỳ này.</p>
+          <p className="text-sm mt-1">
+            Nhà trường chưa mở đăng ký thi lại / nâng điểm cho học kỳ này.
+          </p>
         </div>
       )}
       <PageHeader

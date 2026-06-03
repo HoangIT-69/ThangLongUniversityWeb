@@ -146,9 +146,11 @@ function TeacherTimetablePage() {
                     day === todayDayOfWeek && "bg-primary/10 text-primary",
                   )}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span>{dayLabels[day]}</span>
-                    {day === todayDayOfWeek && <Badge className="shrink-0">Hôm nay</Badge>}
+                  <div className="flex min-h-10 flex-col items-center justify-center gap-1 text-center sm:min-h-0 sm:flex-row sm:justify-center sm:gap-2">
+                    <span className="leading-none">{dayLabels[day]}</span>
+                    {day === todayDayOfWeek && (
+                      <Badge className="h-5 shrink-0 px-2 text-[10px] leading-none">Hôm nay</Badge>
+                    )}
                   </div>
                 </th>
               ))}

@@ -33,17 +33,19 @@ export function EnrollmentsTab({ semesterId }: Props) {
 
   const query = useQuery({
     queryKey: ["admin", "enrollments", semesterId, status, page],
-    queryFn: () => adminApi.listEnrollments({ semesterId, status: status || undefined, page, size: 50 }),
+    queryFn: () =>
+      adminApi.listEnrollments({ semesterId, status: status || undefined, page, size: 50 }),
   });
 
   const data = query.data;
   const items = data?.content ?? [];
 
   const filteredItems = search
-    ? items.filter((e) =>
-        e.studentCode?.toLowerCase().includes(search.toLowerCase()) ||
-        e.studentName?.toLowerCase().includes(search.toLowerCase()) ||
-        e.classCode?.toLowerCase().includes(search.toLowerCase())
+    ? items.filter(
+        (e) =>
+          e.studentCode?.toLowerCase().includes(search.toLowerCase()) ||
+          e.studentName?.toLowerCase().includes(search.toLowerCase()) ||
+          e.classCode?.toLowerCase().includes(search.toLowerCase()),
       )
     : items;
 
@@ -53,14 +55,22 @@ export function EnrollmentsTab({ semesterId }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <Select value={status} onValueChange={(v) => { setStatus(v === "__all__" ? "" : v); setPage(0); }}>
+        <Select
+          value={status}
+          onValueChange={(v) => {
+            setStatus(v === "__all__" ? "" : v);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Trạng thái" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">Tất cả</SelectItem>
             {STATUS_OPTIONS.filter(Boolean).map((s) => (
-              <SelectItem key={s} value={s}>{STATUS_LABEL[s] ?? s}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {STATUS_LABEL[s] ?? s}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -80,7 +90,9 @@ export function EnrollmentsTab({ semesterId }: Props) {
             onClick={() =>
               void adminApi
                 .exportEnrollments(semesterId)
-                .catch((error) => toast.error(error instanceof Error ? error.message : "Không xuất được Excel"))
+                .catch((error) =>
+                  toast.error(error instanceof Error ? error.message : "Không xuất được Excel"),
+                )
             }
           >
             <Download className="h-4 w-4 mr-1" />
@@ -92,11 +104,17 @@ export function EnrollmentsTab({ semesterId }: Props) {
       {/* Summary stats */}
       {!query.isLoading && (
         <div className="flex items-center gap-4 text-sm text-muted-foreground bg-muted/30 rounded-lg px-4 py-2">
-          <span>Tổng: <span className="font-medium text-foreground">{items.length}</span></span>
+          <span>
+            Tổng: <span className="font-medium text-foreground">{items.length}</span>
+          </span>
           <span className="text-border">|</span>
-          <span>Chờ xử lý: <span className="font-medium text-amber-600">{pendingCount}</span></span>
+          <span>
+            Chờ xử lý: <span className="font-medium text-amber-600">{pendingCount}</span>
+          </span>
           <span className="text-border">|</span>
-          <span>Đã xác nhận: <span className="font-medium text-green-600">{registeredCount}</span></span>
+          <span>
+            Đã xác nhận: <span className="font-medium text-green-600">{registeredCount}</span>
+          </span>
         </div>
       )}
 
@@ -124,14 +142,22 @@ export function EnrollmentsTab({ semesterId }: Props) {
                   <td className="p-3 font-mono text-xs">{e.classCode}</td>
                   <td className="p-3">{e.courseName}</td>
                   <td className="p-3 text-center">{e.credits ?? "—"}</td>
-                  <td className="p-3"><EnrollmentStatusBadge status={e.status} /></td>
+                  <td className="p-3">
+                    <EnrollmentStatusBadge status={e.status} />
+                  </td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {e.enrolledAt ? new Intl.DateTimeFormat("vi-VN").format(new Date(e.enrolledAt)) : "—"}
+                    {e.enrolledAt
+                      ? new Intl.DateTimeFormat("vi-VN").format(new Date(e.enrolledAt))
+                      : "—"}
                   </td>
                 </tr>
               ))}
               {filteredItems.length === 0 && (
-                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Không có dữ liệu</td></tr>
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                    Không có dữ liệu
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -140,9 +166,25 @@ export function EnrollmentsTab({ semesterId }: Props) {
 
       {data && data.totalPages > 1 && (
         <div className="flex justify-center gap-2">
-          <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>← Trước</Button>
-          <span className="text-sm self-center">Trang {page + 1}/{data.totalPages}</span>
-          <Button variant="outline" size="sm" disabled={page >= data.totalPages - 1} onClick={() => setPage((p) => p + 1)}>Sau →</Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            ← Trước
+          </Button>
+          <span className="text-sm self-center">
+            Trang {page + 1}/{data.totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= data.totalPages - 1}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Sau →
+          </Button>
         </div>
       )}
     </div>
@@ -150,8 +192,10 @@ export function EnrollmentsTab({ semesterId }: Props) {
 }
 
 function EnrollmentStatusBadge({ status }: { status: string }) {
-  if (status === "REGISTERED") return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Đã xác nhận</Badge>;
-  if (status === "PENDING") return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Chờ xử lý</Badge>;
+  if (status === "REGISTERED")
+    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Đã xác nhận</Badge>;
+  if (status === "PENDING")
+    return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Chờ xử lý</Badge>;
   if (status === "CANCELLED") return <Badge variant="secondary">Đã hủy</Badge>;
   return <Badge variant="outline">{status}</Badge>;
 }

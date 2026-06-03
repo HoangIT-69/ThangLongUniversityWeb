@@ -37,42 +37,65 @@ export function OverviewTab({ semesterId }: Props) {
 
   const toggleRegMutation = useMutation({
     mutationFn: (open: boolean) => adminApi.toggleRegistration(semesterId, open),
-    onSuccess: () => { invalidate(); toast.success("Đã cập nhật trạng thái đăng ký"); },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã cập nhật trạng thái đăng ký");
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Lỗi"),
   });
 
   const lockEnrollMutation = useMutation({
     mutationFn: () => adminApi.lockEnrollments(semesterId),
-    onSuccess: (res) => { invalidate(); toast.success(res.message || "Đã chốt học phần"); },
+    onSuccess: (res) => {
+      invalidate();
+      toast.success(res.message || "Đã chốt học phần");
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Lỗi"),
   });
 
   const publishExamMutation = useMutation({
     mutationFn: () => adminApi.publishExamSchedules(semesterId),
-    onSuccess: () => { invalidate(); toast.success("Đã công bố lịch thi"); },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã công bố lịch thi");
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Lỗi"),
   });
 
   const unpublishExamMutation = useMutation({
     mutationFn: () => adminApi.unpublishExamSchedules(semesterId),
-    onSuccess: () => { invalidate(); toast.success("Đã hủy công bố lịch thi"); },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã hủy công bố lịch thi");
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Lỗi"),
   });
 
   const toggleRetakeMutation = useMutation({
     mutationFn: (open: boolean) => adminApi.toggleRetakeRegistration(semesterId, open),
-    onSuccess: () => { invalidate(); toast.success("Đã cập nhật trạng thái thi lại"); },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã cập nhật trạng thái thi lại");
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Lỗi"),
   });
 
   const lockRetakeMutation = useMutation({
     mutationFn: () => adminApi.lockRetakes(semesterId),
-    onSuccess: (res) => { invalidate(); toast.success(res.message || "Đã chốt thi lại"); },
+    onSuccess: (res) => {
+      invalidate();
+      toast.success(res.message || "Đã chốt thi lại");
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Lỗi"),
   });
 
   if (summaryQuery.isLoading) {
-    return <div className="space-y-4"><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /></div>;
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
   }
 
   if (!s) return null;
@@ -126,11 +149,15 @@ export function OverviewTab({ semesterId }: Props) {
                   : "Chưa mở đăng ký"
             }
             statusBadge={
-              step1Done
-                ? <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Đã chốt</Badge>
-                : s.registrationOpen
-                  ? <Badge className="bg-green-100 text-green-800 border-green-200">Đang mở</Badge>
-                  : <Badge variant="outline">Đóng</Badge>
+              step1Done ? (
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                  Đã chốt
+                </Badge>
+              ) : s.registrationOpen ? (
+                <Badge className="bg-green-100 text-green-800 border-green-200">Đang mở</Badge>
+              ) : (
+                <Badge variant="outline">Đóng</Badge>
+              )
             }
             actions={
               !step1Done ? (
@@ -170,9 +197,11 @@ export function OverviewTab({ semesterId }: Props) {
             title="Công bố lịch thi"
             subtitle={`${s.examScheduledCount}/${s.classSectionCount} lớp đã có lịch thi`}
             statusBadge={
-              step2Done
-                ? <Badge className="bg-blue-100 text-blue-800 border-blue-200">Đã công bố</Badge>
-                : <Badge variant="outline">Chưa công bố</Badge>
+              step2Done ? (
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200">Đã công bố</Badge>
+              ) : (
+                <Badge variant="outline">Chưa công bố</Badge>
+              )
             }
             actions={
               <div className="flex flex-wrap gap-2">
@@ -213,11 +242,15 @@ export function OverviewTab({ semesterId }: Props) {
                   : "Chưa mở đăng ký"
             }
             statusBadge={
-              step3Done
-                ? <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Đã chốt</Badge>
-                : s.retakeOpen
-                  ? <Badge className="bg-amber-100 text-amber-800 border-amber-200">Đang mở</Badge>
-                  : <Badge variant="outline">Đóng</Badge>
+              step3Done ? (
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                  Đã chốt
+                </Badge>
+              ) : s.retakeOpen ? (
+                <Badge className="bg-amber-100 text-amber-800 border-amber-200">Đang mở</Badge>
+              ) : (
+                <Badge variant="outline">Đóng</Badge>
+              )
             }
             actions={
               !step3Done ? (

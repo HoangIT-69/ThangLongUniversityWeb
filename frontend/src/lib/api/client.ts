@@ -74,7 +74,8 @@ export async function downloadApiFile(path: string, fallbackFilename: string) {
   }
 
   const blob = await response.blob();
-  const filename = getDownloadFilename(response.headers.get("Content-Disposition")) ?? fallbackFilename;
+  const filename =
+    getDownloadFilename(response.headers.get("Content-Disposition")) ?? fallbackFilename;
   triggerBrowserDownload(blob, filename);
 }
 
@@ -97,7 +98,11 @@ function getDownloadFilename(contentDisposition: string | null) {
   return asciiMatch?.[1] ?? null;
 }
 
-async function apiRequestWithRetry<T>(path: string, init: RequestInit, allowRefresh: boolean): Promise<T> {
+async function apiRequestWithRetry<T>(
+  path: string,
+  init: RequestInit,
+  allowRefresh: boolean,
+): Promise<T> {
   const auth = getStoredAuth();
   const headers = new Headers(init.headers);
   if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
@@ -118,7 +123,12 @@ async function apiRequestWithRetry<T>(path: string, init: RequestInit, allowRefr
     );
   }
 
-  if (response.status === 401 && allowRefresh && auth?.refreshToken && !path.startsWith("/api/auth/")) {
+  if (
+    response.status === 401 &&
+    allowRefresh &&
+    auth?.refreshToken &&
+    !path.startsWith("/api/auth/")
+  ) {
     const refreshed = await refreshAccessToken(auth);
     if (refreshed) {
       return apiRequestWithRetry<T>(path, init, false);

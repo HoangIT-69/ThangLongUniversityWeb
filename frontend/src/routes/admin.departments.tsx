@@ -84,7 +84,12 @@ function DepartmentFormDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+          >
             Hủy
           </Button>
           <Button
@@ -155,10 +160,7 @@ function DepartmentsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Khoa / Bộ môn"
-        description={`${data.length} khoa`}
-      />
+      <PageHeader title="Khoa / Bộ môn" description={`${data.length} khoa`} />
 
       <DataTable
         data={data}

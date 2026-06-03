@@ -1,10 +1,23 @@
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 
 export function EntityFormDialog({
-  open, onOpenChange, title, description, children, onSubmit, submitText = "Lưu",
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  onSubmit,
+  submitText = "Lưu",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -33,7 +46,9 @@ export function EntityFormDialog({
           </DialogHeader>
           <div className="space-y-4 py-4">{children}</div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Hủy
+            </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {submitText}

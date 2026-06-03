@@ -9,16 +9,16 @@
 
 ## Quick Reference
 
-| Rule | ✅ Required | ❌ Forbidden |
-|------|-----------|------------|
-| **HTTP** | `apiClient` (fetch wrapper) | `fetch()`, `axios`, hardcoded URLs |
-| **State** | TanStack Query + useQuery/useMutation | Redux, Context for API data, useState for server state |
-| **Forms** | react-hook-form + Zod + react-hook-form/form | Manual state, no validation |
-| **UI** | shadcn/ui + TailwindCSS | Material-UI, styled-components, custom CSS |
-| **Routing** | TanStack Router file-based | Manual routes, window.location |
-| **Auth** | useAuth() context | Direct localStorage access outside client.ts |
-| **Errors** | Show all states (pending/error/empty) | Silent failures, no error messages |
-| **Types** | TypeScript strict, no `any` | `any` type, non-null assertions |
+| Rule        | ✅ Required                                  | ❌ Forbidden                                           |
+| ----------- | -------------------------------------------- | ------------------------------------------------------ |
+| **HTTP**    | `apiClient` (fetch wrapper)                  | `fetch()`, `axios`, hardcoded URLs                     |
+| **State**   | TanStack Query + useQuery/useMutation        | Redux, Context for API data, useState for server state |
+| **Forms**   | react-hook-form + Zod + react-hook-form/form | Manual state, no validation                            |
+| **UI**      | shadcn/ui + TailwindCSS                      | Material-UI, styled-components, custom CSS             |
+| **Routing** | TanStack Router file-based                   | Manual routes, window.location                         |
+| **Auth**    | useAuth() context                            | Direct localStorage access outside client.ts           |
+| **Errors**  | Show all states (pending/error/empty)        | Silent failures, no error messages                     |
+| **Types**   | TypeScript strict, no `any`                  | `any` type, non-null assertions                        |
 
 ---
 
@@ -122,24 +122,24 @@ Examples:
 
 ### Component File Size Limits
 
-| Type | Max Lines | Action if Exceeded |
-|------|-----------|-------------------|
-| Route page (Page.tsx) | 150 | Extract to feature component |
-| Feature component | 300 | Extract hooks + smaller children |
-| UI component | 200 | Split into smaller components |
-| Hook | 150 | Extract utilities |
-| Utility function | 100 | Already too complex |
+| Type                  | Max Lines | Action if Exceeded               |
+| --------------------- | --------- | -------------------------------- |
+| Route page (Page.tsx) | 150       | Extract to feature component     |
+| Feature component     | 300       | Extract hooks + smaller children |
+| UI component          | 200       | Split into smaller components    |
+| Hook                  | 150       | Extract utilities                |
+| Utility function      | 100       | Already too complex              |
 
 ### When to Create vs Extend
 
-| Scenario | Action |
-|----------|--------|
-| Similar component exists | Extend with new props |
-| New domain not covered | Create new API module |
-| Different DataTable columns | Don't copy—use dynamic `columns` prop |
-| New endpoints for existing domain | Extend API module |
-| Helper logic used 2+ places | Create hook in `src/hooks/` |
-| Form pattern repeated | Create reusable form component |
+| Scenario                          | Action                                |
+| --------------------------------- | ------------------------------------- |
+| Similar component exists          | Extend with new props                 |
+| New domain not covered            | Create new API module                 |
+| Different DataTable columns       | Don't copy—use dynamic `columns` prop |
+| New endpoints for existing domain | Extend API module                     |
+| Helper logic used 2+ places       | Create hook in `src/hooks/`           |
+| Form pattern repeated             | Create reusable form component        |
 
 ### Folder Structure Rules
 
@@ -193,10 +193,10 @@ export function GradesContent() {
     queryKey: ['student', 'grades'],
     queryFn: studentApi.getGrades
   })
-  
+
   if (isPending) return <Skeleton />
   if (error) return <ErrorAlert error={error} />
-  
+
   return <GradesDisplay data={data} />
 }
 
@@ -301,28 +301,28 @@ const { data } = useQuery({
 
 ```typescript
 // ✅ REQUIRED
-const queryClient = useQueryClient()
+const queryClient = useQueryClient();
 
 const { mutate, isPending } = useMutation({
   mutationFn: (data) => api.create(data),
   onSuccess: () => {
     // REQUIRED: Invalidate related queries
-    queryClient.invalidateQueries({ queryKey: ['items'] })
-    toast.success('Created!')
+    queryClient.invalidateQueries({ queryKey: ["items"] });
+    toast.success("Created!");
   },
   onError: (error) => {
-    toast.error(error.message)
-  }
-})
+    toast.error(error.message);
+  },
+});
 
 // ❌ WRONG: No cache invalidation
 onSuccess: () => {
-  toast.success('Created!')
+  toast.success("Created!");
   // Forgot to invalidate! Stale data displayed
-}
+};
 
 // ❌ WRONG: No error handling
-const { mutate } = useMutation({ mutationFn: api.create })
+const { mutate } = useMutation({ mutationFn: api.create });
 // Silent failures!
 ```
 
@@ -334,7 +334,7 @@ import { useAuth } from '@/lib/auth'
 
 export function MyComponent() {
   const { role, name, profile, login, logout } = useAuth()
-  
+
   return <div>Hello {name}</div>
 }
 
@@ -364,65 +364,65 @@ src/hooks/
 // REQUIRED: Hierarchical, all dependencies included
 
 // Simple list
-queryKey: ['student', 'grades']
+queryKey: ["student", "grades"];
 
 // Filtered/specific
-queryKey: ['student', 'grades', semesterId]
+queryKey: ["student", "grades", semesterId];
 
 // Paginated
-queryKey: ['admin', 'users', page, pageSize]
+queryKey: ["admin", "users", page, pageSize];
 
 // Specific resource
-queryKey: ['admin', 'users', userId]
+queryKey: ["admin", "users", userId];
 
 // ❌ WRONG: Missing dependencies
-queryKey: ['grades']      // Missing 'student' context
-queryKey: ['items']       // Missing page, filter dependencies
+queryKey: ["grades"]; // Missing 'student' context
+queryKey: ["items"]; // Missing page, filter dependencies
 
 // ❌ WRONG: String instead of array
-queryKey: 'student-grades' // Should be array
+queryKey: "student-grades"; // Should be array
 
 // ❌ WRONG: Dependencies not in key
-queryKey: ['grades'] // semesterId used in queryFn but not in key!
+queryKey: ["grades"]; // semesterId used in queryFn but not in key!
 ```
 
 ### Stale Time Strategy
 
 ```typescript
 // Dashboard/frequently viewed
-staleTime: 60 * 1000         // 1 minute
+staleTime: 60 * 1000; // 1 minute
 
 // User data
-staleTime: 5 * 60 * 1000     // 5 minutes
+staleTime: 5 * 60 * 1000; // 5 minutes
 
 // Static reference data (majors, rooms, periods)
-staleTime: 60 * 60 * 1000    // 1 hour
+staleTime: 60 * 60 * 1000; // 1 hour
 
 // Grade data
-staleTime: 5 * 60 * 1000     // 5 minutes
+staleTime: 5 * 60 * 1000; // 5 minutes
 
 // Default (if not specified)
-staleTime: 0                 // Immediately stale
+staleTime: 0; // Immediately stale
 ```
 
 ### Enabled Guard Pattern
 
 ```typescript
 // ✅ REQUIRED: Guard against undefined parameters
-const semesterId = semesters?.[0]?.id
+const semesterId = semesters?.[0]?.id;
 
 const { data } = useQuery({
-  queryKey: ['grades', semesterId],
+  queryKey: ["grades", semesterId],
   queryFn: () => api.getGrades(semesterId),
-  enabled: semesterId != null  // Don't query if undefined
-})
+  enabled: semesterId != null, // Don't query if undefined
+});
 
 // ❌ WRONG: Will error if semesterId is undefined
 const { data } = useQuery({
-  queryKey: ['grades', semesterId],
-  queryFn: () => api.getGrades(semesterId)
+  queryKey: ["grades", semesterId],
+  queryFn: () => api.getGrades(semesterId),
   // Missing enabled guard!
-})
+});
 ```
 
 ---
@@ -554,41 +554,41 @@ const [form, setForm] = useState({ name: '', code: '' })
 ```typescript
 // ✅ REQUIRED: Type all API responses
 export interface StudentGradeResponse {
-  enrollmentId: number
-  classCode: string
-  courseName: string
-  credits: number
-  finalScore?: number | null
-  gradePoint?: number | null
+  enrollmentId: number;
+  classCode: string;
+  courseName: string;
+  credits: number;
+  finalScore?: number | null;
+  gradePoint?: number | null;
 }
 
 // ✅ REQUIRED: Type component props
 interface GradesTableProps {
-  grades: StudentGradeResponse[]
-  onRowClick: (grade: StudentGradeResponse) => void
+  grades: StudentGradeResponse[];
+  onRowClick: (grade: StudentGradeResponse) => void;
 }
 
 // ❌ WRONG: No types
-const grades = await api.get() // any type!
-function GradesTable({ grades, onRowClick }: any) { } // any type!
+const grades = await api.get(); // any type!
+function GradesTable({ grades, onRowClick }: any) {} // any type!
 
 // ❌ WRONG: Non-null assertion
-const score = (data as StudentGradeResponse).score!
+const score = (data as StudentGradeResponse).score!;
 ```
 
 ### Union & Discriminated Types
 
 ```typescript
 // ✅ Use discriminated unions for status/role
-type Status = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
-type Role = 'ADMIN' | 'STUDENT' | 'TEACHER'
+type Status = "ACTIVE" | "INACTIVE" | "SUSPENDED";
+type Role = "ADMIN" | "STUDENT" | "TEACHER";
 
 // ✅ Use optional chaining
-const name = user?.profile?.fullName ?? 'Unknown'
+const name = user?.profile?.fullName ?? "Unknown";
 
 // ✅ Use ?? (nullish coalescing) over ||
-const page = params.page ?? 1 // Correct: 0 is valid
-const page = params.page || 1  // Wrong: 0 treated as falsy
+const page = params.page ?? 1; // Correct: 0 is valid
+const page = params.page || 1; // Wrong: 0 treated as falsy
 ```
 
 ---
@@ -653,15 +653,15 @@ className="p-[20px]" // Use standard: p-5, p-6
 
 ```typescript
 // ✅ REQUIRED: Standard spacing only
-className="space-y-4"      // gap between children
-className="mb-2"           // margin-bottom
-className="gap-3"          // gap in flex/grid
-className="p-5"            // padding
-className="px-4 py-3"      // horizontal padding, vertical padding
+className = "space-y-4"; // gap between children
+className = "mb-2"; // margin-bottom
+className = "gap-3"; // gap in flex/grid
+className = "p-5"; // padding
+className = "px-4 py-3"; // horizontal padding, vertical padding
 
 // ❌ WRONG: Arbitrary values
-className="space-y-7"      // Not in standard scale
-className="my-[15px]"      // Use standard values
+className = "space-y-7"; // Not in standard scale
+className = "my-[15px]"; // Use standard values
 ```
 
 ---
@@ -709,23 +709,23 @@ return <Display data={data} /> // What if error?
 ### Toast Notifications
 
 ```typescript
-import { toast } from 'sonner'
+import { toast } from "sonner";
 
 // ✅ REQUIRED: Feedback on actions
 mutation.mutate(data, {
   onSuccess: () => {
-    toast.success('Saved successfully!')
+    toast.success("Saved successfully!");
   },
   onError: (error) => {
-    toast.error(error.message || 'Something went wrong')
-  }
-})
+    toast.error(error.message || "Something went wrong");
+  },
+});
 
 // Show different toast types
-toast.success('Success message')
-toast.error('Error message')
-toast.info('Info message')
-toast.warning('Warning message')
+toast.success("Success message");
+toast.error("Error message");
+toast.info("Info message");
+toast.warning("Warning message");
 ```
 
 ---
@@ -736,23 +736,23 @@ toast.warning('Warning message')
 
 ```typescript
 // ✅ REQUIRED: Through apiRequest
-import { apiRequest } from '@/lib/api/client'
+import { apiRequest } from "@/lib/api/client";
 
-const data = await apiRequest<UserList>('/api/admin/users')
+const data = await apiRequest<UserList>("/api/admin/users");
 
 // ✅ REQUIRED: Via API module
-import { studentApi } from '@/lib/api/student'
+import { studentApi } from "@/lib/api/student";
 
-const grades = await studentApi.getGrades(semesterId)
+const grades = await studentApi.getGrades(semesterId);
 
 // ❌ WRONG: Direct fetch
-const data = await fetch('/api/admin/users').then(r => r.json())
+const data = await fetch("/api/admin/users").then((r) => r.json());
 
 // ❌ WRONG: Direct axios
-const data = await axios.get('/api/admin/users')
+const data = await axios.get("/api/admin/users");
 
 // ❌ WRONG: Hardcoded URLs
-const url = 'http://localhost:8080/api/admin/users'
+const url = "http://localhost:8080/api/admin/users";
 ```
 
 ### API Module Structure
@@ -760,18 +760,20 @@ const url = 'http://localhost:8080/api/admin/users'
 ```typescript
 // ✅ REQUIRED: Organized exports
 export const studentApi = {
-  listSemesters: () => apiRequest<Semester[]>('/api/student/semesters'),
-  getGrades: (semesterId) => apiRequest<GradesSummary>(`/api/student/grades?semesterId=${semesterId}`),
-  enrollClass: (classId) => apiRequest<EnrollmentResponse>(`/api/student/enroll/${classId}`, { method: 'POST' })
-}
+  listSemesters: () => apiRequest<Semester[]>("/api/student/semesters"),
+  getGrades: (semesterId) =>
+    apiRequest<GradesSummary>(`/api/student/grades?semesterId=${semesterId}`),
+  enrollClass: (classId) =>
+    apiRequest<EnrollmentResponse>(`/api/student/enroll/${classId}`, { method: "POST" }),
+};
 
 // ✅ REQUIRED: Type responses
 async function getGrades(semesterId: number): Promise<GradesSummary> {
-  return apiRequest(`/api/student/grades?semesterId=${semesterId}`)
+  return apiRequest(`/api/student/grades?semesterId=${semesterId}`);
 }
 
 // ❌ WRONG: Untyped
-export const getGrades = (semesterId) => fetch(`...`)
+export const getGrades = (semesterId) => fetch(`...`);
 ```
 
 ### JWT Handling (Built-in)
@@ -922,15 +924,15 @@ useQuery({
 ```typescript
 // ✅ REQUIRED: Organize imports
 // 1. External libraries
-import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 // 2. Internal absolute imports
-import { studentApi } from '@/lib/api/student'
-import { DataTable } from '@/components/data-table/DataTable'
+import { studentApi } from "@/lib/api/student";
+import { DataTable } from "@/components/data-table/DataTable";
 
 // 3. Types
-import type { StudentGradeResponse } from '@/lib/api/types'
+import type { StudentGradeResponse } from "@/lib/api/types";
 ```
 
 ### Comments
@@ -953,19 +955,19 @@ const { data } = useQuery(...)
 
 ## 14. What NOT to Do
 
-| ❌ | Reason |
-|----|--------|
-| `any` type | Defeats TypeScript |
-| `useState` for API data | Use TanStack Query |
-| Direct `fetch()` | Use `apiClient` |
-| Redux | Use TanStack Query |
-| Custom CSS | Use shadcn/ui + Tailwind |
-| Manual localStorage | Use `getStoredAuth()` / `setStoredAuth()` |
-| Context for server state | Use TanStack Query |
-| `localStorage` in components | Only in `src/lib/api/client.ts` |
-| Non-null assertion `!` | Use proper typing |
-| `window.location` navigation | Use TanStack Router Link/navigate |
-| Silent failures | Show error states |
+| ❌                           | Reason                                    |
+| ---------------------------- | ----------------------------------------- |
+| `any` type                   | Defeats TypeScript                        |
+| `useState` for API data      | Use TanStack Query                        |
+| Direct `fetch()`             | Use `apiClient`                           |
+| Redux                        | Use TanStack Query                        |
+| Custom CSS                   | Use shadcn/ui + Tailwind                  |
+| Manual localStorage          | Use `getStoredAuth()` / `setStoredAuth()` |
+| Context for server state     | Use TanStack Query                        |
+| `localStorage` in components | Only in `src/lib/api/client.ts`           |
+| Non-null assertion `!`       | Use proper typing                         |
+| `window.location` navigation | Use TanStack Router Link/navigate         |
+| Silent failures              | Show error states                         |
 
 ---
 
@@ -1080,6 +1082,7 @@ function UsersDisplay({ users }: { users: UserResponse[] }) {
 ## Summary
 
 **These rules keep the code:**
+
 - ✅ Type-safe
 - ✅ Reusable
 - ✅ Maintainable
@@ -1087,4 +1090,3 @@ function UsersDisplay({ users }: { users: UserResponse[] }) {
 - ✅ AI-friendly
 
 **Follow them on every task.**
-

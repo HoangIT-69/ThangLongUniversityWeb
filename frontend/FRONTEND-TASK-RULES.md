@@ -96,32 +96,30 @@ export function GradesDisplay({ data }: Props) {
 
 ```typescript
 // ✅ REQUIRED
-import { apiRequest } from '@/lib/api/client';
-import * as studentApi from '@/lib/api/student';
+import { apiRequest } from "@/lib/api/client";
+import * as studentApi from "@/lib/api/student";
 
 const grades = await studentApi.getGrades();
 
 // ❌ FORBIDDEN
-const grades = await fetch('/api/student/grades').then((r) => r.json());
-const grades = await axios.get('/api/student/grades');
+const grades = await fetch("/api/student/grades").then((r) => r.json());
+const grades = await axios.get("/api/student/grades");
 ```
 
 ### Rule 2: Query Keys (Hierarchical)
 
 ```typescript
 // ✅ REQUIRED
-['student', 'grades'][('student', 'grades', semesterId)][ // List // Filtered
-    ('admin', 'users', page)
-]; // Paginated
+["student", "grades"][("student", "grades", semesterId)][("admin", "users", page)]; // List // Filtered // Paginated
 
 // Include ALL dependencies
 const { data } = useQuery({
-    queryKey: ['users', page, filter], // All here
-    queryFn: () => api.list(page, filter)
+  queryKey: ["users", page, filter], // All here
+  queryFn: () => api.list(page, filter),
 });
 
 // ❌ WRONG - Missing dependencies
-queryKey: ['users']; // Missing page, filter!
+queryKey: ["users"]; // Missing page, filter!
 ```
 
 ### Rule 3: useQuery Pattern
@@ -149,19 +147,19 @@ return <Display data={data} />; // May crash
 ```typescript
 // ✅ REQUIRED
 const { mutate, isPending } = useMutation({
-    mutationFn: (data) => api.create(data),
-    onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['items'] });
-        toast.success('Created!');
-    },
-    onError: (error) => {
-        toast.error(error.message);
-    }
+  mutationFn: (data) => api.create(data),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["items"] });
+    toast.success("Created!");
+  },
+  onError: (error) => {
+    toast.error(error.message);
+  },
 });
 
 // ❌ WRONG - No cache invalidation
 onSuccess: () => {
-    toast.success('Created!'); // Forgot to invalidate!
+  toast.success("Created!"); // Forgot to invalidate!
 };
 ```
 
@@ -270,12 +268,12 @@ window.history.pushState(...);
 ```typescript
 // ✅ REQUIRED - Explicit types
 interface UserProps {
-    user: UserResponse;
-    onEdit: (id: number) => void;
+  user: UserResponse;
+  onEdit: (id: number) => void;
 }
 
 // ✅ REQUIRED - Null safety
-const name = user?.fullName ?? 'Unknown';
+const name = user?.fullName ?? "Unknown";
 const email = user?.profile?.email;
 
 // ✅ REQUIRED - z.infer for forms
@@ -343,37 +341,37 @@ export function StudentDashboard() {
 ```typescript
 // WRONG - Same query in 2 places
 function GradesPage() {
-    const { data } = useQuery({
-        queryKey: ['grades'],
-        queryFn: () => api.getGrades()
-    });
+  const { data } = useQuery({
+    queryKey: ["grades"],
+    queryFn: () => api.getGrades(),
+  });
 }
 
 function GradesSummary() {
-    const { data } = useQuery({
-        queryKey: ['grades'],
-        queryFn: () => api.getGrades()
-    });
+  const { data } = useQuery({
+    queryKey: ["grades"],
+    queryFn: () => api.getGrades(),
+  });
 }
 
 // RIGHT - Reusable hook
 const useStudentGrades = () =>
-    useQuery({
-        queryKey: ['grades'],
-        queryFn: () => api.getGrades()
-    });
+  useQuery({
+    queryKey: ["grades"],
+    queryFn: () => api.getGrades(),
+  });
 ```
 
 ### ❌ Pattern 3: Direct fetch()
 
 ```typescript
 // WRONG
-const data = await fetch('/api/users').then((r) => r.json());
-const data = await axios.get('/api/users');
+const data = await fetch("/api/users").then((r) => r.json());
+const data = await axios.get("/api/users");
 
 // RIGHT
 const { data } = useQuery({
-    queryFn: () => userApi.listUsers()
+  queryFn: () => userApi.listUsers(),
 });
 ```
 
@@ -382,29 +380,29 @@ const { data } = useQuery({
 ```typescript
 // WRONG - Logic in component
 export function EnrollmentForm() {
-    const handleSubmit = async (data) => {
-        if (!data.studentId) {
-            setError('Required');
-            return;
-        }
-        const response = await fetch('/api/enroll', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-    };
+  const handleSubmit = async (data) => {
+    if (!data.studentId) {
+      setError("Required");
+      return;
+    }
+    const response = await fetch("/api/enroll", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  };
 }
 
 // RIGHT - Logic in hook/service
 export function EnrollmentForm() {
-    const { mutate, isPending } = useMutation({
-        mutationFn: (data) => studentApi.enrollClass(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['enrollments'] });
-            toast.success('Enrolled!');
-        }
-    });
+  const { mutate, isPending } = useMutation({
+    mutationFn: (data) => studentApi.enrollClass(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      toast.success("Enrolled!");
+    },
+  });
 
-    const onSubmit = (data) => mutate(data);
+  const onSubmit = (data) => mutate(data);
 }
 ```
 
@@ -414,12 +412,12 @@ export function EnrollmentForm() {
 // WRONG - Context for server state
 const [users, setUsers] = useContext(UsersContext);
 useEffect(() => {
-    fetch('/api/users').then((r) => setUsers(r.json()));
+  fetch("/api/users").then((r) => setUsers(r.json()));
 }, []);
 
 // RIGHT - TanStack Query for server state
 const { data: users } = useQuery({
-    queryFn: () => api.listUsers()
+  queryFn: () => api.listUsers(),
 });
 
 // RIGHT - useState for UI state only
@@ -883,29 +881,27 @@ export function UsersList() {
 
 ```typescript
 // ✅ REQUIRED - Use centralized apiClient
-import { apiRequest } from '@/lib/api/client';
-import * as studentApi from '@/lib/api/student';
+import { apiRequest } from "@/lib/api/client";
+import * as studentApi from "@/lib/api/student";
 
 // In useQuery
 const { data } = useQuery({
-    queryKey: ['student', 'grades'],
-    queryFn: () => studentApi.getGrades()
+  queryKey: ["student", "grades"],
+  queryFn: () => studentApi.getGrades(),
 });
 
 // ❌ FORBIDDEN - Direct fetch
 const { data } = useQuery({
-    queryFn: async () => {
-        const response = await fetch(
-            'http://localhost:8080/api/student/grades'
-        );
-        return response.json();
-    }
+  queryFn: async () => {
+    const response = await fetch("http://localhost:8080/api/student/grades");
+    return response.json();
+  },
 });
 
 // ❌ FORBIDDEN - axios
-import axios from 'axios';
+import axios from "axios";
 const { data } = useQuery({
-    queryFn: () => axios.get('/api/student/grades')
+  queryFn: () => axios.get("/api/student/grades"),
 });
 ```
 
@@ -915,7 +911,7 @@ const { data } = useQuery({
 
 ```typescript
 // ✅ REQUIRED - Use API module
-import { studentApi } from '@/lib/api/student';
+import { studentApi } from "@/lib/api/student";
 
 const grade = await studentApi.getGrades(semesterId);
 
@@ -925,8 +921,8 @@ const grade = await studentApi.getGrades(semesterId);
 // - endpoint path from module
 
 // ❌ FORBIDDEN - Hardcoded URL
-const grade = await apiRequest('http://localhost:8080/api/student/grades');
-const grade = await apiRequest('/api/student/grades'); // URL embedded in component
+const grade = await apiRequest("http://localhost:8080/api/student/grades");
+const grade = await apiRequest("/api/student/grades"); // URL embedded in component
 
 // ❌ FORBIDDEN - String concatenation
 const url = `/api/student/${studentId}/grades`;
@@ -970,22 +966,22 @@ const { data }: { data: any } = useQuery(...);
 
 ```typescript
 // IF endpoint exists in module, use it
-import { studentApi } from '@/lib/api/student';
+import { studentApi } from "@/lib/api/student";
 const grades = await studentApi.getGrades();
 
 // IF endpoint does NOT exist, extend module:
 // File: src/lib/api/student.ts
 
 export const studentApi = {
-    // ... existing functions
+  // ... existing functions
 
-    // ✅ ADD new function to module
-    getStudentWithDetails: (studentId: number) =>
-        apiRequest<StudentDetailResponse>(`/api/student/${studentId}/details`)
+  // ✅ ADD new function to module
+  getStudentWithDetails: (studentId: number) =>
+    apiRequest<StudentDetailResponse>(`/api/student/${studentId}/details`),
 };
 
 // ❌ DO NOT create inline API calls
-const grades = await apiRequest<GradeData[]>('/api/student/grades');
+const grades = await apiRequest<GradeData[]>("/api/student/grades");
 ```
 
 ### Rule 5: Response Type Mapping
@@ -995,22 +991,22 @@ const grades = await apiRequest<GradeData[]>('/api/student/grades');
 ```typescript
 // ✅ REQUIRED - Map API response to DTO
 interface StudentResponse {
-    id: number;
-    fullName: string;
-    email: string;
+  id: number;
+  fullName: string;
+  email: string;
 }
 
 const { data: student } = useQuery<StudentResponse>({
-    queryFn: () => studentApi.getStudent(id)
+  queryFn: () => studentApi.getStudent(id),
 });
 
 // Always import types from src/lib/api/types.ts
-import type { StudentResponseDTO, CourseResponseDTO } from '@/lib/api/types';
+import type { StudentResponseDTO, CourseResponseDTO } from "@/lib/api/types";
 
 // ❌ FORBIDDEN - Interface defined in component
 interface Student {
-    id: number;
-    fullName: string;
+  id: number;
+  fullName: string;
 }
 ```
 
@@ -1131,34 +1127,31 @@ export function CreateEnrollmentForm({ onSuccess }: { onSuccess: () => void }) {
 ```typescript
 // ✅ REQUIRED - Multi-level validation
 const schema = z.object({
-    email: z
-        .string()
-        .email('Invalid email format')
-        .refine(
-            async (email) => {
-                // Custom validation
-                const exists = await checkEmailExists(email);
-                return !exists;
-            },
-            { message: 'Email already exists' }
-        ),
+  email: z
+    .string()
+    .email("Invalid email format")
+    .refine(
+      async (email) => {
+        // Custom validation
+        const exists = await checkEmailExists(email);
+        return !exists;
+      },
+      { message: "Email already exists" },
+    ),
 
-    credits: z
-        .number()
-        .min(1, 'Credits must be at least 1')
-        .max(4, 'Credits cannot exceed 4'),
+  credits: z.number().min(1, "Credits must be at least 1").max(4, "Credits cannot exceed 4"),
 
-    role: z
-        .enum(['ADMIN', 'STUDENT', 'TEACHER'])
-        .refine((role) => role !== 'FORBIDDEN', { message: 'Role not allowed' })
+  role: z
+    .enum(["ADMIN", "STUDENT", "TEACHER"])
+    .refine((role) => role !== "FORBIDDEN", { message: "Role not allowed" }),
 });
 
 // ❌ FORBIDDEN - Validation in component
 const handleSubmit = () => {
-    if (!email.includes('@')) {
-        setError('Invalid email');
-        return;
-    }
+  if (!email.includes("@")) {
+    setError("Invalid email");
+    return;
+  }
 };
 ```
 
@@ -1197,32 +1190,32 @@ onError: (error) => {
 ```typescript
 // ✅ REQUIRED - Use mutation
 const { mutate, isPending, error } = useMutation({
-    mutationFn: (data) => api.createItem(data),
-    onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['items'] });
-        toast.success('Created!');
-        onSuccess?.();
-    },
-    onError: (error) => {
-        toast.error(error.message);
-    }
+  mutationFn: (data) => api.createItem(data),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["items"] });
+    toast.success("Created!");
+    onSuccess?.();
+  },
+  onError: (error) => {
+    toast.error(error.message);
+  },
 });
 
 const onSubmit = (data: FormData) => {
-    mutate(data);
+  mutate(data);
 };
 
 // ❌ FORBIDDEN - Direct API call in submit
 const onSubmit = async (data: FormData) => {
-    try {
-        const response = await fetch('/api/items', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-        // manual error handling...
-    } catch (error) {
-        // manual error handling...
-    }
+  try {
+    const response = await fetch("/api/items", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    // manual error handling...
+  } catch (error) {
+    // manual error handling...
+  }
 };
 ```
 
@@ -1291,8 +1284,8 @@ const name = user!.fullName;
 const [count, setCount] = useState(0); // Type: number inferred
 
 const handleClick = (id: number) => {
-    // Return type inferred from function body
-    return enrollmentService.enroll(id);
+  // Return type inferred from function body
+  return enrollmentService.enroll(id);
 };
 
 // ✅ REQUIRED - Explicit where unclear
@@ -1305,7 +1298,7 @@ type FormData = z.infer<typeof schema>;
 
 // ❌ FORBIDDEN - Unnecessary explicit types
 const count: number = 0;
-const name: string = 'John';
+const name: string = "John";
 ```
 
 ### Rule 4: Interface Naming
@@ -1333,25 +1326,25 @@ interface IUserCardProps {} // Redundant "I" prefix
 ```typescript
 // ✅ REQUIRED - Reusable with generics
 interface PaginatedResponse<T> {
-    content: T[];
-    totalElements: number;
-    totalPages: number;
+  content: T[];
+  totalElements: number;
+  totalPages: number;
 }
 
 // ✅ REQUIRED - Component generics
 interface DataTableProps<T> {
-    columns: ColumnDef<T>[];
-    data: T[];
+  columns: ColumnDef<T>[];
+  data: T[];
 }
 
 // ✅ REQUIRED - Query generics
 const { data } = useQuery<UserResponse>({
-    queryFn: () => getUserById(id)
+  queryFn: () => getUserById(id),
 });
 
 // ❌ FORBIDDEN - Unnecessary use of any
 interface PaginatedResponse {
-    content: any[];
+  content: any[];
 }
 ```
 
@@ -1365,23 +1358,23 @@ interface PaginatedResponse {
 
 ```typescript
 // ✅ REQUIRED - Hierarchical structure
-['users'][('users', 'list')][('users', userId)][('users', userId, 'profile')][ // List all // Explicit list // Specific user // Nested data
-    ('admin', 'users')
-][('admin', 'users', userId)][('student', 'grades', semesterId)]; // Role-specific // Role-specific resource // Contextual data
+["users"][("users", "list")][("users", userId)][("users", userId, "profile")][("admin", "users")][ // List all // Explicit list // Specific user // Nested data
+  ("admin", "users", userId)
+][("student", "grades", semesterId)]; // Role-specific // Role-specific resource // Contextual data
 
 // ✅ REQUIRED - Include dependencies in key
 const { data } = useQuery({
-    queryKey: ['users', page, pageSize, filter], // All deps included
-    queryFn: () => listUsers(page, pageSize, filter)
+  queryKey: ["users", page, pageSize, filter], // All deps included
+  queryFn: () => listUsers(page, pageSize, filter),
 });
 
 // ❌ FORBIDDEN - Non-hierarchical keys
-['getUsers']['userList']['fetch_users'];
+["getUsers"]["userList"]["fetch_users"];
 
 // ❌ FORBIDDEN - Missing dependencies
 const { data } = useQuery({
-    queryKey: ['users'], // Missing page, pageSize, filter!
-    queryFn: () => listUsers(page, pageSize, filter)
+  queryKey: ["users"], // Missing page, pageSize, filter!
+  queryFn: () => listUsers(page, pageSize, filter),
 });
 ```
 
@@ -1421,60 +1414,54 @@ const { success } = useQuery(...);  // Not a valid property
 ```typescript
 // ✅ REQUIRED
 const { mutate, isPending, error } = useMutation({
-    mutationFn: async (data: CreateGradeInput) => studentApi.submitGrade(data),
+  mutationFn: async (data: CreateGradeInput) => studentApi.submitGrade(data),
 
-    onMutate: async (newData) => {
-        // Optimistic update (optional but recommended)
-        await queryClient.cancelQueries({ queryKey: ['student', 'grades'] });
-        const previousData = queryClient.getQueryData(['student', 'grades']);
+  onMutate: async (newData) => {
+    // Optimistic update (optional but recommended)
+    await queryClient.cancelQueries({ queryKey: ["student", "grades"] });
+    const previousData = queryClient.getQueryData(["student", "grades"]);
 
-        queryClient.setQueryData(['student', 'grades'], (old: any) => [
-            ...old,
-            newData
-        ]);
+    queryClient.setQueryData(["student", "grades"], (old: any) => [...old, newData]);
 
-        return { previousData };
-    },
+    return { previousData };
+  },
 
-    onSuccess: (result, variables, context) => {
-        // Invalidate related queries
-        queryClient.invalidateQueries({ queryKey: ['student', 'grades'] });
-        toast.success('Grade submitted!');
-        onSuccess?.();
-    },
+  onSuccess: (result, variables, context) => {
+    // Invalidate related queries
+    queryClient.invalidateQueries({ queryKey: ["student", "grades"] });
+    toast.success("Grade submitted!");
+    onSuccess?.();
+  },
 
-    onError: (error, variables, context) => {
-        // Rollback optimistic update
-        if (context?.previousData) {
-            queryClient.setQueryData(
-                ['student', 'grades'],
-                context.previousData
-            );
-        }
-        toast.error(error.message);
+  onError: (error, variables, context) => {
+    // Rollback optimistic update
+    if (context?.previousData) {
+      queryClient.setQueryData(["student", "grades"], context.previousData);
     }
+    toast.error(error.message);
+  },
 });
 
 const handleSubmit = (data: CreateGradeInput) => {
-    mutate(data);
+  mutate(data);
 };
 
 // ❌ FORBIDDEN - Missing error handling
 const { mutate } = useMutation({
-    mutationFn: (data) => api.submit(data),
-    onSuccess: () => {
-        toast.success('Done!');
-    }
-    // Missing onError handler!
+  mutationFn: (data) => api.submit(data),
+  onSuccess: () => {
+    toast.success("Done!");
+  },
+  // Missing onError handler!
 });
 
 // ❌ FORBIDDEN - No cache invalidation
 const { mutate } = useMutation({
-    mutationFn: (data) => api.create(data),
-    onSuccess: () => {
-        // Forgot to invalidate queries!
-        toast.success('Created!');
-    }
+  mutationFn: (data) => api.create(data),
+  onSuccess: () => {
+    // Forgot to invalidate queries!
+    toast.success("Created!");
+  },
 });
 ```
 
@@ -1554,23 +1541,23 @@ const { data } = useQuery({
 ```typescript
 // ✅ REQUIRED - Filter in query key
 const [filter, setFilter] = useState<UserFilter>({
-    role: undefined,
-    status: 'ACTIVE'
+  role: undefined,
+  status: "ACTIVE",
 });
 
 const { data } = useQuery({
-    queryKey: ['users', filter], // Filter included
-    queryFn: () => adminApi.listUsers(filter)
+  queryKey: ["users", filter], // Filter included
+  queryFn: () => adminApi.listUsers(filter),
 });
 
 const handleFilterChange = (newFilter: UserFilter) => {
-    setFilter(newFilter); // Updates query key, refetches
+  setFilter(newFilter); // Updates query key, refetches
 };
 
 // ❌ FORBIDDEN - Filter not in query key
 const { data } = useQuery({
-    queryKey: ['users'], // Filter not included!
-    queryFn: () => adminApi.listUsers(filter) // Filter lost on cache
+  queryKey: ["users"], // Filter not included!
+  queryFn: () => adminApi.listUsers(filter), // Filter lost on cache
 });
 ```
 
@@ -1696,26 +1683,26 @@ window.history.pushState(...);
 
 ```typescript
 // ✅ REQUIRED - Public routes
-export const Route = createFileRoute('/')({
-    component: LandingPage
+export const Route = createFileRoute("/")({
+  component: LandingPage,
 });
 
-export const Route = createFileRoute('/login')({
-    component: LoginPage
+export const Route = createFileRoute("/login")({
+  component: LoginPage,
 });
 
-export const Route = createFileRoute('/about')({
-    component: AboutPage
+export const Route = createFileRoute("/about")({
+  component: AboutPage,
 });
 
 // ✅ REQUIRED - Authenticated routes (all users)
-export const Route = createFileRoute('/me')({
-    component: MyProfilePage // Requires auth via AuthProvider
+export const Route = createFileRoute("/me")({
+  component: MyProfilePage, // Requires auth via AuthProvider
 });
 
 // ❌ FORBIDDEN - Unprotected admin routes
-export const Route = createFileRoute('/admin/sensitive')({
-    component: SensitiveData // No ProtectedOutlet!
+export const Route = createFileRoute("/admin/sensitive")({
+  component: SensitiveData, // No ProtectedOutlet!
 });
 ```
 
@@ -1841,7 +1828,7 @@ export function GradesDetail() {
 
 ```typescript
 // ✅ REQUIRED - Clear, descriptive names
-const isUserActive = user.status === 'ACTIVE';
+const isUserActive = user.status === "ACTIVE";
 const handleEnrollButtonClick = () => {};
 const getStudentGradeAverage = (grades: Grade[]) => {};
 const StudentGradesContainer = () => {};
@@ -1853,7 +1840,7 @@ const canEdit = true;
 const shouldShowModal = false;
 
 // ❌ FORBIDDEN - Ambiguous names
-const data = user.status === 'ACTIVE';
+const data = user.status === "ACTIVE";
 const handle = () => {};
 const get = (grades: Grade[]) => {};
 const GradesPage = () => {};
@@ -1913,8 +1900,8 @@ return (
 ```typescript
 // ✅ REQUIRED - Paginate by default
 const { data } = useQuery({
-    queryKey: ['users', page],
-    queryFn: () => adminApi.listUsers({ page, limit: 20 })
+  queryKey: ["users", page],
+  queryFn: () => adminApi.listUsers({ page, limit: 20 }),
 });
 
 // ✅ REQUIRED - Default limit of 20-50 items
@@ -1922,7 +1909,7 @@ queryFn: () => api.list({ page: 0, limit: 20 });
 
 // ❌ FORBIDDEN - No pagination
 const { data: allUsers } = useQuery({
-    queryFn: () => adminApi.getAllUsers() // Could be 100,000+ users!
+  queryFn: () => adminApi.getAllUsers(), // Could be 100,000+ users!
 });
 
 // ❌ FORBIDDEN - Loading entire dataset at once
@@ -1965,8 +1952,8 @@ const doubled = useMemo(() => count * 2, [count]); // Unnecessary
 // No manual lazy loading needed
 
 // ✅ Router handles code splitting
-export const Route = createFileRoute('/admin/users')({
-    component: UserListPage
+export const Route = createFileRoute("/admin/users")({
+  component: UserListPage,
 });
 
 // Component is automatically lazy-loaded by Router
@@ -1979,23 +1966,23 @@ export const Route = createFileRoute('/admin/users')({
 ```typescript
 // ✅ REQUIRED - Set appropriate staleTime
 const { data } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
-    staleTime: 5 * 60 * 1000 // 5 minutes
+  queryKey: ["users"],
+  queryFn: fetchUsers,
+  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 // ✅ REQUIRED - Use gcTime for garbage collection
 const { data } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
-    gcTime: 10 * 60 * 1000 // 10 minutes
+  queryKey: ["users"],
+  queryFn: fetchUsers,
+  gcTime: 10 * 60 * 1000, // 10 minutes
 });
 
 // ❌ FORBIDDEN - No caching strategy
 const { data } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers
-    // Defaults to staleTime: 0 = always stale
+  queryKey: ["users"],
+  queryFn: fetchUsers,
+  // Defaults to staleTime: 0 = always stale
 });
 ```
 
@@ -2169,48 +2156,48 @@ export function GradesSummary() {
 ```typescript
 // ❌ FORBIDDEN
 export function EnrollmentForm() {
-    const handleSubmit = async (formData) => {
-        // ❌ Business logic in component
-        if (!formData.studentId || !formData.classId) {
-            setError('Invalid input');
-            return;
-        }
+  const handleSubmit = async (formData) => {
+    // ❌ Business logic in component
+    if (!formData.studentId || !formData.classId) {
+      setError("Invalid input");
+      return;
+    }
 
-        // ❌ Direct API call
-        const response = await fetch('/api/enroll', {
-            method: 'POST',
-            body: JSON.stringify(formData)
-        });
+    // ❌ Direct API call
+    const response = await fetch("/api/enroll", {
+      method: "POST",
+      body: JSON.stringify(formData),
+    });
 
-        if (!response.ok) {
-            setError('Enrollment failed');
-            return;
-        }
+    if (!response.ok) {
+      setError("Enrollment failed");
+      return;
+    }
 
-        // ❌ Manual cache management
-        setStudents([]);
-        alert('Enrolled!');
-    };
+    // ❌ Manual cache management
+    setStudents([]);
+    alert("Enrolled!");
+  };
 }
 
 // ✅ REQUIRED
 export function EnrollmentForm() {
-    const { mutate, isPending } = useMutation({
-        mutationFn: (data) => studentApi.enrollClass(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['student', 'enrollments']
-            });
-            toast.success('Enrolled!');
-        },
-        onError: (error) => {
-            toast.error(error.message);
-        }
-    });
+  const { mutate, isPending } = useMutation({
+    mutationFn: (data) => studentApi.enrollClass(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["student", "enrollments"],
+      });
+      toast.success("Enrolled!");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
 
-    const handleSubmit = (data: EnrollmentInput) => {
-        mutate(data);
-    };
+  const handleSubmit = (data: EnrollmentInput) => {
+    mutate(data);
+  };
 }
 ```
 
@@ -2218,25 +2205,25 @@ export function EnrollmentForm() {
 
 ```typescript
 // ❌ FORBIDDEN
-const grades = await fetch('/api/student/grades').then((r) => r.json());
+const grades = await fetch("/api/student/grades").then((r) => r.json());
 
 const { data } = useQuery({
-    queryFn: async () => {
-        return fetch('/api/student/grades').then((r) => r.json());
-    }
+  queryFn: async () => {
+    return fetch("/api/student/grades").then((r) => r.json());
+  },
 });
 
-import axios from 'axios';
+import axios from "axios";
 const { data } = useQuery({
-    queryFn: () => axios.get('/api/student/grades')
+  queryFn: () => axios.get("/api/student/grades"),
 });
 
 // ✅ REQUIRED
-import { studentApi } from '@/lib/api/student';
+import { studentApi } from "@/lib/api/student";
 
 const { data } = useQuery({
-    queryKey: ['student', 'grades'],
-    queryFn: () => studentApi.getGrades()
+  queryKey: ["student", "grades"],
+  queryFn: () => studentApi.getGrades(),
 });
 ```
 
@@ -2247,7 +2234,7 @@ const { data } = useQuery({
 const [users, setUsers] = useContext(UsersContext);
 
 useEffect(() => {
-    fetch('/api/users').then((r) => setUsers(r.json()));
+  fetch("/api/users").then((r) => setUsers(r.json()));
 }, []);
 
 // ❌ FORBIDDEN - Redux for UI state
@@ -2255,7 +2242,7 @@ dispatch(setModalOpen(true));
 
 // ✅ REQUIRED - TanStack Query for server state
 const { data: users } = useQuery({
-    queryFn: () => adminApi.listUsers()
+  queryFn: () => adminApi.listUsers(),
 });
 
 // ✅ REQUIRED - React state for UI state
@@ -2385,7 +2372,7 @@ const UserTable = ({ users }: { users: User[] }) => {
 const data: any = response;
 const handleClick = (e: any) => {};
 interface Props {
-    data: any;
+  data: any;
 }
 const result = data as any;
 
@@ -2393,7 +2380,7 @@ const result = data as any;
 const data: UserResponse = response;
 const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {};
 interface Props {
-    data: UserResponse[];
+  data: UserResponse[];
 }
 const result = data as UserResponse[];
 ```

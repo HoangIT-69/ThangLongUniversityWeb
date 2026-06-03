@@ -8,16 +8,16 @@
 
 ## Quick Reference
 
-| Category | Components | Usage Pattern |
-|----------|-----------|---------------|
-| **Layouts** | AppLayout, ProtectedOutlet | Every page requires these |
-| **Tables** | DataTable | Any list with search/pagination |
-| **Forms** | EntityFormDialog | CRUD modals |
-| **Page UI** | PageHeader, StatCard | Page titles, stats displays |
-| **Status** | StatusBadge | Status indicators |
-| **Dialogs** | ConfirmDialog | Destructive confirmations |
-| **Navigation** | Sidebar, Header | Built into AppLayout |
-| **UI Primitives** | 44+ shadcn/ui | Buttons, inputs, selects, etc |
+| Category          | Components                 | Usage Pattern                   |
+| ----------------- | -------------------------- | ------------------------------- |
+| **Layouts**       | AppLayout, ProtectedOutlet | Every page requires these       |
+| **Tables**        | DataTable                  | Any list with search/pagination |
+| **Forms**         | EntityFormDialog           | CRUD modals                     |
+| **Page UI**       | PageHeader, StatCard       | Page titles, stats displays     |
+| **Status**        | StatusBadge                | Status indicators               |
+| **Dialogs**       | ConfirmDialog              | Destructive confirmations       |
+| **Navigation**    | Sidebar, Header            | Built into AppLayout            |
+| **UI Primitives** | 44+ shadcn/ui              | Buttons, inputs, selects, etc   |
 
 ---
 
@@ -30,6 +30,7 @@
 **Reusability:** 100% (used in all role-based routes)
 
 **Features:**
+
 - Role-based sidebar navigation (different menus for ADMIN/STUDENT/TEACHER)
 - Sticky header with breadcrumbs + user profile menu
 - Mobile hamburger navigation
@@ -65,6 +66,7 @@ export function AdminDashboardPage() {
 **Reusability:** 100% (used in all role-based route groups)
 
 **Features:**
+
 - Checks authentication (redirects to `/login` if not logged in)
 - Validates user role
 - Redirects to user's dashboard if wrong role
@@ -85,8 +87,11 @@ export const Route = createFileRoute('/student')({
 ```
 
 **Props:**
+
 ```typescript
-{ role: "ADMIN" | "STUDENT" | "TEACHER" }
+{
+  role: "ADMIN" | "STUDENT" | "TEACHER";
+}
 ```
 
 ---
@@ -100,6 +105,7 @@ export const Route = createFileRoute('/student')({
 **Reusability:** 95% (highly parameterized, rarely needs changes)
 
 **Features:**
+
 - Search bar with real-time filtering
 - Pagination (default 8 items per page)
 - Sortable columns (via render functions)
@@ -142,29 +148,31 @@ export const Route = createFileRoute('/student')({
 ```
 
 **Props:**
+
 ```typescript
 interface Props<T> {
-  data: T[]                           // Array of items
-  columns: Column<T>[]                // Column definitions
-  pageSize?: number                   // Items per page (default 8)
-  searchPlaceholder?: string          // Search field placeholder
-  emptyMessage?: string               // Empty state message
-  toolbar?: ReactNode                 // Optional toolbar with buttons
-  rowKey: (row: T) => string         // Extract unique key
-  onRowClick?: (row: T) => void      // Row click handler
+  data: T[]; // Array of items
+  columns: Column<T>[]; // Column definitions
+  pageSize?: number; // Items per page (default 8)
+  searchPlaceholder?: string; // Search field placeholder
+  emptyMessage?: string; // Empty state message
+  toolbar?: ReactNode; // Optional toolbar with buttons
+  rowKey: (row: T) => string; // Extract unique key
+  onRowClick?: (row: T) => void; // Row click handler
 }
 
 interface Column<T> {
-  key: string
-  header: string
-  render?: (row: T) => ReactNode                // Custom rendering
-  className?: string                            // TailwindCSS classes
-  searchable?: boolean                          // Include in search
-  accessor?: (row: T) => string | number       // Search value extractor
+  key: string;
+  header: string;
+  render?: (row: T) => ReactNode; // Custom rendering
+  className?: string; // TailwindCSS classes
+  searchable?: boolean; // Include in search
+  accessor?: (row: T) => string | number; // Search value extractor
 }
 ```
 
 **When NOT to use:**
+
 - If you need sorting by column (DataTable doesn't support this)
 - If you need custom column headers (use render instead)
 - If you need virtual scrolling for 10k+ rows
@@ -193,6 +201,7 @@ interface Column<T> {
 ```
 
 **Props:**
+
 ```typescript
 {
   title: string
@@ -221,6 +230,7 @@ interface Column<T> {
 ```
 
 **Props:**
+
 ```typescript
 {
   label: string
@@ -247,8 +257,11 @@ interface Column<T> {
 ```
 
 **Props:**
+
 ```typescript
-{ value: 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED' | string }
+{
+  value: "ACTIVE" | "INACTIVE" | "PENDING" | "SUSPENDED" | string;
+}
 ```
 
 **Note:** Automatically colors based on status type
@@ -264,6 +277,7 @@ interface Column<T> {
 **Reusability:** 100% (highly flexible)
 
 **Features:**
+
 - Dialog with title + description
 - Form handling with submit button
 - Loading state with spinner
@@ -302,6 +316,7 @@ const [form, setForm] = useState({ name: '', code: '' })
 ```
 
 **Props:**
+
 ```typescript
 {
   open: boolean
@@ -345,6 +360,7 @@ const [toDelete, setToDelete] = useState<Student | null>(null)
 ```
 
 **Props:**
+
 ```typescript
 {
   open: boolean
@@ -370,6 +386,7 @@ const [toDelete, setToDelete] = useState<Student | null>(null)
 **Reusability:** 100% (no extraction needed - built into AppLayout)
 
 **Features:**
+
 - Hierarchical menu structure with groups
 - Collapsible on mobile
 - Collapsible on desktop (toggle button)
@@ -385,17 +402,17 @@ const adminNavGroups: NavGroup[] = [
     heading: "Overview",
     items: [
       { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/admin/landing", label: "Landing", icon: Globe }
-    ]
+      { to: "/admin/landing", label: "Landing", icon: Globe },
+    ],
   },
   {
     heading: "Users",
     items: [
       { to: "/admin/users", label: "Accounts", icon: Users },
-      { to: "/admin/students", label: "Students", icon: GraduationCap }
-    ]
-  }
-]
+      { to: "/admin/students", label: "Students", icon: GraduationCap },
+    ],
+  },
+];
 ```
 
 ---
@@ -406,6 +423,7 @@ const adminNavGroups: NavGroup[] = [
 **Reusability:** 100% (no extraction needed)
 
 **Features:**
+
 - Breadcrumbs
 - Chat button
 - Notifications (STUDENT only with badge)
@@ -439,12 +457,13 @@ Advanced:
 **Import Pattern:**
 
 ```typescript
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 ```
 
 **Never:**
+
 - ❌ Create custom button component (use Button)
 - ❌ Use Material-UI (use shadcn/ui)
 - ❌ Use styled-components (use Tailwind)
@@ -455,13 +474,13 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
 
 ### When to Extend vs Duplicate
 
-| Scenario | Action | Example |
-|----------|--------|---------|
-| Same component, different columns | Extend via props | DataTable with different Column[] |
-| Same form layout, different fields | Extend via children | EntityFormDialog with child fields |
-| Same logic, different API | Create hook | `useStudentGrades()` vs `useTeacherGrades()` |
-| Same visual, different data | Compose | Use `StatCard` multiple times |
-| Slight styling difference | Use className prop | DataTable with custom className |
+| Scenario                           | Action              | Example                                      |
+| ---------------------------------- | ------------------- | -------------------------------------------- |
+| Same component, different columns  | Extend via props    | DataTable with different Column[]            |
+| Same form layout, different fields | Extend via children | EntityFormDialog with child fields           |
+| Same logic, different API          | Create hook         | `useStudentGrades()` vs `useTeacherGrades()` |
+| Same visual, different data        | Compose             | Use `StatCard` multiple times                |
+| Slight styling difference          | Use className prop  | DataTable with custom className              |
 
 ### How to Avoid Duplication
 
@@ -475,31 +494,31 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
 
 ## 7. Component Status
 
-| Component | Exists | Complete | Used In |
-|-----------|--------|----------|---------|
-| AppLayout | ✅ | ✅ | All authenticated pages |
-| ProtectedOutlet | ✅ | ✅ | Admin, Student, Teacher routes |
-| DataTable | ✅ | ✅ | Students, Users, Courses, etc |
-| PageHeader | ✅ | ✅ | Dashboard, list pages |
-| StatCard | ✅ | ✅ | Dashboards |
-| StatusBadge | ✅ | ✅ | Status columns |
-| EntityFormDialog | ✅ | ✅ | Add/Edit modals |
-| ConfirmDialog | ✅ | ✅ | Delete confirmations |
-| Sidebar | ✅ | ✅ | Part of AppLayout |
-| Header | ✅ | ✅ | Part of AppLayout |
+| Component        | Exists | Complete | Used In                        |
+| ---------------- | ------ | -------- | ------------------------------ |
+| AppLayout        | ✅     | ✅       | All authenticated pages        |
+| ProtectedOutlet  | ✅     | ✅       | Admin, Student, Teacher routes |
+| DataTable        | ✅     | ✅       | Students, Users, Courses, etc  |
+| PageHeader       | ✅     | ✅       | Dashboard, list pages          |
+| StatCard         | ✅     | ✅       | Dashboards                     |
+| StatusBadge      | ✅     | ✅       | Status columns                 |
+| EntityFormDialog | ✅     | ✅       | Add/Edit modals                |
+| ConfirmDialog    | ✅     | ✅       | Delete confirmations           |
+| Sidebar          | ✅     | ✅       | Part of AppLayout              |
+| Header           | ✅     | ✅       | Part of AppLayout              |
 
 ---
 
 ## 8. Missing / To Be Built
 
-| Component | Needed For | Priority |
-|-----------|-----------|----------|
-| DataTable with sorting | Admin lists | Medium |
-| Advanced filters | Admin dashboards | Low |
-| Inline editing | Student grades | Low |
-| Bulk actions | Admin users | Low |
-| PDF export | Reports | Low |
-| Charts | Analytics | Low |
+| Component              | Needed For       | Priority |
+| ---------------------- | ---------------- | -------- |
+| DataTable with sorting | Admin lists      | Medium   |
+| Advanced filters       | Admin dashboards | Low      |
+| Inline editing         | Student grades   | Low      |
+| Bulk actions           | Admin users      | Low      |
+| PDF export             | Reports          | Low      |
+| Charts                 | Analytics        | Low      |
 
 ---
 
@@ -657,6 +676,7 @@ function StudentDashboardPage() {
 ## Summary
 
 **Key Reusables:**
+
 - ✅ **AppLayout** - Use in every page
 - ✅ **DataTable** - Use for any list
 - ✅ **PageHeader + StatCard** - Dashboard standard
@@ -666,4 +686,3 @@ function StudentDashboardPage() {
 - ✅ **44+ shadcn/ui** - All UI primitives
 
 **Before building:** Always check if component exists here!
-

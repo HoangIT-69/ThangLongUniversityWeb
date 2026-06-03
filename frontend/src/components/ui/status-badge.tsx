@@ -12,19 +12,45 @@ const styles: Record<Variant, string> = {
 };
 
 const map: Record<string, Variant> = {
-  ACTIVE: "success", OPEN: "success", AVAILABLE: "success", PAID: "success", SUCCESS: "success", GRADUATED: "info",
-  PENDING: "warning", PROCESSING: "info", UPCOMING: "info", PARTIAL: "warning", UNPAID: "warning",
-  CLOSED: "muted", INACTIVE: "muted", CANCELLED: "muted",
-  FAILED: "destructive", OVERDUE: "destructive", SUSPENDED: "destructive", FULL: "destructive", MAINTENANCE: "destructive",
-  ADMIN: "primary", TEACHER: "info", STUDENT: "success",
-  LECTURE: "info", LAB: "primary", AUDITORIUM: "warning",
-  OFFLINE: "muted", ONLINE: "info", PROJECT: "primary",
+  ACTIVE: "success",
+  OPEN: "success",
+  AVAILABLE: "success",
+  PAID: "success",
+  SUCCESS: "success",
+  GRADUATED: "info",
+  PENDING: "warning",
+  PROCESSING: "info",
+  UPCOMING: "info",
+  PARTIAL: "warning",
+  UNPAID: "warning",
+  CLOSED: "muted",
+  INACTIVE: "muted",
+  CANCELLED: "muted",
+  FAILED: "destructive",
+  OVERDUE: "destructive",
+  SUSPENDED: "destructive",
+  FULL: "destructive",
+  MAINTENANCE: "destructive",
+  ADMIN: "primary",
+  TEACHER: "info",
+  STUDENT: "success",
+  LECTURE: "info",
+  LAB: "primary",
+  AUDITORIUM: "warning",
+  OFFLINE: "muted",
+  ONLINE: "info",
+  PROJECT: "primary",
 };
 
 export function StatusBadge({ value, variant }: { value: string; variant?: Variant }) {
   const v = variant ?? map[value] ?? "muted";
   return (
-    <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide", styles[v])}>
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide",
+        styles[v],
+      )}
+    >
       {value}
     </span>
   );

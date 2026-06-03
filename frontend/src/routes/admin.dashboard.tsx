@@ -46,14 +46,23 @@ function occupancy(section: ClassSectionResponse) {
 }
 
 function AdminDashboard() {
-  const studentsQuery = useQuery({ queryKey: ["admin", "students"], queryFn: adminApi.listStudents });
-  const teachersQuery = useQuery({ queryKey: ["admin", "teachers"], queryFn: adminApi.listTeachers });
+  const studentsQuery = useQuery({
+    queryKey: ["admin", "students"],
+    queryFn: adminApi.listStudents,
+  });
+  const teachersQuery = useQuery({
+    queryKey: ["admin", "teachers"],
+    queryFn: adminApi.listTeachers,
+  });
   const coursesQuery = useQuery({ queryKey: ["admin", "courses"], queryFn: adminApi.listCourses });
   const classSectionsQuery = useQuery({
     queryKey: ["admin", "class-sections"],
     queryFn: adminApi.listClassSections,
   });
-  const semestersQuery = useQuery({ queryKey: ["admin", "semesters"], queryFn: adminApi.listSemesters });
+  const semestersQuery = useQuery({
+    queryKey: ["admin", "semesters"],
+    queryFn: adminApi.listSemesters,
+  });
   const departmentsQuery = useQuery({
     queryKey: ["admin", "departments"],
     queryFn: adminApi.listDepartments,
@@ -83,7 +92,9 @@ function AdminDashboard() {
 
   const currentSemester =
     semesters.find((semester) => semester.registrationOpen || semester.retakeOpen) ?? semesters[0];
-  const assignedClasses = classSections.filter((section) => section.teacherId || section.teacherName);
+  const assignedClasses = classSections.filter(
+    (section) => section.teacherId || section.teacherName,
+  );
   const scheduledClasses = classSections.filter((section) => section.schedules?.length);
   const totalRegisteredSlots = classSections.reduce(
     (sum, section) => sum + (section.currentSlots ?? 0),
@@ -94,7 +105,9 @@ function AdminDashboard() {
     0,
   );
   const averageOccupancy = percent(totalRegisteredSlots, totalCapacity);
-  const openClasses = classSections.filter((section) => !(section.closed ?? section.isClosed)).length;
+  const openClasses = classSections.filter(
+    (section) => !(section.closed ?? section.isClosed),
+  ).length;
   const roomCapacity = rooms.reduce((sum, room) => sum + (room.capacity ?? 0), 0);
 
   const studentsByMajor = Object.entries(
@@ -115,9 +128,7 @@ function AdminDashboard() {
     .sort((a, b) => occupancy(b).rate - occupancy(a).rate)
     .slice(0, 5);
 
-  const recentClasses = [...classSections]
-    .sort((a, b) => b.id - a.id)
-    .slice(0, 5);
+  const recentClasses = [...classSections].sort((a, b) => b.id - a.id).slice(0, 5);
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -158,7 +169,11 @@ function AdminDashboard() {
               </Badge>
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
-              <SystemMetric label="Lớp đang mở" value={openClasses} helper={`${classSections.length} lớp tổng`} />
+              <SystemMetric
+                label="Lớp đang mở"
+                value={openClasses}
+                helper={`${classSections.length} lớp tổng`}
+              />
               <SystemMetric
                 label="Tỷ lệ có giảng viên"
                 value={`${percent(assignedClasses.length, classSections.length)}%`}
@@ -232,7 +247,9 @@ function AdminDashboard() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">Lớp học phần cần chú ý</h2>
-              <p className="text-xs text-muted-foreground">Ưu tiên lớp thiếu giảng viên, chưa xếp lịch hoặc gần đầy</p>
+              <p className="text-xs text-muted-foreground">
+                Ưu tiên lớp thiếu giảng viên, chưa xếp lịch hoặc gần đầy
+              </p>
             </div>
             <AlertTriangle className="h-5 w-5 text-warning-foreground" />
           </div>
@@ -248,7 +265,9 @@ function AdminDashboard() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-medium">{section.classCode}</div>
-                        <div className="mt-0.5 text-xs text-muted-foreground">{section.courseName}</div>
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          {section.courseName}
+                        </div>
                       </div>
                       <Badge variant={load.rate >= 90 ? "destructive" : "outline"}>
                         {load.current}/{load.max || "-"}
@@ -270,7 +289,9 @@ function AdminDashboard() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">Phân bổ sinh viên theo ngành</h2>
-              <p className="text-xs text-muted-foreground">Top ngành có số lượng sinh viên cao nhất</p>
+              <p className="text-xs text-muted-foreground">
+                Top ngành có số lượng sinh viên cao nhất
+              </p>
             </div>
             <LibraryBig className="h-5 w-5 text-muted-foreground" />
           </div>
@@ -313,7 +334,9 @@ function AdminDashboard() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">Lớp học phần mới cập nhật</h2>
-              <p className="text-xs text-muted-foreground">Theo mã bản ghi mới nhất trong hệ thống</p>
+              <p className="text-xs text-muted-foreground">
+                Theo mã bản ghi mới nhất trong hệ thống
+              </p>
             </div>
             <Layers className="h-5 w-5 text-muted-foreground" />
           </div>
@@ -324,7 +347,10 @@ function AdminDashboard() {
               {recentClasses.map((section) => {
                 const load = occupancy(section);
                 return (
-                  <div key={section.id} className="flex items-center justify-between gap-4 py-3 text-sm">
+                  <div
+                    key={section.id}
+                    className="flex items-center justify-between gap-4 py-3 text-sm"
+                  >
                     <div className="min-w-0">
                       <div className="truncate font-medium">{section.classCode}</div>
                       <div className="truncate text-xs text-muted-foreground">
@@ -348,7 +374,15 @@ function AdminDashboard() {
   );
 }
 
-function SystemMetric({ label, value, helper }: { label: string; value: string | number; helper: string }) {
+function SystemMetric({
+  label,
+  value,
+  helper,
+}: {
+  label: string;
+  value: string | number;
+  helper: string;
+}) {
   return (
     <div className="rounded-lg border bg-background p-4">
       <div className="text-xs font-medium uppercase text-muted-foreground">{label}</div>

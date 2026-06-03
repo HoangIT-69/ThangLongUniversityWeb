@@ -9,19 +9,19 @@
 
 ## 1. Tech Stack Overview
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Framework** | TanStack Start | Server-side rendering capable React framework |
-| **UI Library** | shadcn/ui + TailwindCSS | Pre-built, accessible components |
-| **State Management** | TanStack Query v5.83 | Server state & caching ONLY |
-| **Routing** | TanStack Router v1.168 | File-based, type-safe routing |
-| **Forms** | react-hook-form + Zod | Form validation & state |
-| **HTTP** | Fetch API | Centralized via `apiClient` wrapper |
-| **Auth** | JWT (accessToken + refreshToken) | Role-based access control |
-| **Styling** | TailwindCSS v4 | Utility-first CSS |
-| **Icons** | lucide-react | Consistent icon library |
-| **Notifications** | sonner | Toast notifications |
-| **Date** | Intl API | Vietnamese date/number formatting |
+| Layer                | Technology                       | Purpose                                       |
+| -------------------- | -------------------------------- | --------------------------------------------- |
+| **Framework**        | TanStack Start                   | Server-side rendering capable React framework |
+| **UI Library**       | shadcn/ui + TailwindCSS          | Pre-built, accessible components              |
+| **State Management** | TanStack Query v5.83             | Server state & caching ONLY                   |
+| **Routing**          | TanStack Router v1.168           | File-based, type-safe routing                 |
+| **Forms**            | react-hook-form + Zod            | Form validation & state                       |
+| **HTTP**             | Fetch API                        | Centralized via `apiClient` wrapper           |
+| **Auth**             | JWT (accessToken + refreshToken) | Role-based access control                     |
+| **Styling**          | TailwindCSS v4                   | Utility-first CSS                             |
+| **Icons**            | lucide-react                     | Consistent icon library                       |
+| **Notifications**    | sonner                           | Toast notifications                           |
+| **Date**             | Intl API                         | Vietnamese date/number formatting             |
 
 ---
 
@@ -213,34 +213,33 @@ If user has wrong role → redirect to their dashboard
 const { data, isPending, isError, error } = useQuery({
   queryKey: ["student", "grades", semesterId],
   queryFn: () => studentApi.getGrades(semesterId),
-  enabled: semesterId != null
-})
+  enabled: semesterId != null,
+});
 
 // ✅ REQUIRED: Mutations with cache invalidation
 const { mutate, isPending } = useMutation({
   mutationFn: (data) => api.create(data),
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["items"] })
-    toast.success("Created!")
-  }
-})
+    queryClient.invalidateQueries({ queryKey: ["items"] });
+    toast.success("Created!");
+  },
+});
 ```
 
 ### Query Key Hierarchy
 
 ```typescript
 // Hierarchical format: [domain, feature, ...params]
-["student", "grades"]                    // List all
-["student", "grades", semesterId]        // Filtered
-["admin", "users", page, 10]             // Paginated
-["teacher", "classes", classId]          // Specific resource
+["student", "grades"][("student", "grades", semesterId)][("admin", "users", page, 10)][ // List all // Filtered // Paginated
+  ("teacher", "classes", classId)
+]; // Specific resource
 ```
 
 ### NO Context/Redux for Server State
 
 ✗ Context for API data  
 ✗ Redux for server state  
-✗ useState for async data  
+✗ useState for async data
 
 ---
 
@@ -252,11 +251,11 @@ Centralized fetch wrapper at `src/lib/api/client.ts`:
 
 ```typescript
 // Internal: automatically adds JWT headers + refresh logic
-async function apiRequest<T>(path: string, init?: RequestInit): Promise<T>
+async function apiRequest<T>(path: string, init?: RequestInit): Promise<T>;
 
 // Usage (internal):
-import { apiRequest } from '@/lib/api/client'
-const data = await apiRequest<UserList>('/api/admin/users')
+import { apiRequest } from "@/lib/api/client";
+const data = await apiRequest<UserList>("/api/admin/users");
 ```
 
 ### API Modules
@@ -275,20 +274,20 @@ src/lib/api/
 
 ```typescript
 // ✅ REQUIRED: Import from API module
-import { studentApi } from '@/lib/api/student'
-const grades = await studentApi.getGrades(semesterId)
+import { studentApi } from "@/lib/api/student";
+const grades = await studentApi.getGrades(semesterId);
 
 // Wrapped in useQuery
 const { data } = useQuery({
-  queryKey: ['student', 'grades', semesterId],
-  queryFn: () => studentApi.getGrades(semesterId)
-})
+  queryKey: ["student", "grades", semesterId],
+  queryFn: () => studentApi.getGrades(semesterId),
+});
 ```
 
 ### Base URL
 
 ```typescript
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 ```
 
 Environment variable: `VITE_API_BASE_URL=http://localhost:8080`
@@ -402,7 +401,9 @@ Table, Pagination, Progress, Skeleton, Separator, Spinner
 ### Layout Components
 
 #### AppLayout
+
 Full-page layout with sidebar + header:
+
 - Sticky sidebar (64px width)
 - Top navigation bar
 - Role-based navigation menu
@@ -410,16 +411,20 @@ Full-page layout with sidebar + header:
 - Collapsible on mobile (hamburger)
 
 #### ProtectedOutlet
+
 Role-based access control wrapper:
+
 - Checks authentication
 - Validates user role
 - Redirects to login or correct dashboard
 - Renders AppLayout with children
 
 #### PageHeader
+
 Page title + stats:
+
 ```typescript
-<PageHeader 
+<PageHeader
   title="Students"
   description="120 students"
   actions={<Button>Add</Button>}
@@ -427,7 +432,9 @@ Page title + stats:
 ```
 
 #### DataTable
+
 Reusable paginated table with search:
+
 ```typescript
 <DataTable
   data={items}
@@ -462,20 +469,20 @@ All API responses typed in `src/lib/api/types.ts`:
 
 ```typescript
 export interface StudentGradeItemResponse {
-  enrollmentId: number
-  semesterId: number
-  classCode: string
-  courseName: string
-  credits: number
-  totalScore?: number | null
-  gradePoint?: number | null
+  enrollmentId: number;
+  semesterId: number;
+  classCode: string;
+  courseName: string;
+  credits: number;
+  totalScore?: number | null;
+  gradePoint?: number | null;
 }
 
 export interface StudentGradesSummaryResponse {
-  semesterId?: number | null
-  semesterGpa: number
-  cumulativeGpa: number
-  items: StudentGradeItemResponse[]
+  semesterId?: number | null;
+  semesterGpa: number;
+  cumulativeGpa: number;
+  items: StudentGradeItemResponse[];
 }
 ```
 
@@ -485,8 +492,8 @@ Always typed:
 
 ```typescript
 interface StudentDashboardProps {
-  semester: SemesterResponse
-  onGradeClick: (gradeId: number) => void
+  semester: SemesterResponse;
+  onGradeClick: (gradeId: number) => void;
 }
 
 export function StudentDashboard({ semester, onGradeClick }: StudentDashboardProps) {
@@ -547,11 +554,11 @@ useMutation({
   mutationFn: (data) => api.create(data),
   onSuccess: () => {
     // Invalidate list queries
-    queryClient.invalidateQueries({ queryKey: ['items'] })
+    queryClient.invalidateQueries({ queryKey: ["items"] });
     // Specific invalidation
-    queryClient.invalidateQueries({ queryKey: ['items', page] })
-  }
-})
+    queryClient.invalidateQueries({ queryKey: ["items", page] });
+  },
+});
 ```
 
 ---
@@ -608,16 +615,16 @@ npm run format   # Prettier
 
 ## 14. Key Files Reference
 
-| File | Purpose |
-|------|---------|
-| `src/lib/auth.tsx` | AuthContext, useAuth() |
-| `src/lib/api/client.ts` | Fetch wrapper, JWT refresh |
-| `src/lib/api/types.ts` | All DTO interfaces |
-| `src/components/layout/AppLayout.tsx` | Main layout with navigation |
-| `src/components/layout/ProtectedOutlet.tsx` | Role-based access control |
-| `src/components/data-table/DataTable.tsx` | Reusable paginated table |
-| `src/router.tsx` | QueryClient + Router setup |
-| `src/routes/__root.tsx` | Root layout component |
+| File                                        | Purpose                     |
+| ------------------------------------------- | --------------------------- |
+| `src/lib/auth.tsx`                          | AuthContext, useAuth()      |
+| `src/lib/api/client.ts`                     | Fetch wrapper, JWT refresh  |
+| `src/lib/api/types.ts`                      | All DTO interfaces          |
+| `src/components/layout/AppLayout.tsx`       | Main layout with navigation |
+| `src/components/layout/ProtectedOutlet.tsx` | Role-based access control   |
+| `src/components/data-table/DataTable.tsx`   | Reusable paginated table    |
+| `src/router.tsx`                            | QueryClient + Router setup  |
+| `src/routes/__root.tsx`                     | Root layout component       |
 
 ---
 
@@ -631,9 +638,9 @@ export function StudentDashboardPage() {
     queryKey: ['student', 'semesters'],
     queryFn: studentApi.listSemesters
   })
-  
+
   const semesterId = semesters?.[0]?.id
-  
+
   const { data: grades } = useQuery({
     queryKey: ['student', 'grades', semesterId],
     queryFn: () => studentApi.getGrades(semesterId),
@@ -684,4 +691,3 @@ export function AdminStudentsPage() {
 - **Bundle size:** shadcn/ui components tree-shake well
 - **Query caching:** Prevents redundant API calls
 - **Lazy loading:** Routes are lazy by default
-

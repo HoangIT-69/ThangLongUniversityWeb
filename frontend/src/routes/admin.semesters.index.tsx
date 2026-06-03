@@ -57,18 +57,20 @@ function getProgress(startDate?: string | null, endDate?: string | null): number
 }
 
 function TimeStatusChip({ status }: { status: TimeStatus }) {
-  if (status === "active") return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-      Đang diễn ra
-    </span>
-  );
-  if (status === "upcoming") return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-      Sắp tới
-    </span>
-  );
+  if (status === "active")
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        Đang diễn ra
+      </span>
+    );
+  if (status === "upcoming")
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+        Sắp tới
+      </span>
+    );
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
       Đã kết thúc
@@ -77,16 +79,18 @@ function TimeStatusChip({ status }: { status: TimeStatus }) {
 }
 
 function RegistrationBadge({ s }: { s: StudentSemesterResponse }) {
-  if (s.locked) return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-      <Lock className="h-3 w-3" /> Đã chốt
-    </span>
-  );
-  if (s.registrationOpen) return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Đang mở
-    </span>
-  );
+  if (s.locked)
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+        <Lock className="h-3 w-3" /> Đã chốt
+      </span>
+    );
+  if (s.registrationOpen)
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Đang mở
+      </span>
+    );
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1 text-xs font-medium text-gray-500 ring-1 ring-gray-200">
       <CircleOff className="h-3 w-3" /> Đóng
@@ -95,11 +99,12 @@ function RegistrationBadge({ s }: { s: StudentSemesterResponse }) {
 }
 
 function ExamBadge({ s }: { s: StudentSemesterResponse }) {
-  if (s.examPublished) return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-blue-500" /> Đã công bố
-    </span>
-  );
+  if (s.examPublished)
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" /> Đã công bố
+      </span>
+    );
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1 text-xs font-medium text-gray-400">
       Chưa có
@@ -108,16 +113,18 @@ function ExamBadge({ s }: { s: StudentSemesterResponse }) {
 }
 
 function RetakeBadge({ s }: { s: StudentSemesterResponse }) {
-  if (s.retakeLocked) return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-      <Lock className="h-3 w-3" /> Đã chốt
-    </span>
-  );
-  if (s.retakeOpen) return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /> Đang mở
-    </span>
-  );
+  if (s.retakeLocked)
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+        <Lock className="h-3 w-3" /> Đã chốt
+      </span>
+    );
+  if (s.retakeOpen)
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-amber-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /> Đang mở
+      </span>
+    );
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1 text-xs font-medium text-gray-400">
       Chưa mở
@@ -160,19 +167,32 @@ function SemestersPage() {
 
   const createMutation = useMutation({
     mutationFn: (req: SemesterRequest) => adminApi.createSemester(req),
-    onSuccess: () => { invalidate(); toast.success("Đã tạo học kỳ mới"); setFormOpen(false); },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã tạo học kỳ mới");
+      setFormOpen(false);
+    },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Lỗi khi tạo học kỳ"),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, req }: { id: number; req: SemesterRequest }) => adminApi.updateSemester(id, req),
-    onSuccess: () => { invalidate(); toast.success("Đã cập nhật học kỳ"); setFormOpen(false); },
+    mutationFn: ({ id, req }: { id: number; req: SemesterRequest }) =>
+      adminApi.updateSemester(id, req),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã cập nhật học kỳ");
+      setFormOpen(false);
+    },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Lỗi khi cập nhật học kỳ"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => adminApi.deleteSemester(id),
-    onSuccess: () => { invalidate(); toast.success("Đã xóa học kỳ"); setDeleteTarget(null); },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã xóa học kỳ");
+      setDeleteTarget(null);
+    },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Lỗi khi xóa học kỳ"),
   });
 
@@ -190,7 +210,10 @@ function SemestersPage() {
   }
 
   function handleFormSubmit() {
-    if (!form.name.trim()) { toast.error("Tên học kỳ không được để trống"); return; }
+    if (!form.name.trim()) {
+      toast.error("Tên học kỳ không được để trống");
+      return;
+    }
     const req: SemesterRequest = {
       name: form.name,
       startDate: form.startDate || null,
@@ -210,7 +233,9 @@ function SemestersPage() {
     return (
       <div className="p-6 space-y-4">
         <Skeleton className="h-10 w-64" />
-        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 w-full rounded-xl" />)}
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-40 w-full rounded-xl" />
+        ))}
       </div>
     );
   }
@@ -236,7 +261,9 @@ function SemestersPage() {
 
       {semestersQuery.isError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          {semestersQuery.error instanceof Error ? semestersQuery.error.message : "Không tải được danh sách học kỳ"}
+          {semestersQuery.error instanceof Error
+            ? semestersQuery.error.message
+            : "Không tải được danh sách học kỳ"}
         </div>
       )}
 
@@ -283,7 +310,9 @@ function SemestersPage() {
                   {/* Status badges */}
                   <div className="mt-3 flex flex-wrap gap-4">
                     <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground font-medium">Đăng ký học phần</span>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Đăng ký học phần
+                      </span>
                       <RegistrationBadge s={s} />
                     </div>
                     <div className="flex flex-col gap-1">
@@ -299,11 +328,7 @@ function SemestersPage() {
 
                 {/* Right: actions */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => openEdit(s, e)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={(e) => openEdit(s, e)}>
                     <Pencil className="h-3.5 w-3.5 mr-1" />
                     Sửa
                   </Button>
@@ -312,14 +337,20 @@ function SemestersPage() {
                     size="sm"
                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     disabled={s.locked}
-                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(s); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteTarget(s);
+                    }}
                   >
                     <Trash2 className="h-3.5 w-3.5 mr-1" />
                     Xóa
                   </Button>
                   <Button
                     size="sm"
-                    onClick={(e) => { e.stopPropagation(); navigate({ to: "/admin/semesters/$id", params: { id: String(s.id) } }); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate({ to: "/admin/semesters/$id", params: { id: String(s.id) } });
+                    }}
                   >
                     Quản lý
                     <ChevronRight className="h-3.5 w-3.5 ml-1" />
@@ -346,7 +377,9 @@ function SemestersPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1">
-              <Label>Tên học kỳ <span className="text-destructive">*</span></Label>
+              <Label>
+                Tên học kỳ <span className="text-destructive">*</span>
+              </Label>
               <Input
                 placeholder="VD: Học kỳ 1 2024-2025"
                 value={form.name}
@@ -373,7 +406,9 @@ function SemestersPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setFormOpen(false)}>Hủy</Button>
+            <Button variant="outline" onClick={() => setFormOpen(false)}>
+              Hủy
+            </Button>
             <Button onClick={handleFormSubmit} disabled={isMutating}>
               {editTarget ? "Lưu thay đổi" : "Tạo học kỳ"}
             </Button>
@@ -382,13 +417,18 @@ function SemestersPage() {
       </Dialog>
 
       {/* Delete Confirm */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTarget(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xóa học kỳ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc muốn xóa học kỳ <strong>{deleteTarget?.name}</strong>?{" "}
-              Học kỳ chỉ có thể xóa khi chưa có lớp học phần.
+              Bạn có chắc muốn xóa học kỳ <strong>{deleteTarget?.name}</strong>? Học kỳ chỉ có thể
+              xóa khi chưa có lớp học phần.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -4,16 +4,30 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/data-table/DataTable";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { adminApi } from "@/lib/api/admin";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/enrollments")({
-  beforeLoad: () => { throw redirect({ to: "/admin/semesters" }); },
+  beforeLoad: () => {
+    throw redirect({ to: "/admin/semesters" });
+  },
   component: EnrollmentsPage,
 });
 
@@ -77,9 +91,7 @@ function EnrollmentsPage() {
       <PageHeader
         title="Đăng ký môn học"
         description={`${totalElements} đăng ký`}
-        actions={
-          <Button onClick={() => setOverrideOpen(true)}>Override đăng ký</Button>
-        }
+        actions={<Button onClick={() => setOverrideOpen(true)}>Override đăng ký</Button>}
       />
 
       {enrollmentsQuery.isError && (
@@ -97,17 +109,35 @@ function EnrollmentsPage() {
         searchPlaceholder="Tìm theo sinh viên, môn học, mã lớp…"
         toolbar={
           <div className="flex flex-wrap gap-2">
-            <Select value={semesterId} onValueChange={(v) => { setSemesterId(v); setPage(0); }}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Tất cả học kỳ" /></SelectTrigger>
+            <Select
+              value={semesterId}
+              onValueChange={(v) => {
+                setSemesterId(v);
+                setPage(0);
+              }}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Tất cả học kỳ" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>Tất cả học kỳ</SelectItem>
                 {semesters.map((s) => (
-                  <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={status} onValueChange={(v) => { setStatus(v); setPage(0); }}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tất cả trạng thái" /></SelectTrigger>
+            <Select
+              value={status}
+              onValueChange={(v) => {
+                setStatus(v);
+                setPage(0);
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Tất cả trạng thái" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>Tất cả trạng thái</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
@@ -149,7 +179,11 @@ function EnrollmentsPage() {
             key: "sem",
             header: "Học kỳ",
             accessor: (e) => e.semesterName ?? String(e.semesterId),
-            render: (e) => <span className="text-xs text-muted-foreground">{e.semesterName ?? e.semesterId}</span>,
+            render: (e) => (
+              <span className="text-xs text-muted-foreground">
+                {e.semesterName ?? e.semesterId}
+              </span>
+            ),
           },
           {
             key: "status",
@@ -161,12 +195,24 @@ function EnrollmentsPage() {
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-          <span>Trang {page + 1} / {totalPages}</span>
+          <span>
+            Trang {page + 1} / {totalPages}
+          </span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
               Trước
             </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
               Sau
             </Button>
           </div>
@@ -197,7 +243,9 @@ function EnrollmentsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOverrideOpen(false)}>Hủy</Button>
+            <Button variant="outline" onClick={() => setOverrideOpen(false)}>
+              Hủy
+            </Button>
             <Button onClick={handleOverrideSubmit} disabled={overrideMutation.isPending}>
               Xác nhận
             </Button>

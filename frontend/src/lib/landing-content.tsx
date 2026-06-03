@@ -12,7 +12,10 @@ export interface LandingProgram {
   description: string;
   duration: string;
 }
-export interface LandingStat { label: string; value: string }
+export interface LandingStat {
+  label: string;
+  value: string;
+}
 
 export interface LandingContent {
   heroTitle: string;
@@ -47,15 +50,50 @@ export const defaultContent: LandingContent = {
     { label: "Đối tác quốc tế", value: "60+" },
   ],
   programs: [
-    { id: "p1", name: "Công nghệ Thông tin", description: "Lập trình, AI, An toàn thông tin, Khoa học dữ liệu.", duration: "4 năm" },
-    { id: "p2", name: "Kinh tế & Quản trị", description: "Quản trị Kinh doanh, Tài chính – Ngân hàng, Marketing.", duration: "4 năm" },
-    { id: "p3", name: "Ngôn ngữ", description: "Ngôn ngữ Anh, Trung, Nhật, Hàn theo chuẩn quốc tế.", duration: "4 năm" },
-    { id: "p4", name: "Khoa học Sức khỏe", description: "Điều dưỡng, Y tế công cộng, Công tác xã hội.", duration: "4 năm" },
+    {
+      id: "p1",
+      name: "Công nghệ Thông tin",
+      description: "Lập trình, AI, An toàn thông tin, Khoa học dữ liệu.",
+      duration: "4 năm",
+    },
+    {
+      id: "p2",
+      name: "Kinh tế & Quản trị",
+      description: "Quản trị Kinh doanh, Tài chính – Ngân hàng, Marketing.",
+      duration: "4 năm",
+    },
+    {
+      id: "p3",
+      name: "Ngôn ngữ",
+      description: "Ngôn ngữ Anh, Trung, Nhật, Hàn theo chuẩn quốc tế.",
+      duration: "4 năm",
+    },
+    {
+      id: "p4",
+      name: "Khoa học Sức khỏe",
+      description: "Điều dưỡng, Y tế công cộng, Công tác xã hội.",
+      duration: "4 năm",
+    },
   ],
   news: [
-    { id: "n1", title: "Thông báo tuyển sinh đại học chính quy 2025", date: "2025-04-12", excerpt: "Nhà trường công bố phương án tuyển sinh năm 2025 với 6 phương thức xét tuyển." },
-    { id: "n2", title: "Hợp tác chiến lược với Đại học Tokyo", date: "2025-03-28", excerpt: "Mở rộng chương trình trao đổi sinh viên và nghiên cứu chung trong lĩnh vực AI." },
-    { id: "n3", title: "Khai mạc Tuần lễ Khởi nghiệp TLU 2025", date: "2025-03-10", excerpt: "Hơn 60 dự án sinh viên tranh tài tại sự kiện thường niên lớn nhất nhà trường." },
+    {
+      id: "n1",
+      title: "Thông báo tuyển sinh đại học chính quy 2025",
+      date: "2025-04-12",
+      excerpt: "Nhà trường công bố phương án tuyển sinh năm 2025 với 6 phương thức xét tuyển.",
+    },
+    {
+      id: "n2",
+      title: "Hợp tác chiến lược với Đại học Tokyo",
+      date: "2025-03-28",
+      excerpt: "Mở rộng chương trình trao đổi sinh viên và nghiên cứu chung trong lĩnh vực AI.",
+    },
+    {
+      id: "n3",
+      title: "Khai mạc Tuần lễ Khởi nghiệp TLU 2025",
+      date: "2025-03-10",
+      excerpt: "Hơn 60 dự án sinh viên tranh tài tại sự kiện thường niên lớn nhất nhà trường.",
+    },
   ],
   contactAddress: "Nghiêm Xuân Yêm, Đại Kim, Hoàng Mai, Hà Nội",
   contactPhone: "024 3858 7346",
@@ -82,12 +120,16 @@ export function LandingContentProvider({ children }: { children: ReactNode }) {
   const update = (patch: Partial<LandingContent>) => {
     setContent((c) => {
       const next = { ...c, ...patch };
-      try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
+      try {
+        localStorage.setItem(KEY, JSON.stringify(next));
+      } catch {}
       return next;
     });
   };
   const reset = () => {
-    try { localStorage.removeItem(KEY); } catch {}
+    try {
+      localStorage.removeItem(KEY);
+    } catch {}
     setContent(defaultContent);
   };
   return <Ctx.Provider value={{ content, update, reset }}>{children}</Ctx.Provider>;

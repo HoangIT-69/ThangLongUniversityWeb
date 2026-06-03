@@ -61,7 +61,10 @@ export function mapApiClassSection(
   };
 }
 
-export function buildOptionSets(data: ReferenceApiData, rows: ClassSectionRow[]): ClassSectionOptionSets {
+export function buildOptionSets(
+  data: ReferenceApiData,
+  rows: ClassSectionRow[],
+): ClassSectionOptionSets {
   return {
     courses: mergeCourseOptions(mapApiCourses(data.courses), rows),
     semesters: mergeSemesterOptions(mapApiSemesters(data.semesters), rows),

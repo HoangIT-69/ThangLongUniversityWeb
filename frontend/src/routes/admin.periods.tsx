@@ -63,7 +63,8 @@ function PeriodsPage() {
       setCreateOpen(false);
       toast.success("Da them tiet hoc");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Them tiet hoc that bai"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Them tiet hoc that bai"),
   });
 
   const updateMutation = useMutation({
@@ -74,7 +75,8 @@ function PeriodsPage() {
       setEditItem(null);
       toast.success("Da cap nhat tiet hoc");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Cap nhat tiet hoc that bai"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Cap nhat tiet hoc that bai"),
   });
 
   const deleteMutation = useMutation({
@@ -84,15 +86,13 @@ function PeriodsPage() {
       toast.success("Da xoa tiet hoc");
       setToDelete(null);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Xoa tiet hoc that bai"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Xoa tiet hoc that bai"),
   });
 
   return (
     <div>
-      <PageHeader
-        title="Tiet hoc"
-        description={`${data.length} tiet`}
-      />
+      <PageHeader title="Tiet hoc" description={`${data.length} tiet`} />
 
       <DataTable
         data={data}
@@ -108,7 +108,9 @@ function PeriodsPage() {
           {
             key: "periodNumber",
             header: "Tiet",
-            render: (period) => <span className="font-mono font-semibold">Tiet {period.periodNumber}</span>,
+            render: (period) => (
+              <span className="font-mono font-semibold">Tiet {period.periodNumber}</span>
+            ),
           },
           {
             key: "startTime",
@@ -229,7 +231,9 @@ function PeriodFormDialog({
               max={12}
               value={form.periodNumber}
               placeholder="VD: 1"
-              onChange={(event) => setForm((prev) => ({ ...prev, periodNumber: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, periodNumber: event.target.value }))
+              }
             />
           </div>
 
@@ -240,7 +244,9 @@ function PeriodFormDialog({
                 className="h-9 text-sm"
                 type="time"
                 value={form.startTime}
-                onChange={(event) => setForm((prev) => ({ ...prev, startTime: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, startTime: event.target.value }))
+                }
               />
             </div>
 
@@ -257,7 +263,12 @@ function PeriodFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+          >
             Huy
           </Button>
           <Button size="sm" disabled={submitting || !canSubmit} onClick={() => onSubmit(form)}>

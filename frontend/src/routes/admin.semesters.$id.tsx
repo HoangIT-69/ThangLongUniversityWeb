@@ -4,7 +4,14 @@ import { adminApi } from "@/lib/api/admin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, BookOpen, CalendarCheck, CalendarDays, ClipboardList, Layers } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  CalendarCheck,
+  CalendarDays,
+  ClipboardList,
+  Layers,
+} from "lucide-react";
 import { OverviewTab } from "@/features/semester-hub/OverviewTab";
 import { ClassSectionsTab } from "@/features/semester-hub/ClassSectionsTab";
 import { EnrollmentsTab } from "@/features/semester-hub/EnrollmentsTab";
@@ -37,7 +44,9 @@ function SemesterHubPage() {
       <div className="p-6">
         <p className="text-destructive">Không tìm thấy học kỳ (id={id})</p>
         <Link to="/admin/semesters">
-          <Button variant="outline" className="mt-4">← Quay lại</Button>
+          <Button variant="outline" className="mt-4">
+            ← Quay lại
+          </Button>
         </Link>
       </div>
     );
@@ -48,7 +57,10 @@ function SemesterHubPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link to="/admin/semesters" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-2">
+          <Link
+            to="/admin/semesters"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
+          >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             Quản lý Học kỳ
           </Link>
@@ -59,7 +71,8 @@ function SemesterHubPage() {
           <p className="text-sm text-muted-foreground mt-0.5">
             {semester.startDate
               ? new Intl.DateTimeFormat("vi-VN").format(new Date(semester.startDate))
-              : "?"}{" "}→{" "}
+              : "?"}{" "}
+            →{" "}
             {semester.endDate
               ? new Intl.DateTimeFormat("vi-VN").format(new Date(semester.endDate))
               : "?"}
@@ -76,16 +89,28 @@ function SemesterHubPage() {
       {/* Hub tabs */}
       <Tabs defaultValue="overview">
         <TabsList className="grid w-full grid-cols-4 h-11 bg-muted/50 p-1 rounded-lg">
-          <TabsTrigger value="overview" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5">
+          <TabsTrigger
+            value="overview"
+            className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5"
+          >
             <BookOpen className="h-3.5 w-3.5" /> Tổng quan
           </TabsTrigger>
-          <TabsTrigger value="class-sections" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5">
+          <TabsTrigger
+            value="class-sections"
+            className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5"
+          >
             <Layers className="h-3.5 w-3.5" /> Lớp học phần
           </TabsTrigger>
-          <TabsTrigger value="enrollments" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5">
+          <TabsTrigger
+            value="enrollments"
+            className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5"
+          >
             <ClipboardList className="h-3.5 w-3.5" /> Đăng ký học
           </TabsTrigger>
-          <TabsTrigger value="exam-schedules" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5">
+          <TabsTrigger
+            value="exam-schedules"
+            className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5"
+          >
             <CalendarCheck className="h-3.5 w-3.5" /> Lịch thi
           </TabsTrigger>
         </TabsList>

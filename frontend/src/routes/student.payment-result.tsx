@@ -105,7 +105,11 @@ function PaymentResultPage() {
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <Button asChild className="gap-2">
                 <Link to="/student/tuition">
-                  {isSuccess ? <ArrowLeft className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
+                  {isSuccess ? (
+                    <ArrowLeft className="h-4 w-4" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4" />
+                  )}
                   {isSuccess ? "Về trang học phí" : "Thử thanh toán lại"}
                 </Link>
               </Button>

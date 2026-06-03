@@ -75,7 +75,9 @@ export function searchUsers(q: string) {
 }
 
 export function createPrivateRoom(otherUserId: number) {
-  return apiRequest<ChatRoom>(`/api/chat/rooms/private?otherUserId=${otherUserId}`, { method: "POST" });
+  return apiRequest<ChatRoom>(`/api/chat/rooms/private?otherUserId=${otherUserId}`, {
+    method: "POST",
+  });
 }
 
 export function createGroupRoom(name: string, memberIds: number[]) {

@@ -4,10 +4,22 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/page-header";
 import { DataTable } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Calendar } from "lucide-react";
 import { toast } from "sonner";
@@ -15,7 +27,9 @@ import { adminApi } from "@/lib/api/admin";
 import type { ExamScheduleResponse } from "@/lib/api/types";
 
 export const Route = createFileRoute("/admin/exam-schedules")({
-  beforeLoad: () => { throw redirect({ to: "/admin/semesters" }); },
+  beforeLoad: () => {
+    throw redirect({ to: "/admin/semesters" });
+  },
   component: ExamSchedulesPage,
 });
 
@@ -57,8 +71,14 @@ function ExamSchedulesPage() {
     for (let j = i + 1; j < schedules.length; j++) {
       const a = schedules[i];
       const b = schedules[j];
-      if (a.examAt && b.examAt && a.examRoom && b.examRoom
-          && a.examAt === b.examAt && a.examRoom === b.examRoom) {
+      if (
+        a.examAt &&
+        b.examAt &&
+        a.examRoom &&
+        b.examRoom &&
+        a.examAt === b.examAt &&
+        a.examRoom === b.examRoom
+      ) {
         conflictKeys.add(a.classSectionId);
         conflictKeys.add(b.classSectionId);
       }
@@ -66,8 +86,13 @@ function ExamSchedulesPage() {
   }
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, req }: { id: number; req: { classSectionId: number; examAt: string | null; examRoom: string | null } }) =>
-      adminApi.updateExamSchedule(id, req),
+    mutationFn: ({
+      id,
+      req,
+    }: {
+      id: number;
+      req: { classSectionId: number; examAt: string | null; examRoom: string | null };
+    }) => adminApi.updateExamSchedule(id, req),
     onSuccess: () => {
       toast.success("Đã cập nhật lịch thi");
       queryClient.invalidateQueries({ queryKey: ["admin", "exam-schedules", semesterId] });
@@ -106,7 +131,11 @@ function ExamSchedulesPage() {
     <div>
       <PageHeader
         title="Quản lý lịch thi"
-        description={semesterId ? `${withExam.length}/${schedules.length} lớp đã có lịch thi` : "Chọn học kỳ để xem"}
+        description={
+          semesterId
+            ? `${withExam.length}/${schedules.length} lớp đã có lịch thi`
+            : "Chọn học kỳ để xem"
+        }
       />
 
       <div className="mb-4 flex items-center gap-3">
@@ -116,22 +145,30 @@ function ExamSchedulesPage() {
           </SelectTrigger>
           <SelectContent>
             {semesters.map((s) => (
-              <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+              <SelectItem key={s.id} value={String(s.id)}>
+                {s.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         {semesterId && (
           <div className="flex gap-2 text-sm text-muted-foreground">
             <Badge variant="secondary">{withExam.length} đã có lịch</Badge>
-            {withoutExam.length > 0 && <Badge variant="outline">{withoutExam.length} chưa có lịch</Badge>}
-            {conflictKeys.size > 0 && <Badge variant="destructive">{conflictKeys.size} lớp xung đột phòng</Badge>}
+            {withoutExam.length > 0 && (
+              <Badge variant="outline">{withoutExam.length} chưa có lịch</Badge>
+            )}
+            {conflictKeys.size > 0 && (
+              <Badge variant="destructive">{conflictKeys.size} lớp xung đột phòng</Badge>
+            )}
           </div>
         )}
       </div>
 
       {schedulesQuery.isError && (
         <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          {schedulesQuery.error instanceof Error ? schedulesQuery.error.message : "Không tải được lịch thi"}
+          {schedulesQuery.error instanceof Error
+            ? schedulesQuery.error.message
+            : "Không tải được lịch thi"}
         </div>
       )}
 
@@ -150,7 +187,9 @@ function ExamSchedulesPage() {
                 <div>
                   <div className="font-mono text-sm font-medium">{s.classCode}</div>
                   {conflictKeys.has(s.classSectionId) && (
-                    <Badge variant="destructive" className="text-xs mt-0.5">Xung đột phòng</Badge>
+                    <Badge variant="destructive" className="text-xs mt-0.5">
+                      Xung đột phòng
+                    </Badge>
                   )}
                 </div>
               ),
@@ -162,7 +201,9 @@ function ExamSchedulesPage() {
               render: (s) => (
                 <div>
                   <div className="font-medium">{s.courseName}</div>
-                  <div className="text-xs text-muted-foreground">{s.courseCode} · {s.credits} TC</div>
+                  <div className="text-xs text-muted-foreground">
+                    {s.courseCode} · {s.credits} TC
+                  </div>
                 </div>
               ),
             },
@@ -182,24 +223,26 @@ function ExamSchedulesPage() {
               key: "examAt",
               header: "Ngày & giờ thi",
               accessor: (s) => s.examAt ?? "",
-              render: (s) => s.examAt ? (
-                <div className="flex items-center gap-1 text-sm">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  {formatDateTime(s.examAt)}
-                </div>
-              ) : (
-                <span className="text-xs text-muted-foreground">Chưa có lịch</span>
-              ),
+              render: (s) =>
+                s.examAt ? (
+                  <div className="flex items-center gap-1 text-sm">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    {formatDateTime(s.examAt)}
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Chưa có lịch</span>
+                ),
             },
             {
               key: "examRoom",
               header: "Phòng thi",
               accessor: (s) => s.examRoom ?? "",
-              render: (s) => s.examRoom ? (
-                <span className="font-mono text-sm">{s.examRoom}</span>
-              ) : (
-                <span className="text-xs text-muted-foreground">-</span>
-              ),
+              render: (s) =>
+                s.examRoom ? (
+                  <span className="font-mono text-sm">{s.examRoom}</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">-</span>
+                ),
             },
             {
               key: "actions",
@@ -216,7 +259,12 @@ function ExamSchedulesPage() {
         />
       )}
 
-      <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
+      <Dialog
+        open={!!editTarget}
+        onOpenChange={(o) => {
+          if (!o) setEditTarget(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cập nhật lịch thi — {editTarget?.classCode}</DialogTitle>
@@ -243,10 +291,17 @@ function ExamSchedulesPage() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" size="sm" onClick={handleClearSchedule} disabled={updateMutation.isPending}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearSchedule}
+              disabled={updateMutation.isPending}
+            >
               Xóa lịch thi
             </Button>
-            <Button variant="outline" onClick={() => setEditTarget(null)}>Hủy</Button>
+            <Button variant="outline" onClick={() => setEditTarget(null)}>
+              Hủy
+            </Button>
             <Button onClick={handleSubmit} disabled={updateMutation.isPending}>
               Lưu
             </Button>
