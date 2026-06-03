@@ -100,7 +100,8 @@ function RoomsPage() {
       setEditItem(null);
       toast.success("Da cap nhat phong");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Cap nhat phong that bai"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Cap nhat phong that bai"),
   });
 
   const deleteMutation = useMutation({
@@ -115,10 +116,7 @@ function RoomsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Phong hoc"
-        description={`${filteredData.length} / ${data.length} phong`}
-      />
+      <PageHeader title="Phong hoc" description={`${filteredData.length} / ${data.length} phong`} />
 
       <DataTable
         data={filteredData}
@@ -315,7 +313,9 @@ function RoomFormDialog({
               <Label className="text-xs">Trang thai</Label>
               <Select
                 value={form.status}
-                onValueChange={(value) => setForm((prev) => ({ ...prev, status: value as RoomStatus }))}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, status: value as RoomStatus }))
+                }
               >
                 <SelectTrigger className="h-9 text-sm">
                   <SelectValue />
@@ -330,7 +330,12 @@ function RoomFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+          >
             Huy
           </Button>
           <Button size="sm" disabled={submitting || !canSubmit} onClick={() => onSubmit(form)}>

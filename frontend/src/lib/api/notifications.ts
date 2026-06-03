@@ -29,11 +29,15 @@ export function listStudentNotifications() {
 }
 
 export function markNotificationRead(id: string, role: NotificationRole = "STUDENT") {
-  return apiRequest<void>(`${notificationBasePath(role)}/${encodeURIComponent(id)}/read`, { method: "POST" });
+  return apiRequest<void>(`${notificationBasePath(role)}/${encodeURIComponent(id)}/read`, {
+    method: "POST",
+  });
 }
 
 export function markStudentNotificationRead(id: string) {
-  return apiRequest<void>(`/api/student/notifications/${encodeURIComponent(id)}/read`, { method: "POST" });
+  return apiRequest<void>(`/api/student/notifications/${encodeURIComponent(id)}/read`, {
+    method: "POST",
+  });
 }
 
 export function markAllNotificationsRead(role: NotificationRole = "STUDENT") {

@@ -1,13 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  Outlet,
-  createRootRouteWithContext,
-  HeadContent,
-  Scripts,
-  useRouterState,
-} from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth";
-import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { Toaster } from "@/components/ui/sonner";
 import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
@@ -24,11 +17,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Hệ thống quản lý Trường Đại học Thăng Long." },
       { name: "twitter:description", content: "Hệ thống quản lý Trường Đại học Thăng Long." },
       { property: "og:image", content: "/images/LogoThangLongUniversity.png" },
+      { property: "og:site_name", content: "Đại học Thăng Long" },
       { name: "twitter:image", content: "/images/LogoThangLongUniversity.png" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "theme-color", content: "#C8102E" },
       { property: "og:type", content: "website" },
     ],
     links: [
+      { rel: "icon", type: "image/png", href: "/images/LogoThangLongUniversity.png" },
+      { rel: "shortcut icon", type: "image/png", href: "/images/LogoThangLongUniversity.png" },
+      { rel: "apple-touch-icon", href: "/images/LogoThangLongUniversity.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://images.unsplash.com" },
@@ -42,7 +40,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       <div>
         <h1 className="text-6xl font-bold text-primary">404</h1>
         <p className="mt-2 text-muted-foreground">Trang không tồn tại.</p>
-        <a href="/" className="mt-4 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Về trang chủ</a>
+        <a
+          href="/"
+          className="mt-4 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
+          Về trang chủ
+        </a>
       </div>
     </div>
   ),
@@ -51,7 +54,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="vi">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />
@@ -73,17 +78,8 @@ function RootComponent() {
 }
 
 function PublicShell() {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const shouldHideHeader =
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/student") ||
-    pathname.startsWith("/teacher") ||
-    pathname === "/login" ||
-    pathname.endsWith(".xml");
-
   return (
     <>
-      {!shouldHideHeader && <SiteHeader />}
       <Outlet />
     </>
   );

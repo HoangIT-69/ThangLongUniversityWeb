@@ -90,15 +90,11 @@ const adminNavGroups: NavGroup[] = [
   },
   {
     heading: "Quản lý lớp",
-    items: [
-      { to: "/admin/semesters", label: "Quản lý học kỳ", icon: CalendarDays },
-    ],
+    items: [{ to: "/admin/semesters", label: "Quản lý học kỳ", icon: CalendarDays }],
   },
   {
     heading: "AI Chatbot",
-    items: [
-      { to: "/admin/knowledge", label: "Cơ sở tri thức", icon: Brain },
-    ],
+    items: [{ to: "/admin/knowledge", label: "Cơ sở tri thức", icon: Brain }],
   },
 ];
 

@@ -42,7 +42,10 @@ export function RetakeRegistrationsTab({ semesterId }: Props) {
           <SumCard label="Tổng đăng ký" value={summary.total} />
           <SumCard label="Chờ duyệt" value={summary.pending} />
           <SumCard label="Đã xác nhận" value={summary.registered} />
-          <SumCard label="Tổng phí" value={`${(summary.totalFeeCharged ?? 0).toLocaleString("vi-VN")}₫`} />
+          <SumCard
+            label="Tổng phí"
+            value={`${(summary.totalFeeCharged ?? 0).toLocaleString("vi-VN")}₫`}
+          />
         </div>
       )}
 
@@ -63,7 +66,9 @@ export function RetakeRegistrationsTab({ semesterId }: Props) {
           onClick={() =>
             void adminApi
               .exportRetakes(semesterId)
-              .catch((error) => toast.error(error instanceof Error ? error.message : "Không xuất được Excel"))
+              .catch((error) =>
+                toast.error(error instanceof Error ? error.message : "Không xuất được Excel"),
+              )
           }
         >
           <Download className="h-4 w-4 mr-1" />
@@ -93,20 +98,36 @@ export function RetakeRegistrationsTab({ semesterId }: Props) {
                 <tr key={r.id} className="border-t hover:bg-muted/30">
                   <td className="p-3 font-mono text-xs">{r.studentCode}</td>
                   <td className="p-3">{r.studentName}</td>
-                  <td className="p-3">{r.courseName} <span className="text-xs text-muted-foreground">({r.courseCode})</span></td>
+                  <td className="p-3">
+                    {r.courseName}{" "}
+                    <span className="text-xs text-muted-foreground">({r.courseCode})</span>
+                  </td>
                   <td className="p-3">
                     <RegistrationTypeBadge type={r.registrationType} />
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {r.examAt ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(r.examAt)) : "—"}
+                    {r.examAt
+                      ? new Intl.DateTimeFormat("vi-VN", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        }).format(new Date(r.examAt))
+                      : "—"}
                   </td>
                   <td className="p-3">{r.examRoom ?? "—"}</td>
-                  <td className="p-3 text-xs">{r.feeCharged != null ? `${r.feeCharged.toLocaleString("vi-VN")}₫` : "—"}</td>
-                  <td className="p-3"><RetakeStatusBadge status={r.status} /></td>
+                  <td className="p-3 text-xs">
+                    {r.feeCharged != null ? `${r.feeCharged.toLocaleString("vi-VN")}₫` : "—"}
+                  </td>
+                  <td className="p-3">
+                    <RetakeStatusBadge status={r.status} />
+                  </td>
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">Không có dữ liệu</td></tr>
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                    Không có dữ liệu
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -126,13 +147,21 @@ function SumCard({ label, value }: { label: string; value: string | number }) {
 }
 
 function RegistrationTypeBadge({ type }: { type?: string | null }) {
-  if (type === "RETAKE") return <Badge className="bg-red-100 text-red-800 hover:bg-red-100 text-xs">Thi lại</Badge>;
-  if (type === "IMPROVE") return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs">Nâng điểm</Badge>;
-  return <Badge variant="outline" className="text-xs">{type ?? "—"}</Badge>;
+  if (type === "RETAKE")
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100 text-xs">Thi lại</Badge>;
+  if (type === "IMPROVE")
+    return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs">Nâng điểm</Badge>;
+  return (
+    <Badge variant="outline" className="text-xs">
+      {type ?? "—"}
+    </Badge>
+  );
 }
 
 function RetakeStatusBadge({ status }: { status: string }) {
-  if (status === "REGISTERED") return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Đã xác nhận</Badge>;
-  if (status === "PENDING") return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Chờ xử lý</Badge>;
+  if (status === "REGISTERED")
+    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Đã xác nhận</Badge>;
+  if (status === "PENDING")
+    return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Chờ xử lý</Badge>;
   return <Badge variant="outline">{status}</Badge>;
 }

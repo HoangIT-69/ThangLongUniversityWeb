@@ -1,7 +1,14 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +34,18 @@ interface Props<T> {
   onRowClick?: (row: T) => void;
 }
 
-export function DataTable<T>({ data, columns, pageSize = 8, searchPlaceholder = "Tìm kiếm…", searchSlot, filterRow, emptyMessage = "Không có dữ liệu", toolbar, rowKey, onRowClick }: Props<T>) {
+export function DataTable<T>({
+  data,
+  columns,
+  pageSize = 8,
+  searchPlaceholder = "Tìm kiếm…",
+  searchSlot,
+  filterRow,
+  emptyMessage = "Không có dữ liệu",
+  toolbar,
+  rowKey,
+  onRowClick,
+}: Props<T>) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
 
@@ -55,15 +73,28 @@ export function DataTable<T>({ data, columns, pageSize = 8, searchPlaceholder = 
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={q}
-              onChange={(e) => { setQ(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setPage(1);
+              }}
               placeholder={searchPlaceholder}
               className="pl-9"
             />
           </div>
-          {searchSlot && <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-end">{searchSlot}</div>}
-          {filterRow && <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-end">{filterRow}</div>}
+          {searchSlot && (
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-end">
+              {searchSlot}
+            </div>
+          )}
+          {filterRow && (
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-end">
+              {filterRow}
+            </div>
+          )}
         </div>
-        {toolbar && <div className="flex flex-wrap items-center gap-2 lg:justify-end">{toolbar}</div>}
+        {toolbar && (
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">{toolbar}</div>
+        )}
       </div>
 
       <div className="overflow-x-auto">
@@ -71,7 +102,13 @@ export function DataTable<T>({ data, columns, pageSize = 8, searchPlaceholder = 
           <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40">
               {columns.map((c) => (
-                <TableHead key={c.key} className={cn("text-xs uppercase tracking-wide text-muted-foreground", c.className)}>
+                <TableHead
+                  key={c.key}
+                  className={cn(
+                    "text-xs uppercase tracking-wide text-muted-foreground",
+                    c.className,
+                  )}
+                >
                   {c.header}
                 </TableHead>
               ))}
@@ -80,7 +117,10 @@ export function DataTable<T>({ data, columns, pageSize = 8, searchPlaceholder = 
           <TableBody>
             {slice.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="py-16 text-center text-sm text-muted-foreground">
+                <TableCell
+                  colSpan={columns.length}
+                  className="py-16 text-center text-sm text-muted-foreground"
+                >
                   {emptyMessage}
                 </TableCell>
               </TableRow>
@@ -105,14 +145,29 @@ export function DataTable<T>({ data, columns, pageSize = 8, searchPlaceholder = 
 
       <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
         <div>
-          Hiển thị {slice.length === 0 ? 0 : (safePage - 1) * pageSize + 1}–{(safePage - 1) * pageSize + slice.length} / {filtered.length}
+          Hiển thị {slice.length === 0 ? 0 : (safePage - 1) * pageSize + 1}–
+          {(safePage - 1) * pageSize + slice.length} / {filtered.length}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            disabled={safePage === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="tabular-nums">{safePage} / {totalPages}</span>
-          <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+          <span className="tabular-nums">
+            {safePage} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            disabled={safePage === totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

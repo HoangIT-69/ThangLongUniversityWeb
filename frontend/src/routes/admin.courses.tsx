@@ -104,7 +104,8 @@ function CoursesPage() {
       setCreateOpen(false);
       toast.success("Da tao mon hoc");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Tao mon hoc that bai"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Tao mon hoc that bai"),
   });
 
   const updateMutation = useMutation({
@@ -115,7 +116,8 @@ function CoursesPage() {
       setEditItem(null);
       toast.success("Da cap nhat mon hoc");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Cap nhat mon hoc that bai"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Cap nhat mon hoc that bai"),
   });
 
   const deleteMutation = useMutation({
@@ -125,15 +127,13 @@ function CoursesPage() {
       toast.success("Da xoa mon hoc");
       setToDelete(null);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Xoa mon hoc that bai"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Xoa mon hoc that bai"),
   });
 
   return (
     <div>
-      <PageHeader
-        title="Mon hoc"
-        description={`${filteredRows.length} / ${rows.length} mon`}
-      />
+      <PageHeader title="Mon hoc" description={`${filteredRows.length} / ${rows.length} mon`} />
 
       <DataTable
         data={filteredRows}
@@ -200,7 +200,6 @@ function CoursesPage() {
             render: (course) => (
               <div className="min-w-56">
                 <div className="font-medium">{course.name}</div>
-                
               </div>
             ),
           },
@@ -228,7 +227,9 @@ function CoursesPage() {
             header: "Tien quyet",
             accessor: (course) => course.courseTypeLabel ?? course.courseType ?? "",
             render: (course) => (
-              <span className="text-xs text-muted-foreground">{course.courseTypeLabel ?? course.courseType ?? "-"}</span>
+              <span className="text-xs text-muted-foreground">
+                {course.courseTypeLabel ?? course.courseType ?? "-"}
+              </span>
             ),
           },
           {
@@ -362,7 +363,11 @@ function CourseFormDialog({
     .filter((course) => course.id !== editingId)
     .filter((course) => {
       const term = prerequisiteSearch.trim().toLowerCase();
-      return !term || course.code.toLowerCase().includes(term) || course.name.toLowerCase().includes(term);
+      return (
+        !term ||
+        course.code.toLowerCase().includes(term) ||
+        course.name.toLowerCase().includes(term)
+      );
     })
     .slice(0, 80);
 
@@ -408,7 +413,10 @@ function CourseFormDialog({
 
           <div className="flex flex-col gap-1">
             <Label className="text-xs">Nganh</Label>
-            <Select value={form.majorId || none} onValueChange={(value) => set("majorId", value === none ? "" : value)}>
+            <Select
+              value={form.majorId || none}
+              onValueChange={(value) => set("majorId", value === none ? "" : value)}
+            >
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Chon nganh" />
               </SelectTrigger>
@@ -425,7 +433,10 @@ function CourseFormDialog({
 
           <div className="flex flex-col gap-1">
             <Label className="text-xs">Tien quyet</Label>
-            <Select value={form.courseType} onValueChange={(value) => set("courseType", value as CourseType)}>
+            <Select
+              value={form.courseType}
+              onValueChange={(value) => set("courseType", value as CourseType)}
+            >
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Chon loai mon" />
               </SelectTrigger>
@@ -456,11 +467,16 @@ function CourseFormDialog({
             />
             <div className="max-h-40 overflow-y-auto rounded-md border">
               {prerequisiteOptions.length === 0 ? (
-                <p className="p-3 text-center text-xs text-muted-foreground">Khong co mon hoc phu hop</p>
+                <p className="p-3 text-center text-xs text-muted-foreground">
+                  Khong co mon hoc phu hop
+                </p>
               ) : (
                 <div className="divide-y">
                   {prerequisiteOptions.map((course) => (
-                    <label key={course.id} className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted/50">
+                    <label
+                      key={course.id}
+                      className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted/50"
+                    >
                       <input
                         type="checkbox"
                         className="rounded"
@@ -479,12 +495,19 @@ function CourseFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+          >
             Huy
           </Button>
           <Button
             size="sm"
-            disabled={submitting || !form.code.trim() || !form.name.trim() || !form.credits || !form.majorId}
+            disabled={
+              submitting || !form.code.trim() || !form.name.trim() || !form.credits || !form.majorId
+            }
             onClick={() => onSubmit(form)}
           >
             {submitting ? "Dang luu..." : "Luu"}

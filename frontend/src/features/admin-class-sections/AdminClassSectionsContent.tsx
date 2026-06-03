@@ -9,11 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/lib/api/admin";
 import type { AdminClassSectionStatus } from "@/lib/api/types";
-import {
-  buildOptionSets,
-  mapApiClassSection,
-  toClassSectionRequest,
-} from "./classSectionMappers";
+import { buildOptionSets, mapApiClassSection, toClassSectionRequest } from "./classSectionMappers";
 import { ClassSectionFormDialog } from "./ClassSectionFormDialog";
 import { ClassSectionStudentsDialog } from "./ClassSectionStudentsDialog";
 import { ClassSectionsByMajor } from "./ClassSectionsByMajor";
@@ -73,10 +69,7 @@ export function AdminClassSectionsContent() {
 
   const rowsWithMajors = useMemo(() => {
     const courseMajorMap = new Map(
-      (coursesQuery.data ?? []).map((course) => [
-        course.id,
-        course.majorName ?? "-",
-      ]),
+      (coursesQuery.data ?? []).map((course) => [course.id, course.majorName ?? "-"]),
     );
     return rows.map((row) => ({
       ...row,
@@ -206,9 +199,7 @@ export function AdminClassSectionsContent() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Không tải được API lớp học phần</AlertTitle>
-          <AlertDescription>
-            {classSectionsQuery.error.message}
-          </AlertDescription>
+          <AlertDescription>{classSectionsQuery.error.message}</AlertDescription>
         </Alert>
       )}
       {(coursesQuery.isError || semestersQuery.isError) && (
@@ -289,4 +280,3 @@ function getNextStatus(status: AdminClassSectionStatus): AdminClassSectionStatus
   if (status === "CLOSED") return "OPEN";
   return "OPEN";
 }
-

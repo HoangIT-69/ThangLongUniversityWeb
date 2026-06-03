@@ -5,14 +5,7 @@ import { useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/api/types";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import {
-  AlertCircle,
-  BookOpen,
-  CheckCircle2,
-  Loader2,
-  Sparkles,
-  WifiOff,
-} from "lucide-react";
+import { AlertCircle, BookOpen, CheckCircle2, Loader2, Sparkles, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
@@ -138,7 +131,11 @@ function LoginPage() {
         <div className="relative flex h-full flex-col justify-between p-10">
           <Link to="/" className="inline-flex items-center" aria-label="Về trang chính">
             <div className="grid h-24 w-40 place-items-center rounded-2xl p-3 shadow-xl transition-transform hover:scale-[1.02]">
-              <img src={schoolLogo} alt="Logo Đại học Thăng Long" className="h-full w-full object-contain" />
+              <img
+                src={schoolLogo}
+                alt="Logo Đại học Thăng Long"
+                className="h-full w-full object-contain"
+              />
             </div>
           </Link>
 
@@ -166,7 +163,10 @@ function LoginPage() {
             {/* Stats row */}
             <div className="mt-8 flex gap-6">
               {HERO_STATS.map((stat) => (
-                <div key={stat.label} className="border-l border-white/20 pl-4 first:border-l-0 first:pl-0">
+                <div
+                  key={stat.label}
+                  className="border-l border-white/20 pl-4 first:border-l-0 first:pl-0"
+                >
                   <div className="text-2xl font-bold text-white">{stat.value}</div>
                   <div className="mt-0.5 text-xs text-white/60">{stat.label}</div>
                 </div>
@@ -176,44 +176,56 @@ function LoginPage() {
         </div>
       </div>
 
-      <div className="flex min-h-screen flex-col bg-background">
-        <div className="relative h-48 overflow-hidden lg:hidden">
-          <img
-            src="/images/DHTL.jpg"
-            alt="Toàn cảnh khuôn viên Đại học Thăng Long"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 p-5">
-            <Link
-              to="/"
-              className="grid h-20 w-36 place-items-center rounded-2xl bg-white/95 p-2 shadow-xl transition-transform hover:scale-[1.02]"
-              aria-label="Về trang chính"
-            >
-              <img src={schoolLogo} alt="Logo Đại học Thăng Long" className="h-full w-full object-contain" />
-            </Link>
+      <div className="flex min-h-screen flex-col bg-[#f6f8fc] lg:bg-background">
+        <div className="px-6 pt-8 text-center lg:hidden">
+          <Link
+            to="/"
+            className="mx-auto grid h-32 w-48 place-items-center transition-transform hover:scale-[1.02]"
+            aria-label="Về trang chính"
+          >
+            <img
+              src={schoolLogo}
+              alt="Logo Đại học Thăng Long"
+              className="h-full w-full object-contain"
+            />
+          </Link>
+          <div className="mx-auto mt-5 max-w-xs">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#C8102E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-[#C8102E]">
+              <BookOpen className="h-3.5 w-3.5" />
+              Cổng đào tạo
+            </div>
+            <h1 className="mt-4 text-2xl font-bold leading-tight text-[#00204A]">
+              Trường Đại học Thăng Long
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Không gian truy cập dành cho sinh viên, giảng viên và cán bộ quản lý.
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-1 items-center justify-center px-6 py-8 sm:px-10">
-          <div className="w-full max-w-sm">
+        <div className="flex flex-1 items-start justify-center px-4 py-7 sm:px-6 lg:items-center lg:px-10 lg:py-8">
+          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:max-w-md sm:p-7 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
             <div className="mb-1 hidden items-center gap-2 lg:flex">
               <BookOpen className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">Hệ thống Quản lý Đào tạo</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Hệ thống Quản lý Đào tạo
+              </span>
             </div>
 
-            <h2 className="text-2xl font-bold tracking-tight">Đăng nhập</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">
+            <h2 className="text-2xl font-bold tracking-tight text-[#00204A] lg:text-foreground">
+              Đăng nhập
+            </h2>
+            <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
               Sử dụng tài khoản được cấp để truy cập hệ thống.
             </p>
 
-            <div className="mt-4 flex items-center gap-1.5 text-xs">
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1.5 text-xs">
               {statusIcon}
               <span className={statusTextClassName}>{statusText}</span>
             </div>
 
-            <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-              <div className="space-y-1.5">
+            <form className="mt-6 space-y-5" onSubmit={onSubmit}>
+              <div className="space-y-2">
                 <Label htmlFor="username">Tên đăng nhập</Label>
                 <Input
                   id="username"
@@ -221,11 +233,11 @@ function LoginPage() {
                   onChange={(event) => setUsername(event.target.value)}
                   placeholder="Nhập tên đăng nhập"
                   autoComplete="username"
-                  className="h-11"
+                  className="h-12 lg:h-11"
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="password">Mật khẩu</Label>
                 <Input
                   id="password"
@@ -233,7 +245,7 @@ function LoginPage() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="current-password"
-                  className="h-11"
+                  className="h-12 lg:h-11"
                 />
               </div>
 
@@ -244,10 +256,12 @@ function LoginPage() {
                 </div>
               )}
 
-              <Button type="submit" className="h-11 w-full text-sm font-semibold" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
+              <Button
+                type="submit"
+                className="h-12 w-full text-sm font-semibold lg:h-11"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Đăng nhập
               </Button>
             </form>
@@ -261,4 +275,3 @@ function LoginPage() {
     </div>
   );
 }
-

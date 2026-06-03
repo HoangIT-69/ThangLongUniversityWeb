@@ -23,12 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -135,7 +130,10 @@ function HomeroomFormDialog({
 
           <div className="flex flex-col gap-1">
             <Label className="text-xs">Nganh</Label>
-            <Select value={form.majorId || none} onValueChange={(value) => set("majorId", value === none ? "" : value)}>
+            <Select
+              value={form.majorId || none}
+              onValueChange={(value) => set("majorId", value === none ? "" : value)}
+            >
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Chon nganh" />
               </SelectTrigger>
@@ -174,7 +172,12 @@ function HomeroomFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+          >
             Huy
           </Button>
           <Button
@@ -206,7 +209,9 @@ function AddStudentsDialog({
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
-  const [advisorId, setAdvisorId] = useState(homeroom.advisorId != null ? String(homeroom.advisorId) : "");
+  const [advisorId, setAdvisorId] = useState(
+    homeroom.advisorId != null ? String(homeroom.advisorId) : "",
+  );
 
   useEffect(() => {
     if (open) {
@@ -229,10 +234,13 @@ function AddStudentsDialog({
   });
 
   const major = majors.find((item) => item.id === homeroom.majorId);
-  const advisorOptions = (teachersQuery.data ?? []).filter((teacher) => teacherMatchesMajor(teacher, major));
+  const advisorOptions = (teachersQuery.data ?? []).filter((teacher) =>
+    teacherMatchesMajor(teacher, major),
+  );
 
   const addMutation = useMutation({
-    mutationFn: () => adminApi.addStudentsToHomeroom(homeroom.id, { studentIds: Array.from(selected) }),
+    mutationFn: () =>
+      adminApi.addStudentsToHomeroom(homeroom.id, { studentIds: Array.from(selected) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms", homeroom.id, "students"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms"] });
@@ -307,7 +315,10 @@ function AddStudentsDialog({
           <section className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
             <div className="flex flex-col gap-1">
               <Label className="text-xs">Co van hoc tap</Label>
-              <Select value={advisorId || none} onValueChange={(value) => setAdvisorId(value === none ? "" : value)}>
+              <Select
+                value={advisorId || none}
+                onValueChange={(value) => setAdvisorId(value === none ? "" : value)}
+              >
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Chon co van" />
                 </SelectTrigger>
@@ -389,7 +400,12 @@ function AddStudentsDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={addMutation.isPending}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={addMutation.isPending}
+          >
             Dong
           </Button>
           <Button
@@ -449,7 +465,8 @@ function HomeroomDetailSheet({
           <SheetHeader className="mb-4">
             <SheetTitle className="text-base">{homeroom.className}</SheetTitle>
             <p className="text-xs text-muted-foreground">
-              {homeroom.majorName ?? "-"} - Khoa {homeroom.cohort ?? "-"} - {academicRange(homeroom.academicYear)}
+              {homeroom.majorName ?? "-"} - Khoa {homeroom.cohort ?? "-"} -{" "}
+              {academicRange(homeroom.academicYear)}
             </p>
           </SheetHeader>
 
@@ -465,7 +482,11 @@ function HomeroomDetailSheet({
               </div>
               <div>
                 <span className="text-muted-foreground">Trang thai: </span>
-                <span className={homeroom.isActive ? "font-medium text-green-600" : "text-muted-foreground"}>
+                <span
+                  className={
+                    homeroom.isActive ? "font-medium text-green-600" : "text-muted-foreground"
+                  }
+                >
                   {homeroom.isActive ? "Dang hoat dong" : "Het nien khoa"}
                 </span>
               </div>
@@ -476,7 +497,12 @@ function HomeroomDetailSheet({
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Danh sach sinh vien ({students.length})
                 </h3>
-                <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setAddOpen(true)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => setAddOpen(true)}
+                >
                   <UserPlus className="h-3.5 w-3.5" />
                   Them SV / co van
                 </Button>
@@ -485,7 +511,9 @@ function HomeroomDetailSheet({
               {studentsQuery.isLoading ? (
                 <p className="py-4 text-center text-xs text-muted-foreground">Dang tai...</p>
               ) : students.length === 0 ? (
-                <p className="py-4 text-center text-xs text-muted-foreground">Chua co sinh vien trong lop</p>
+                <p className="py-4 text-center text-xs text-muted-foreground">
+                  Chua co sinh vien trong lop
+                </p>
               ) : (
                 <div className="max-h-96 overflow-y-auto rounded-md border">
                   <div className="divide-y">
@@ -587,8 +615,15 @@ function HomeroomsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, form, advisorId }: { id: number; form: HomeroomForm; advisorId?: number | null }) =>
-      adminApi.updateHomeroom(id, toHomeroomPayload(form, advisorId)),
+    mutationFn: ({
+      id,
+      form,
+      advisorId,
+    }: {
+      id: number;
+      form: HomeroomForm;
+      advisorId?: number | null;
+    }) => adminApi.updateHomeroom(id, toHomeroomPayload(form, advisorId)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms"] });
       setEditItem(null);
@@ -608,7 +643,10 @@ function HomeroomsPage() {
 
   return (
     <div>
-      <PageHeader title="Lop hanh chinh" description={`${filteredData.length} / ${data.length} lop`} />
+      <PageHeader
+        title="Lop hanh chinh"
+        description={`${filteredData.length} / ${data.length} lop`}
+      />
 
       <DataTable
         data={filteredData}
@@ -676,28 +714,37 @@ function HomeroomsPage() {
           {
             key: "majorName",
             header: "Nganh",
-            render: (homeroom) => <span className="text-xs text-muted-foreground">{homeroom.majorName ?? "-"}</span>,
+            render: (homeroom) => (
+              <span className="text-xs text-muted-foreground">{homeroom.majorName ?? "-"}</span>
+            ),
           },
           {
             key: "cohort",
             header: "Khoa",
-            render: (homeroom) => <span className="text-xs tabular-nums">{homeroom.cohort ?? "-"}</span>,
+            render: (homeroom) => (
+              <span className="text-xs tabular-nums">{homeroom.cohort ?? "-"}</span>
+            ),
           },
           {
             key: "academicYear",
             header: "Nien khoa",
             accessor: (homeroom) => academicRange(homeroom.academicYear),
-            render: (homeroom) => <span className="text-xs tabular-nums">{academicRange(homeroom.academicYear)}</span>,
+            render: (homeroom) => (
+              <span className="text-xs tabular-nums">{academicRange(homeroom.academicYear)}</span>
+            ),
           },
           {
             key: "studentCount",
             header: "So SV",
-            render: (homeroom) => <span className="text-xs tabular-nums">{homeroom.studentCount ?? "-"}</span>,
+            render: (homeroom) => (
+              <span className="text-xs tabular-nums">{homeroom.studentCount ?? "-"}</span>
+            ),
           },
           {
             key: "isActive",
             header: "Trang thai",
-            accessor: (homeroom) => (homeroom.isActive === false ? "Het nien khoa" : "Dang hoat dong"),
+            accessor: (homeroom) =>
+              homeroom.isActive === false ? "Het nien khoa" : "Dang hoat dong",
             render: (homeroom) =>
               homeroom.isActive === false ? (
                 <span className="text-xs text-muted-foreground">Het nien khoa</span>
@@ -712,10 +759,20 @@ function HomeroomsPage() {
             searchable: false,
             render: (homeroom) => (
               <div className="flex justify-end gap-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDetailItem(homeroom)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setDetailItem(homeroom)}
+                >
                   <Eye className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditItem(homeroom)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setEditItem(homeroom)}
+                >
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
                 <Button
@@ -746,7 +803,10 @@ function HomeroomsPage() {
         onOpenChange={(value) => !value && setEditItem(null)}
         title={`Sua lop ${editItem?.className ?? ""}`}
         initial={editItem ? toForm(editItem) : emptyForm}
-        onSubmit={(form) => editItem && updateMutation.mutate({ id: editItem.id, form, advisorId: editItem.advisorId })}
+        onSubmit={(form) =>
+          editItem &&
+          updateMutation.mutate({ id: editItem.id, form, advisorId: editItem.advisorId })
+        }
         submitting={updateMutation.isPending}
       />
 

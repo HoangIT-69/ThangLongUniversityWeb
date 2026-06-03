@@ -204,7 +204,10 @@ function KnowledgePage() {
               </thead>
               <tbody>
                 {docs.map((doc) => (
-                  <tr key={doc.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={doc.id}
+                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                  >
                     <td className="px-4 py-3 max-w-xs">
                       <div className="font-medium truncate">{doc.title}</div>
                       {doc.sourceUrl && (
@@ -342,7 +345,9 @@ function KnowledgePage() {
             </Button>
             <Button
               onClick={() => ingestTextMut.mutate(textForm)}
-              disabled={ingestTextMut.isPending || !textForm.title.trim() || !textForm.content.trim()}
+              disabled={
+                ingestTextMut.isPending || !textForm.title.trim() || !textForm.content.trim()
+              }
             >
               {ingestTextMut.isPending ? "Đang xử lý..." : "Thêm và nhúng"}
             </Button>

@@ -23,7 +23,9 @@ function AcademicResults() {
         data={studentsQuery.data ?? []}
         rowKey={(student) => String(student.id)}
         searchPlaceholder="Tìm theo mã sinh viên, họ tên, email..."
-        emptyMessage={studentsQuery.isError ? "Không tải được dữ liệu sinh viên" : "Chưa có dữ liệu sinh viên"}
+        emptyMessage={
+          studentsQuery.isError ? "Không tải được dữ liệu sinh viên" : "Chưa có dữ liệu sinh viên"
+        }
         columns={[
           {
             key: "studentCode",
@@ -38,7 +40,9 @@ function AcademicResults() {
           {
             key: "email",
             header: "Email",
-            render: (student) => <span className="text-sm text-muted-foreground">{student.email}</span>,
+            render: (student) => (
+              <span className="text-sm text-muted-foreground">{student.email}</span>
+            ),
           },
           {
             key: "majorName",

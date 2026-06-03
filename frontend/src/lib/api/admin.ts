@@ -62,17 +62,70 @@ export const adminApi = {
 
   listStudents: () => apiRequest<AdminStudentResponse[]>("/api/admin/students"),
   createStudent: (request: AdminStudentRequest) =>
-    apiRequest<AdminStudentResponse>("/api/admin/students", { method: "POST", body: jsonBody(request) }),
-  updateStudent: (id: number | string, request: Partial<AdminStudentRequest> & { majorId?: number; academicYear?: number; cohort?: string; homeroomId?: number | null; status?: string; trainingType?: string; gender?: string; phone?: string; nationalId?: string; placeOfBirth?: string; hometown?: string; permanentAddress?: string; currentAddress?: string; emergencyContact?: string; address?: string }) =>
-    apiRequest<AdminStudentResponse>(`/api/admin/students/${id}`, { method: "PUT", body: jsonBody(request) }),
+    apiRequest<AdminStudentResponse>("/api/admin/students", {
+      method: "POST",
+      body: jsonBody(request),
+    }),
+  updateStudent: (
+    id: number | string,
+    request: Partial<AdminStudentRequest> & {
+      majorId?: number;
+      academicYear?: number;
+      cohort?: string;
+      homeroomId?: number | null;
+      status?: string;
+      trainingType?: string;
+      gender?: string;
+      phone?: string;
+      nationalId?: string;
+      placeOfBirth?: string;
+      hometown?: string;
+      permanentAddress?: string;
+      currentAddress?: string;
+      emergencyContact?: string;
+      address?: string;
+    },
+  ) =>
+    apiRequest<AdminStudentResponse>(`/api/admin/students/${id}`, {
+      method: "PUT",
+      body: jsonBody(request),
+    }),
   deleteStudent: (id: number | string) =>
     apiRequest<string>(`/api/admin/students/${id}`, { method: "DELETE" }),
 
   listTeachers: () => apiRequest<AdminTeacherResponse[]>("/api/admin/teachers"),
   createTeacher: (request: AdminTeacherRequest) =>
-    apiRequest<AdminTeacherResponse>("/api/admin/teachers", { method: "POST", body: jsonBody(request) }),
-  updateTeacher: (id: number | string, request: Partial<Pick<AdminTeacherResponse, "email" | "fullName" | "dob" | "gender" | "phone" | "nationalId" | "placeOfBirth" | "hometown" | "permanentAddress" | "currentAddress" | "emergencyContact" | "departmentId" | "degree" | "address" | "status">>) =>
-    apiRequest<AdminTeacherResponse>(`/api/admin/teachers/${id}`, { method: "PUT", body: jsonBody(request) }),
+    apiRequest<AdminTeacherResponse>("/api/admin/teachers", {
+      method: "POST",
+      body: jsonBody(request),
+    }),
+  updateTeacher: (
+    id: number | string,
+    request: Partial<
+      Pick<
+        AdminTeacherResponse,
+        | "email"
+        | "fullName"
+        | "dob"
+        | "gender"
+        | "phone"
+        | "nationalId"
+        | "placeOfBirth"
+        | "hometown"
+        | "permanentAddress"
+        | "currentAddress"
+        | "emergencyContact"
+        | "departmentId"
+        | "degree"
+        | "address"
+        | "status"
+      >
+    >,
+  ) =>
+    apiRequest<AdminTeacherResponse>(`/api/admin/teachers/${id}`, {
+      method: "PUT",
+      body: jsonBody(request),
+    }),
   deleteTeacher: (id: number | string) =>
     apiRequest<string>(`/api/admin/teachers/${id}`, { method: "DELETE" }),
 
@@ -80,15 +133,24 @@ export const adminApi = {
   createCourse: (request: AdminCourseRequest) =>
     apiRequest<CourseResponse>("/api/admin/courses", { method: "POST", body: jsonBody(request) }),
   updateCourse: (id: number | string, request: AdminCourseRequest) =>
-    apiRequest<CourseResponse>(`/api/admin/courses/${id}`, { method: "PUT", body: jsonBody(request) }),
+    apiRequest<CourseResponse>(`/api/admin/courses/${id}`, {
+      method: "PUT",
+      body: jsonBody(request),
+    }),
   deleteCourse: (id: number | string) =>
     apiRequest<string>(`/api/admin/courses/${id}`, { method: "DELETE" }),
 
   listSemesters: () => apiRequest<StudentSemesterResponse[]>("/api/admin/semesters"),
   createSemester: (request: SemesterRequest) =>
-    apiRequest<StudentSemesterResponse>("/api/admin/semesters", { method: "POST", body: jsonBody(request) }),
+    apiRequest<StudentSemesterResponse>("/api/admin/semesters", {
+      method: "POST",
+      body: jsonBody(request),
+    }),
   updateSemester: (id: number | string, request: SemesterRequest) =>
-    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${id}`, { method: "PUT", body: jsonBody(request) }),
+    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${id}`, {
+      method: "PUT",
+      body: jsonBody(request),
+    }),
   deleteSemester: (id: number | string) =>
     apiRequest<string>(`/api/admin/semesters/${id}`, { method: "DELETE" }),
   getSemesterSummary: (id: number | string) =>
@@ -103,18 +165,26 @@ export const adminApi = {
   lockRetakeSemester: (semesterId: number | string) =>
     apiRequest<string>(`/api/admin/enrollments/lock-retakes/${semesterId}`, { method: "POST" }),
   lockEnrollments: (semesterId: number | string) =>
-    apiRequest<{ message: string }>(`/api/admin/semesters/${semesterId}/lock-enrollments`, { method: "POST" }),
+    apiRequest<{ message: string }>(`/api/admin/semesters/${semesterId}/lock-enrollments`, {
+      method: "POST",
+    }),
   publishExamSchedules: (semesterId: number | string) =>
-    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/publish-exams`, { method: "POST" }),
+    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/publish-exams`, {
+      method: "POST",
+    }),
   unpublishExamSchedules: (semesterId: number | string) =>
-    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/unpublish-exams`, { method: "POST" }),
+    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/unpublish-exams`, {
+      method: "POST",
+    }),
   toggleRetakeRegistration: (semesterId: number | string, open: boolean) =>
     apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/toggle-retake`, {
       method: "POST",
       body: jsonBody({ open }),
     }),
   lockRetakes: (semesterId: number | string) =>
-    apiRequest<{ message: string }>(`/api/admin/semesters/${semesterId}/lock-retakes`, { method: "POST" }),
+    apiRequest<{ message: string }>(`/api/admin/semesters/${semesterId}/lock-retakes`, {
+      method: "POST",
+    }),
 
   listEnrollments: (params?: {
     semesterId?: number;
@@ -131,7 +201,7 @@ export const adminApi = {
     if (params?.size != null) qs.set("size", String(params.size));
     const query = qs.toString();
     return apiRequest<PageResponse<AdminEnrollmentResponse>>(
-      `/api/admin/enrollments${query ? `?${query}` : ""}`
+      `/api/admin/enrollments${query ? `?${query}` : ""}`,
     );
   },
   overrideEnrollment: (request: AdminOverrideEnrollmentRequest) =>
@@ -141,25 +211,34 @@ export const adminApi = {
     }),
 
   getExamSchedules: (semesterId: number | string) =>
-    apiRequest<ExamScheduleResponse[]>(`/api/admin/class-sections/semester/${semesterId}/exam-schedules`),
+    apiRequest<ExamScheduleResponse[]>(
+      `/api/admin/class-sections/semester/${semesterId}/exam-schedules`,
+    ),
   updateExamSchedule: (classSectionId: number | string, request: ExamScheduleRequest) =>
     apiRequest<ExamScheduleResponse>(`/api/admin/class-sections/${classSectionId}/exam-schedule`, {
       method: "PUT",
       body: jsonBody(request),
     }),
   batchUpdateExamSchedules: (semesterId: number | string, requests: ExamScheduleRequest[]) =>
-    apiRequest<ExamScheduleResponse[]>(`/api/admin/class-sections/semester/${semesterId}/exam-schedules`, {
-      method: "PUT",
-      body: jsonBody(requests),
-    }),
+    apiRequest<ExamScheduleResponse[]>(
+      `/api/admin/class-sections/semester/${semesterId}/exam-schedules`,
+      {
+        method: "PUT",
+        body: jsonBody(requests),
+      },
+    ),
 
   listExamRegistrations: (semesterId: number, status?: string) => {
     const qs = new URLSearchParams({ semesterId: String(semesterId) });
     if (status) qs.set("status", status);
-    return apiRequest<AdminExamRegistrationResponse[]>(`/api/admin/exam-registrations?${qs.toString()}`);
+    return apiRequest<AdminExamRegistrationResponse[]>(
+      `/api/admin/exam-registrations?${qs.toString()}`,
+    );
   },
   getExamRegistrationSummary: (semesterId: number) =>
-    apiRequest<AdminExamRegistrationSummary>(`/api/admin/exam-registrations/semester/${semesterId}/summary`),
+    apiRequest<AdminExamRegistrationSummary>(
+      `/api/admin/exam-registrations/semester/${semesterId}/summary`,
+    ),
 
   listClassSectionsBySemester: (semesterId: number | string) =>
     apiRequest<ClassSectionResponse[]>(`/api/admin/class-sections/semester/${semesterId}`),
@@ -207,7 +286,10 @@ export const adminApi = {
   createMajor: (request: AdminMajorRequest) =>
     apiRequest<MajorResponse>("/api/admin/majors", { method: "POST", body: jsonBody(request) }),
   updateMajor: (id: number | string, request: AdminMajorRequest) =>
-    apiRequest<MajorResponse>(`/api/admin/majors/${id}`, { method: "PUT", body: jsonBody(request) }),
+    apiRequest<MajorResponse>(`/api/admin/majors/${id}`, {
+      method: "PUT",
+      body: jsonBody(request),
+    }),
   deleteMajor: (id: number | string) =>
     apiRequest<string>(`/api/admin/majors/${id}`, { method: "DELETE" }),
 
@@ -223,15 +305,24 @@ export const adminApi = {
   createPeriod: (request: PeriodRequest) =>
     apiRequest<PeriodResponse>("/api/admin/periods", { method: "POST", body: jsonBody(request) }),
   updatePeriod: (id: number | string, request: PeriodRequest) =>
-    apiRequest<PeriodResponse>(`/api/admin/periods/${id}`, { method: "PUT", body: jsonBody(request) }),
+    apiRequest<PeriodResponse>(`/api/admin/periods/${id}`, {
+      method: "PUT",
+      body: jsonBody(request),
+    }),
   deletePeriod: (id: number | string) =>
     apiRequest<string>(`/api/admin/periods/${id}`, { method: "DELETE" }),
 
   listDepartments: () => apiRequest<DepartmentResponse[]>("/api/admin/departments"),
   createDepartment: (req: DepartmentRequest) =>
-    apiRequest<DepartmentResponse>("/api/admin/departments", { method: "POST", body: jsonBody(req) }),
+    apiRequest<DepartmentResponse>("/api/admin/departments", {
+      method: "POST",
+      body: jsonBody(req),
+    }),
   updateDepartment: (id: number | string, req: DepartmentRequest) =>
-    apiRequest<DepartmentResponse>(`/api/admin/departments/${id}`, { method: "PUT", body: jsonBody(req) }),
+    apiRequest<DepartmentResponse>(`/api/admin/departments/${id}`, {
+      method: "PUT",
+      body: jsonBody(req),
+    }),
   deleteDepartment: (id: number | string) =>
     apiRequest<string>(`/api/admin/departments/${id}`, { method: "DELETE" }),
 
@@ -239,13 +330,21 @@ export const adminApi = {
   createHomeroom: (req: HomeroomRequest) =>
     apiRequest<HomeroomResponse>("/api/admin/homerooms", { method: "POST", body: jsonBody(req) }),
   updateHomeroom: (id: number | string, req: HomeroomRequest) =>
-    apiRequest<HomeroomResponse>(`/api/admin/homerooms/${id}`, { method: "PUT", body: jsonBody(req) }),
+    apiRequest<HomeroomResponse>(`/api/admin/homerooms/${id}`, {
+      method: "PUT",
+      body: jsonBody(req),
+    }),
   deleteHomeroom: (id: number | string) =>
     apiRequest<string>(`/api/admin/homerooms/${id}`, { method: "DELETE" }),
   listHomeroomStudents: (id: number | string) =>
     apiRequest<AdminStudentResponse[]>(`/api/admin/homerooms/${id}/students`),
   addStudentsToHomeroom: (id: number | string, req: HomeroomStudentsRequest) =>
-    apiRequest<string>(`/api/admin/homerooms/${id}/students`, { method: "POST", body: jsonBody(req) }),
+    apiRequest<string>(`/api/admin/homerooms/${id}/students`, {
+      method: "POST",
+      body: jsonBody(req),
+    }),
   removeStudentFromHomeroom: (homeroomId: number | string, studentId: number | string) =>
-    apiRequest<string>(`/api/admin/homerooms/${homeroomId}/students/${studentId}`, { method: "DELETE" }),
+    apiRequest<string>(`/api/admin/homerooms/${homeroomId}/students/${studentId}`, {
+      method: "DELETE",
+    }),
 };

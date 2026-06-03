@@ -15,7 +15,10 @@ import {
   mapApiClassSection,
   toClassSectionRequest,
 } from "@/features/admin-class-sections/classSectionMappers";
-import type { ClassSectionFormValues, ClassSectionRow } from "@/features/admin-class-sections/types";
+import type {
+  ClassSectionFormValues,
+  ClassSectionRow,
+} from "@/features/admin-class-sections/types";
 
 interface Props {
   semesterId: number;
@@ -33,11 +36,31 @@ export function ClassSectionsTab({ semesterId }: Props) {
     queryKey: ["admin", "class-sections", "semester", semesterId],
     queryFn: () => adminApi.listClassSectionsBySemester(semesterId),
   });
-  const coursesQuery = useQuery({ queryKey: ["admin", "courses"], queryFn: adminApi.listCourses, staleTime: 300_000 });
-  const semestersQuery = useQuery({ queryKey: ["admin", "semesters"], queryFn: adminApi.listSemesters, staleTime: 300_000 });
-  const teachersQuery = useQuery({ queryKey: ["admin", "teachers"], queryFn: adminApi.listTeachers, staleTime: 300_000 });
-  const roomsQuery = useQuery({ queryKey: ["admin", "rooms"], queryFn: adminApi.listRooms, staleTime: 3_600_000 });
-  const periodsQuery = useQuery({ queryKey: ["admin", "periods"], queryFn: adminApi.listPeriods, staleTime: 3_600_000 });
+  const coursesQuery = useQuery({
+    queryKey: ["admin", "courses"],
+    queryFn: adminApi.listCourses,
+    staleTime: 300_000,
+  });
+  const semestersQuery = useQuery({
+    queryKey: ["admin", "semesters"],
+    queryFn: adminApi.listSemesters,
+    staleTime: 300_000,
+  });
+  const teachersQuery = useQuery({
+    queryKey: ["admin", "teachers"],
+    queryFn: adminApi.listTeachers,
+    staleTime: 300_000,
+  });
+  const roomsQuery = useQuery({
+    queryKey: ["admin", "rooms"],
+    queryFn: adminApi.listRooms,
+    staleTime: 3_600_000,
+  });
+  const periodsQuery = useQuery({
+    queryKey: ["admin", "periods"],
+    queryFn: adminApi.listPeriods,
+    staleTime: 3_600_000,
+  });
 
   const allSections = classSectionsQuery.data ?? [];
   const rows = allSections.map((section) => mapApiClassSection(section));
@@ -54,7 +77,9 @@ export function ClassSectionsTab({ semesterId }: Props) {
   );
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["admin", "class-sections", "semester", semesterId] });
+    queryClient.invalidateQueries({
+      queryKey: ["admin", "class-sections", "semester", semesterId],
+    });
     queryClient.invalidateQueries({ queryKey: ["admin", "exam-schedules", semesterId] });
     queryClient.invalidateQueries({ queryKey: ["admin", "semester-summary", semesterId] });
     queryClient.invalidateQueries({ queryKey: ["admin", "semesters"] });
@@ -68,7 +93,8 @@ export function ClassSectionsTab({ semesterId }: Props) {
       toast.success("Đã tạo lớp học phần");
       closeForm();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Không tạo được lớp học phần"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Không tạo được lớp học phần"),
   });
 
   const updateMutation = useMutation({
@@ -79,7 +105,8 @@ export function ClassSectionsTab({ semesterId }: Props) {
       toast.success("Đã cập nhật lớp học phần");
       closeForm();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Không cập nhật được lớp học phần"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Không cập nhật được lớp học phần"),
   });
 
   const deleteMutation = useMutation({
@@ -89,7 +116,8 @@ export function ClassSectionsTab({ semesterId }: Props) {
       toast.success("Đã xóa lớp học phần");
       setDeleteTarget(null);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Không xóa được lớp học phần"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Không xóa được lớp học phần"),
   });
 
   if (classSectionsQuery.isLoading) return <Skeleton className="h-64 w-full" />;
@@ -98,17 +126,20 @@ export function ClassSectionsTab({ semesterId }: Props) {
   }
 
   const sections = search
-    ? allSections.filter((section) =>
-        section.classCode?.toLowerCase().includes(search.toLowerCase()) ||
-        section.courseName?.toLowerCase().includes(search.toLowerCase()) ||
-        section.teacherName?.toLowerCase().includes(search.toLowerCase())
+    ? allSections.filter(
+        (section) =>
+          section.classCode?.toLowerCase().includes(search.toLowerCase()) ||
+          section.courseName?.toLowerCase().includes(search.toLowerCase()) ||
+          section.teacherName?.toLowerCase().includes(search.toLowerCase()),
       )
     : allSections;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{allSections.length} lớp học phần trong học kỳ này</p>
+        <p className="text-sm text-muted-foreground">
+          {allSections.length} lớp học phần trong học kỳ này
+        </p>
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -154,11 +185,20 @@ export function ClassSectionsTab({ semesterId }: Props) {
                   <td className="p-3">{section.courseName}</td>
                   <td className="p-3">{section.teacherName ?? "-"}</td>
                   <td className="p-3">{section.room ?? "-"}</td>
-                  <td className="p-3">{section.currentSlots ?? 0}/{section.maxSlots ?? "-"}</td>
-                  <td className="p-3"><ExamTypeBadge type={section.examType} /></td>
+                  <td className="p-3">
+                    {section.currentSlots ?? 0}/{section.maxSlots ?? "-"}
+                  </td>
+                  <td className="p-3">
+                    <ExamTypeBadge type={section.examType} />
+                  </td>
                   <td className="p-3">
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setStudentsSection(row)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setStudentsSection(row)}
+                      >
                         <Users className="h-4 w-4" />
                       </Button>
                       <Button
@@ -187,7 +227,9 @@ export function ClassSectionsTab({ semesterId }: Props) {
             })}
             {sections.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">Chưa có lớp học phần</td>
+                <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                  Chưa có lớp học phần
+                </td>
               </tr>
             )}
           </tbody>
@@ -239,8 +281,9 @@ export function ClassSectionsTab({ semesterId }: Props) {
 
 function ExamTypeBadge({ type }: { type?: string | null }) {
   if (!type || type === "NORMAL") return <Badge variant="outline">Thường</Badge>;
-  if (type === "RETAKE") return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Thi lại</Badge>;
-  if (type === "IMPROVE") return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Nâng điểm</Badge>;
+  if (type === "RETAKE")
+    return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Thi lại</Badge>;
+  if (type === "IMPROVE")
+    return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Nâng điểm</Badge>;
   return <Badge variant="outline">{type}</Badge>;
 }
-

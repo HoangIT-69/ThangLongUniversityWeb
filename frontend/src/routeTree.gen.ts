@@ -9,21 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TuitionRouteImport } from './routes/tuition'
 import { Route as TeacherRouteImport } from './routes/teacher'
 import { Route as StudentRouteImport } from './routes/student'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ScholarshipsRouteImport } from './routes/scholarships'
-import { Route as ProgramsRouteImport } from './routes/programs'
-import { Route as NewsRouteImport } from './routes/news'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as ArticlesRouteImport } from './routes/articles'
-import { Route as AdmissionsRouteImport } from './routes/admissions'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ArticlesIndexRouteImport } from './routes/articles.index'
 import { Route as TeacherTimetableRouteImport } from './routes/teacher.timetable'
 import { Route as TeacherProfileRouteImport } from './routes/teacher.profile'
 import { Route as TeacherGradesRouteImport } from './routes/teacher.grades'
@@ -44,7 +35,6 @@ import { Route as StudentCurriculumRouteImport } from './routes/student.curricul
 import { Route as StudentCourseRegistrationRouteImport } from './routes/student.course-registration'
 import { Route as StudentChatRouteImport } from './routes/student.chat'
 import { Route as StudentAcademicResultsRouteImport } from './routes/student.academic-results'
-import { Route as ArticlesSlugRouteImport } from './routes/articles.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTeachersRouteImport } from './routes/admin.teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin.students'
@@ -69,11 +59,6 @@ import { Route as AdminSemestersIndexRouteImport } from './routes/admin.semester
 import { Route as AdminSemestersIdRouteImport } from './routes/admin.semesters.$id'
 import { Route as TeacherClassesClassSectionIdStudentsRouteImport } from './routes/teacher.classes.$classSectionId.students'
 
-const TuitionRoute = TuitionRouteImport.update({
-  id: '/tuition',
-  path: '/tuition',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TeacherRoute = TeacherRouteImport.update({
   id: '/teacher',
   path: '/teacher',
@@ -89,39 +74,9 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ScholarshipsRoute = ScholarshipsRouteImport.update({
-  id: '/scholarships',
-  path: '/scholarships',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProgramsRoute = ProgramsRouteImport.update({
-  id: '/programs',
-  path: '/programs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NewsRoute = NewsRouteImport.update({
-  id: '/news',
-  path: '/news',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ArticlesRoute = ArticlesRouteImport.update({
-  id: '/articles',
-  path: '/articles',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdmissionsRoute = AdmissionsRouteImport.update({
-  id: '/admissions',
-  path: '/admissions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -129,20 +84,10 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const ArticlesIndexRoute = ArticlesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ArticlesRoute,
 } as any)
 const TeacherTimetableRoute = TeacherTimetableRouteImport.update({
   id: '/timetable',
@@ -245,11 +190,6 @@ const StudentAcademicResultsRoute = StudentAcademicResultsRouteImport.update({
   id: '/academic-results',
   path: '/academic-results',
   getParentRoute: () => StudentRoute,
-} as any)
-const ArticlesSlugRoute = ArticlesSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => ArticlesRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -370,19 +310,11 @@ const TeacherClassesClassSectionIdStudentsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/admissions': typeof AdmissionsRoute
-  '/articles': typeof ArticlesRouteWithChildren
-  '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
-  '/news': typeof NewsRoute
-  '/programs': typeof ProgramsRoute
-  '/scholarships': typeof ScholarshipsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/student': typeof StudentRouteWithChildren
   '/teacher': typeof TeacherRouteWithChildren
-  '/tuition': typeof TuitionRoute
   '/admin/academic-results': typeof AdminAcademicResultsRoute
   '/admin/chat': typeof AdminChatRoute
   '/admin/class-sections': typeof AdminClassSectionsRoute
@@ -403,7 +335,6 @@ export interface FileRoutesByFullPath {
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
   '/admin/users': typeof AdminUsersRoute
-  '/articles/$slug': typeof ArticlesSlugRoute
   '/student/academic-results': typeof StudentAcademicResultsRoute
   '/student/chat': typeof StudentChatRoute
   '/student/course-registration': typeof StudentCourseRegistrationRoute
@@ -424,25 +355,17 @@ export interface FileRoutesByFullPath {
   '/teacher/grades': typeof TeacherGradesRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/timetable': typeof TeacherTimetableRoute
-  '/articles/': typeof ArticlesIndexRoute
   '/admin/semesters/$id': typeof AdminSemestersIdRoute
   '/admin/semesters/': typeof AdminSemestersIndexRoute
   '/teacher/classes/$classSectionId/students': typeof TeacherClassesClassSectionIdStudentsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/admissions': typeof AdmissionsRoute
-  '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
-  '/news': typeof NewsRoute
-  '/programs': typeof ProgramsRoute
-  '/scholarships': typeof ScholarshipsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/student': typeof StudentRouteWithChildren
   '/teacher': typeof TeacherRouteWithChildren
-  '/tuition': typeof TuitionRoute
   '/admin/academic-results': typeof AdminAcademicResultsRoute
   '/admin/chat': typeof AdminChatRoute
   '/admin/class-sections': typeof AdminClassSectionsRoute
@@ -462,7 +385,6 @@ export interface FileRoutesByTo {
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
   '/admin/users': typeof AdminUsersRoute
-  '/articles/$slug': typeof ArticlesSlugRoute
   '/student/academic-results': typeof StudentAcademicResultsRoute
   '/student/chat': typeof StudentChatRoute
   '/student/course-registration': typeof StudentCourseRegistrationRoute
@@ -483,7 +405,6 @@ export interface FileRoutesByTo {
   '/teacher/grades': typeof TeacherGradesRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/timetable': typeof TeacherTimetableRoute
-  '/articles': typeof ArticlesIndexRoute
   '/admin/semesters/$id': typeof AdminSemestersIdRoute
   '/admin/semesters': typeof AdminSemestersIndexRoute
   '/teacher/classes/$classSectionId/students': typeof TeacherClassesClassSectionIdStudentsRoute
@@ -491,19 +412,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/admissions': typeof AdmissionsRoute
-  '/articles': typeof ArticlesRouteWithChildren
-  '/contact': typeof ContactRoute
   '/login': typeof LoginRoute
-  '/news': typeof NewsRoute
-  '/programs': typeof ProgramsRoute
-  '/scholarships': typeof ScholarshipsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/student': typeof StudentRouteWithChildren
   '/teacher': typeof TeacherRouteWithChildren
-  '/tuition': typeof TuitionRoute
   '/admin/academic-results': typeof AdminAcademicResultsRoute
   '/admin/chat': typeof AdminChatRoute
   '/admin/class-sections': typeof AdminClassSectionsRoute
@@ -524,7 +437,6 @@ export interface FileRoutesById {
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
   '/admin/users': typeof AdminUsersRoute
-  '/articles/$slug': typeof ArticlesSlugRoute
   '/student/academic-results': typeof StudentAcademicResultsRoute
   '/student/chat': typeof StudentChatRoute
   '/student/course-registration': typeof StudentCourseRegistrationRoute
@@ -545,7 +457,6 @@ export interface FileRoutesById {
   '/teacher/grades': typeof TeacherGradesRoute
   '/teacher/profile': typeof TeacherProfileRoute
   '/teacher/timetable': typeof TeacherTimetableRoute
-  '/articles/': typeof ArticlesIndexRoute
   '/admin/semesters/$id': typeof AdminSemestersIdRoute
   '/admin/semesters/': typeof AdminSemestersIndexRoute
   '/teacher/classes/$classSectionId/students': typeof TeacherClassesClassSectionIdStudentsRoute
@@ -554,19 +465,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
     | '/admin'
-    | '/admissions'
-    | '/articles'
-    | '/contact'
     | '/login'
-    | '/news'
-    | '/programs'
-    | '/scholarships'
     | '/sitemap.xml'
     | '/student'
     | '/teacher'
-    | '/tuition'
     | '/admin/academic-results'
     | '/admin/chat'
     | '/admin/class-sections'
@@ -587,7 +490,6 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/admin/teachers'
     | '/admin/users'
-    | '/articles/$slug'
     | '/student/academic-results'
     | '/student/chat'
     | '/student/course-registration'
@@ -608,25 +510,17 @@ export interface FileRouteTypes {
     | '/teacher/grades'
     | '/teacher/profile'
     | '/teacher/timetable'
-    | '/articles/'
     | '/admin/semesters/$id'
     | '/admin/semesters/'
     | '/teacher/classes/$classSectionId/students'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/about'
     | '/admin'
-    | '/admissions'
-    | '/contact'
     | '/login'
-    | '/news'
-    | '/programs'
-    | '/scholarships'
     | '/sitemap.xml'
     | '/student'
     | '/teacher'
-    | '/tuition'
     | '/admin/academic-results'
     | '/admin/chat'
     | '/admin/class-sections'
@@ -646,7 +540,6 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/admin/teachers'
     | '/admin/users'
-    | '/articles/$slug'
     | '/student/academic-results'
     | '/student/chat'
     | '/student/course-registration'
@@ -667,26 +560,17 @@ export interface FileRouteTypes {
     | '/teacher/grades'
     | '/teacher/profile'
     | '/teacher/timetable'
-    | '/articles'
     | '/admin/semesters/$id'
     | '/admin/semesters'
     | '/teacher/classes/$classSectionId/students'
   id:
     | '__root__'
     | '/'
-    | '/about'
     | '/admin'
-    | '/admissions'
-    | '/articles'
-    | '/contact'
     | '/login'
-    | '/news'
-    | '/programs'
-    | '/scholarships'
     | '/sitemap.xml'
     | '/student'
     | '/teacher'
-    | '/tuition'
     | '/admin/academic-results'
     | '/admin/chat'
     | '/admin/class-sections'
@@ -707,7 +591,6 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/admin/teachers'
     | '/admin/users'
-    | '/articles/$slug'
     | '/student/academic-results'
     | '/student/chat'
     | '/student/course-registration'
@@ -728,7 +611,6 @@ export interface FileRouteTypes {
     | '/teacher/grades'
     | '/teacher/profile'
     | '/teacher/timetable'
-    | '/articles/'
     | '/admin/semesters/$id'
     | '/admin/semesters/'
     | '/teacher/classes/$classSectionId/students'
@@ -736,30 +618,15 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AdmissionsRoute: typeof AdmissionsRoute
-  ArticlesRoute: typeof ArticlesRouteWithChildren
-  ContactRoute: typeof ContactRoute
   LoginRoute: typeof LoginRoute
-  NewsRoute: typeof NewsRoute
-  ProgramsRoute: typeof ProgramsRoute
-  ScholarshipsRoute: typeof ScholarshipsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudentRoute: typeof StudentRouteWithChildren
   TeacherRoute: typeof TeacherRouteWithChildren
-  TuitionRoute: typeof TuitionRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tuition': {
-      id: '/tuition'
-      path: '/tuition'
-      fullPath: '/tuition'
-      preLoaderRoute: typeof TuitionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/teacher': {
       id: '/teacher'
       path: '/teacher'
@@ -781,53 +648,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/scholarships': {
-      id: '/scholarships'
-      path: '/scholarships'
-      fullPath: '/scholarships'
-      preLoaderRoute: typeof ScholarshipsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/programs': {
-      id: '/programs'
-      path: '/programs'
-      fullPath: '/programs'
-      preLoaderRoute: typeof ProgramsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/news': {
-      id: '/news'
-      path: '/news'
-      fullPath: '/news'
-      preLoaderRoute: typeof NewsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/articles': {
-      id: '/articles'
-      path: '/articles'
-      fullPath: '/articles'
-      preLoaderRoute: typeof ArticlesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admissions': {
-      id: '/admissions'
-      path: '/admissions'
-      fullPath: '/admissions'
-      preLoaderRoute: typeof AdmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -837,26 +662,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/articles/': {
-      id: '/articles/'
-      path: '/'
-      fullPath: '/articles/'
-      preLoaderRoute: typeof ArticlesIndexRouteImport
-      parentRoute: typeof ArticlesRoute
     }
     '/teacher/timetable': {
       id: '/teacher/timetable'
@@ -997,13 +808,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/student/academic-results'
       preLoaderRoute: typeof StudentAcademicResultsRouteImport
       parentRoute: typeof StudentRoute
-    }
-    '/articles/$slug': {
-      id: '/articles/$slug'
-      path: '/$slug'
-      fullPath: '/articles/$slug'
-      preLoaderRoute: typeof ArticlesSlugRouteImport
-      parentRoute: typeof ArticlesRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -1231,20 +1035,6 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface ArticlesRouteChildren {
-  ArticlesSlugRoute: typeof ArticlesSlugRoute
-  ArticlesIndexRoute: typeof ArticlesIndexRoute
-}
-
-const ArticlesRouteChildren: ArticlesRouteChildren = {
-  ArticlesSlugRoute: ArticlesSlugRoute,
-  ArticlesIndexRoute: ArticlesIndexRoute,
-}
-
-const ArticlesRouteWithChildren = ArticlesRoute._addFileChildren(
-  ArticlesRouteChildren,
-)
-
 interface StudentRouteChildren {
   StudentAcademicResultsRoute: typeof StudentAcademicResultsRoute
   StudentChatRoute: typeof StudentChatRoute
@@ -1318,19 +1108,11 @@ const TeacherRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
-  AdmissionsRoute: AdmissionsRoute,
-  ArticlesRoute: ArticlesRouteWithChildren,
-  ContactRoute: ContactRoute,
   LoginRoute: LoginRoute,
-  NewsRoute: NewsRoute,
-  ProgramsRoute: ProgramsRoute,
-  ScholarshipsRoute: ScholarshipsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudentRoute: StudentRouteWithChildren,
   TeacherRoute: TeacherRouteWithChildren,
-  TuitionRoute: TuitionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -61,7 +61,9 @@ export function ExamSchedulesTab({ semesterId }: Props) {
       adminApi.updateExamSchedule(classSectionId, req),
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["admin", "exam-schedules", semesterId] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "class-sections", "semester", semesterId] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "class-sections", "semester", semesterId],
+      });
       queryClient.invalidateQueries({ queryKey: ["admin", "semester-summary", semesterId] });
       queryClient.invalidateQueries({ queryKey: ["admin", "exam-registrations", semesterId] });
       toast.success("Đã lưu lịch thi");
@@ -71,14 +73,23 @@ export function ExamSchedulesTab({ semesterId }: Props) {
         return next;
       });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Không lưu được lịch thi"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Không lưu được lịch thi"),
   });
 
-  function getField<K extends keyof ExamScheduleRequest>(id: number, field: K, original: ExamScheduleRequest[K]) {
+  function getField<K extends keyof ExamScheduleRequest>(
+    id: number,
+    field: K,
+    original: ExamScheduleRequest[K],
+  ) {
     return edits[id]?.[field] !== undefined ? edits[id][field] : original;
   }
 
-  function setField<K extends keyof ExamScheduleRequest>(id: number, field: K, value: ExamScheduleRequest[K]) {
+  function setField<K extends keyof ExamScheduleRequest>(
+    id: number,
+    field: K,
+    value: ExamScheduleRequest[K],
+  ) {
     setEdits((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
   }
 
@@ -107,7 +118,8 @@ export function ExamSchedulesTab({ semesterId }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{scheduledCount}</span>/{schedules.length} lớp đã có lịch thi
+            <span className="font-medium text-foreground">{scheduledCount}</span>/{schedules.length}{" "}
+            lớp đã có lịch thi
           </span>
           <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
             Bao gồm {retakeCount} đăng ký thi lại/nâng điểm
@@ -119,7 +131,9 @@ export function ExamSchedulesTab({ semesterId }: Props) {
           onClick={() =>
             void adminApi
               .exportExamSchedules(semesterId)
-              .catch((error) => toast.error(error instanceof Error ? error.message : "Không xuất được Excel"))
+              .catch((error) =>
+                toast.error(error instanceof Error ? error.message : "Không xuất được Excel"),
+              )
           }
         >
           <Download className="mr-1 h-4 w-4" />
@@ -142,11 +156,18 @@ export function ExamSchedulesTab({ semesterId }: Props) {
           </thead>
           <tbody>
             {schedules.map((schedule) => {
-              const examAt = getField(schedule.classSectionId, "examAt", schedule.examAt) as string | null;
-              const examRoom = getField(schedule.classSectionId, "examRoom", schedule.examRoom) as string | null;
+              const examAt = getField(schedule.classSectionId, "examAt", schedule.examAt) as
+                | string
+                | null;
+              const examRoom = getField(schedule.classSectionId, "examRoom", schedule.examRoom) as
+                | string
+                | null;
               const hasEdit = !!edits[schedule.classSectionId];
               const noSchedule = !schedule.examAt && !edits[schedule.classSectionId]?.examAt;
-              const extraStudents = getMatchingRetakeRegistrations(schedule, retakeRegistrations).length;
+              const extraStudents = getMatchingRetakeRegistrations(
+                schedule,
+                retakeRegistrations,
+              ).length;
 
               return (
                 <tr
@@ -162,7 +183,11 @@ export function ExamSchedulesTab({ semesterId }: Props) {
                       className="h-8 w-44 text-xs"
                       value={examAt ? examAt.slice(0, 16) : ""}
                       onChange={(event) =>
-                        setField(schedule.classSectionId, "examAt", event.target.value ? `${event.target.value}:00` : null)
+                        setField(
+                          schedule.classSectionId,
+                          "examAt",
+                          event.target.value ? `${event.target.value}:00` : null,
+                        )
                       }
                     />
                   </td>
@@ -170,7 +195,9 @@ export function ExamSchedulesTab({ semesterId }: Props) {
                     <Input
                       className="h-8 w-28 text-xs"
                       value={examRoom ?? ""}
-                      onChange={(event) => setField(schedule.classSectionId, "examRoom", event.target.value || null)}
+                      onChange={(event) =>
+                        setField(schedule.classSectionId, "examRoom", event.target.value || null)
+                      }
                     />
                   </td>
                   <td className="p-3">
@@ -186,7 +213,12 @@ export function ExamSchedulesTab({ semesterId }: Props) {
                   </td>
                   <td className="p-3">
                     {hasEdit && (
-                      <Button size="sm" className="h-7 text-xs" disabled={updateMutation.isPending} onClick={() => saveRow(schedule)}>
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs"
+                        disabled={updateMutation.isPending}
+                        onClick={() => saveRow(schedule)}
+                      >
                         <Save className="mr-1 h-3 w-3" />
                         Lưu
                       </Button>
@@ -197,7 +229,9 @@ export function ExamSchedulesTab({ semesterId }: Props) {
             })}
             {schedules.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">Chưa có lịch thi</td>
+                <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                  Chưa có lịch thi
+                </td>
               </tr>
             )}
           </tbody>
@@ -269,7 +303,13 @@ function ExamStudentsDialog({
               : "Sinh viên dự thi theo lịch thi đã chọn"}
           </DialogDescription>
           <div className="pt-2">
-            <Button variant="outline" size="sm" className="gap-2" onClick={exportRows} disabled={rows.length === 0}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={exportRows}
+              disabled={rows.length === 0}
+            >
               <Download className="h-4 w-4" />
               Xuất danh sách phòng thi
             </Button>
@@ -305,7 +345,9 @@ function ExamStudentsDialog({
                     <td className="p-3">
                       <ExamKindBadge kind={row.examKind} />
                     </td>
-                    <td className="p-3 text-xs text-muted-foreground">{formatStatus(row.status)}</td>
+                    <td className="p-3 text-xs text-muted-foreground">
+                      {formatStatus(row.status)}
+                    </td>
                     <td className="p-3 text-xs tabular-nums">
                       {row.feeCharged != null ? `${row.feeCharged.toLocaleString("vi-VN")}đ` : "-"}
                     </td>
@@ -385,7 +427,8 @@ function getMatchingRetakeRegistrations(
 
 function ExamKindBadge({ kind }: { kind: ExamStudentRow["examKind"] }) {
   if (kind === "NORMAL") return <Badge variant="outline">Thi thường</Badge>;
-  if (kind === "IMPROVE") return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Nâng điểm</Badge>;
+  if (kind === "IMPROVE")
+    return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Nâng điểm</Badge>;
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Thi lại</Badge>;
 }
 

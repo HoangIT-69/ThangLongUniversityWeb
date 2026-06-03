@@ -7,7 +7,7 @@
   "routes": [
     {
       "pattern": "thanglonguniversity.online/*",
-      "zone_name": "thanglonguniversity.online"
-    }
-  ]
+      "zone_name": "thanglonguniversity.online",
+    },
+  ],
 }

@@ -14,9 +14,7 @@ export function ChatbotWidget() {
 
   return (
     <>
-      {open && (
-        <ChatbotPanel sessionId={sessionId} onClose={() => setOpen(false)} />
-      )}
+      {open && <ChatbotPanel sessionId={sessionId} onClose={() => setOpen(false)} />}
       <Button
         size="icon"
         className={cn(
