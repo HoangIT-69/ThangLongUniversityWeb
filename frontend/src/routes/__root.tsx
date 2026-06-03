@@ -24,9 +24,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
     ],
     links: [
-      { rel: "icon", type: "image/png", href: "/images/LogoThangLongUniversity.png" },
-      { rel: "shortcut icon", type: "image/png", href: "/images/LogoThangLongUniversity.png" },
-      { rel: "apple-touch-icon", href: "/images/LogoThangLongUniversity.png" },
+      { rel: "icon", type: "image/png", href: "/images/logotab.png" },
+      { rel: "shortcut icon", type: "image/png", href: "/images/logotab.png" },
+      { rel: "apple-touch-icon", href: "/images/logotab.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://images.unsplash.com" },

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
+import { TimetableGrid, type TimetableCell } from "@/components/timetable/TimetableGrid";
 import { Check, ChevronDown, Loader2, Lock, X } from "lucide-react";
 import { toast } from "sonner";
 import { studentApi } from "@/lib/api/student";
@@ -38,6 +39,16 @@ type CourseGroup = {
   courseType: "REQUIRED" | "ELECTIVE";
   courseTypeLabel: string;
   sections: ClassSectionResponse[];
+};
+
+type SelectedScheduleCell = TimetableCell & {
+  courseName: string;
+  courseCode: string;
+  classCode: string;
+  roomName: string;
+  teacherName: string;
+  credits: number;
+  periodRange: string;
 };
 
 function formatSchedule(section: ClassSectionResponse) {
@@ -77,6 +88,35 @@ function formatEnrollmentSchedule(item: EnrollmentResponse) {
         `${dayLabels[schedule.dayOfWeek] ?? `Thứ ${schedule.dayOfWeek}`} tiết ${schedule.startPeriod}-${schedule.endPeriod}${schedule.roomName ? `, ${schedule.roomName}` : ""}`,
     )
     .join(" | ");
+}
+
+function buildSelectedScheduleCells(selected: EnrollmentResponse[]) {
+  const cells: Record<string, SelectedScheduleCell | null> = {};
+
+  selected.forEach((item) => {
+    getEnrollmentSchedules(item).forEach((schedule) => {
+      const startPeriod = schedule.startPeriod;
+      const endPeriod = schedule.endPeriod;
+      if (!schedule.dayOfWeek || !startPeriod || !endPeriod) return;
+
+      const rowSpan = Math.max(endPeriod - startPeriod + 1, 1);
+      for (let period = startPeriod; period <= endPeriod; period += 1) {
+        cells[`${schedule.dayOfWeek}-${period}`] = {
+          courseName: item.courseName,
+          courseCode: item.courseCode ?? "",
+          classCode: item.classCode,
+          roomName: schedule.roomName ?? item.room ?? "",
+          teacherName: item.teacherName ?? "",
+          credits: item.credits ?? 0,
+          periodRange: `${startPeriod}-${endPeriod}`,
+          rowSpan,
+          isStart: period === startPeriod,
+        };
+      }
+    });
+  });
+
+  return cells;
 }
 
 function overlapsSelectedSchedule(section: ClassSectionResponse, selected: EnrollmentResponse[]) {
@@ -191,6 +231,7 @@ function CourseRegistrationPage() {
     [selected],
   );
   const selectedCredits = selected.reduce((sum, item) => sum + (item.credits ?? 0), 0);
+  const selectedScheduleCells = useMemo(() => buildSelectedScheduleCells(selected), [selected]);
 
   const groups = useMemo(() => groupByCourse(classesQuery.data ?? []), [classesQuery.data]);
   const visibleGroups = groups.filter((group) => group.courseType === activeType);
@@ -447,6 +488,46 @@ function CourseRegistrationPage() {
           </div>
         </aside>
       </div>
+
+      <section className="mt-6 space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold">Lịch học đã chọn</h2>
+          <p className="text-sm text-muted-foreground">
+            Xem trực quan các lớp học phần đã đăng ký theo từng ngày và tiết học.
+          </p>
+        </div>
+
+        {selectedQuery.isLoading ? (
+          <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+            Đang tải lịch học đã chọn...
+          </div>
+        ) : selected.length === 0 ? (
+          <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+            Chưa có lớp học phần nào để hiển thị trên thời khóa biểu.
+          </div>
+        ) : (
+          <TimetableGrid
+            cells={selectedScheduleCells}
+            renderCell={(cell) => <SelectedScheduleCard cell={cell} />}
+          />
+        )}
+      </section>
+    </div>
+  );
+}
+
+function SelectedScheduleCard({ cell }: { cell: SelectedScheduleCell }) {
+  return (
+    <div className="flex h-full min-h-16 w-full max-w-full flex-col overflow-hidden rounded-md border border-primary/30 bg-card p-2 text-xs leading-tight">
+      <div className="truncate font-semibold text-primary">{cell.courseName}</div>
+      <div className="font-mono text-[10px] text-muted-foreground">
+        {cell.classCode}
+        {cell.courseCode ? ` - ${cell.courseCode}` : ""}
+      </div>
+      <div className="mt-1 text-muted-foreground">Phòng: {cell.roomName || "-"}</div>
+      <div className="text-[10px] text-muted-foreground">Tiết: {cell.periodRange}</div>
+      <div className="text-[10px] text-muted-foreground">{cell.credits} TC</div>
+      {cell.teacherName && <div className="text-[10px] text-info">GV: {cell.teacherName}</div>}
     </div>
   );
 }

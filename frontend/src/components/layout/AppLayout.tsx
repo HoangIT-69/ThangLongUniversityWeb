@@ -13,7 +13,6 @@ import {
   ClipboardList,
   Clock,
   DoorOpen,
-  Globe,
   GraduationCap,
   Layers,
   LayoutDashboard,
@@ -66,7 +65,6 @@ const adminNavGroups: NavGroup[] = [
     heading: "Tổng quan",
     items: [
       { to: "/admin/dashboard", label: "Bảng điều khiển", icon: LayoutDashboard },
-      { to: "/admin/landing", label: "Trang giới thiệu", icon: Globe },
     ],
   },
   {
