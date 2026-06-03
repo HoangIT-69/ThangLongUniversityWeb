@@ -6,6 +6,7 @@ import { PageHeader, StatCard } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { teacherApi } from "@/lib/api/teacher";
+import { pickCurrentSemester } from "@/lib/semester";
 
 export const Route = createFileRoute("/teacher/dashboard")({ component: TeacherDashboardPage });
 
@@ -33,7 +34,7 @@ function TeacherDashboardPage() {
   });
 
   const semesters = semestersQuery.data ?? [];
-  const currentSemester = semesters.find((s) => s.registrationOpen) ?? semesters[0];
+  const currentSemester = pickCurrentSemester(semesters);
   const semesterId = currentSemester?.id;
 
   const classesQuery = useQuery({

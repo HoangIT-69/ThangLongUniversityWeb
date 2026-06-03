@@ -2,6 +2,9 @@ import type { AuthResponse } from "./types";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 const STORAGE_KEY = "tlu-auth";
+export const AUTH_STORAGE_EVENT = "tlu-auth-storage";
+
+let refreshPromise: Promise<boolean> | null = null;
 
 export interface StoredAuth {
   accessToken: string;
@@ -26,9 +29,15 @@ export function setStoredAuth(auth: StoredAuth | null) {
   if (typeof window === "undefined") return;
   if (!auth) {
     localStorage.removeItem(STORAGE_KEY);
+    notifyAuthChanged();
     return;
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
+  notifyAuthChanged();
+}
+
+function notifyAuthChanged() {
+  window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -54,6 +63,14 @@ function tryParseJson(text: string): unknown {
   }
 }
 
+function shouldAttemptTokenRefresh(response: Response, path: string, auth: StoredAuth | null) {
+  return (
+    (response.status === 401 || response.status === 403) &&
+    Boolean(auth?.refreshToken) &&
+    !path.startsWith("/api/auth/")
+  );
+}
+
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   return apiRequestWithRetry<T>(path, init, true);
 }
@@ -63,11 +80,26 @@ export function apiUrl(path: string) {
 }
 
 export async function downloadApiFile(path: string, fallbackFilename: string) {
+  return downloadApiFileWithRetry(path, fallbackFilename, true);
+}
+
+async function downloadApiFileWithRetry(
+  path: string,
+  fallbackFilename: string,
+  allowRefresh: boolean,
+) {
   const auth = getStoredAuth();
   const headers = new Headers();
   if (auth?.accessToken) headers.set("Authorization", `Bearer ${auth.accessToken}`);
 
   const response = await fetch(apiUrl(path), { headers });
+  if (allowRefresh && shouldAttemptTokenRefresh(response, path, auth)) {
+    const refreshed = await refreshAccessToken(auth);
+    if (refreshed) {
+      return downloadApiFileWithRetry(path, fallbackFilename, false);
+    }
+  }
+
   if (!response.ok) {
     const message = await response.text();
     throw new Error(message || response.statusText || "Khong tai duoc file");
@@ -123,12 +155,7 @@ async function apiRequestWithRetry<T>(
     );
   }
 
-  if (
-    response.status === 401 &&
-    allowRefresh &&
-    auth?.refreshToken &&
-    !path.startsWith("/api/auth/")
-  ) {
+  if (allowRefresh && shouldAttemptTokenRefresh(response, path, auth)) {
     const refreshed = await refreshAccessToken(auth);
     if (refreshed) {
       return apiRequestWithRetry<T>(path, init, false);
@@ -139,6 +166,16 @@ async function apiRequestWithRetry<T>(
 }
 
 async function refreshAccessToken(auth: StoredAuth): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = requestAccessTokenRefresh(auth).finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+}
+
+async function requestAccessTokenRefresh(auth: StoredAuth): Promise<boolean> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
       method: "POST",

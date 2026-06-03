@@ -43,7 +43,6 @@ import { Route as AdminRoomsRouteImport } from './routes/admin.rooms'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminPeriodsRouteImport } from './routes/admin.periods'
 import { Route as AdminMajorsRouteImport } from './routes/admin.majors'
-import { Route as AdminLandingRouteImport } from './routes/admin.landing'
 import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
 import { Route as AdminHomeroomsRouteImport } from './routes/admin.homerooms'
 import { Route as AdminExamSchedulesRouteImport } from './routes/admin.exam-schedules'
@@ -231,11 +230,6 @@ const AdminMajorsRoute = AdminMajorsRouteImport.update({
   path: '/majors',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminLandingRoute = AdminLandingRouteImport.update({
-  id: '/landing',
-  path: '/landing',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminKnowledgeRoute = AdminKnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
@@ -326,7 +320,6 @@ export interface FileRoutesByFullPath {
   '/admin/exam-schedules': typeof AdminExamSchedulesRoute
   '/admin/homerooms': typeof AdminHomeroomsRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
-  '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
   '/admin/periods': typeof AdminPeriodsRoute
   '/admin/profile': typeof AdminProfileRoute
@@ -377,7 +370,6 @@ export interface FileRoutesByTo {
   '/admin/exam-schedules': typeof AdminExamSchedulesRoute
   '/admin/homerooms': typeof AdminHomeroomsRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
-  '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
   '/admin/periods': typeof AdminPeriodsRoute
   '/admin/profile': typeof AdminProfileRoute
@@ -428,7 +420,6 @@ export interface FileRoutesById {
   '/admin/exam-schedules': typeof AdminExamSchedulesRoute
   '/admin/homerooms': typeof AdminHomeroomsRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
-  '/admin/landing': typeof AdminLandingRoute
   '/admin/majors': typeof AdminMajorsRoute
   '/admin/periods': typeof AdminPeriodsRoute
   '/admin/profile': typeof AdminProfileRoute
@@ -481,7 +472,6 @@ export interface FileRouteTypes {
     | '/admin/exam-schedules'
     | '/admin/homerooms'
     | '/admin/knowledge'
-    | '/admin/landing'
     | '/admin/majors'
     | '/admin/periods'
     | '/admin/profile'
@@ -532,7 +522,6 @@ export interface FileRouteTypes {
     | '/admin/exam-schedules'
     | '/admin/homerooms'
     | '/admin/knowledge'
-    | '/admin/landing'
     | '/admin/majors'
     | '/admin/periods'
     | '/admin/profile'
@@ -582,7 +571,6 @@ export interface FileRouteTypes {
     | '/admin/exam-schedules'
     | '/admin/homerooms'
     | '/admin/knowledge'
-    | '/admin/landing'
     | '/admin/majors'
     | '/admin/periods'
     | '/admin/profile'
@@ -865,13 +853,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMajorsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/landing': {
-      id: '/admin/landing'
-      path: '/landing'
-      fullPath: '/admin/landing'
-      preLoaderRoute: typeof AdminLandingRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/knowledge': {
       id: '/admin/knowledge'
       path: '/knowledge'
@@ -999,7 +980,6 @@ interface AdminRouteChildren {
   AdminExamSchedulesRoute: typeof AdminExamSchedulesRoute
   AdminHomeroomsRoute: typeof AdminHomeroomsRoute
   AdminKnowledgeRoute: typeof AdminKnowledgeRoute
-  AdminLandingRoute: typeof AdminLandingRoute
   AdminMajorsRoute: typeof AdminMajorsRoute
   AdminPeriodsRoute: typeof AdminPeriodsRoute
   AdminProfileRoute: typeof AdminProfileRoute
@@ -1022,7 +1002,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminExamSchedulesRoute: AdminExamSchedulesRoute,
   AdminHomeroomsRoute: AdminHomeroomsRoute,
   AdminKnowledgeRoute: AdminKnowledgeRoute,
-  AdminLandingRoute: AdminLandingRoute,
   AdminMajorsRoute: AdminMajorsRoute,
   AdminPeriodsRoute: AdminPeriodsRoute,
   AdminProfileRoute: AdminProfileRoute,
