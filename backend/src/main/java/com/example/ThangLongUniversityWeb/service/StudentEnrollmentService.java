@@ -13,6 +13,7 @@ import com.example.ThangLongUniversityWeb.entity.Course;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.entity.Grade;
 import com.example.ThangLongUniversityWeb.entity.Student;
+import com.example.ThangLongUniversityWeb.entity.RegistrationRound;
 import com.example.ThangLongUniversityWeb.enums.CourseType;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
@@ -36,6 +37,7 @@ public class StudentEnrollmentService {
     private final ClassSectionRepository classSectionRepository;
     private final StudentRepository studentRepository;
     private final ClassSectionService classSectionService;
+    private final RegistrationRoundService registrationRoundService;
 
     private Student getCurrentStudent() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -45,7 +47,11 @@ public class StudentEnrollmentService {
 
     public List<ClassSectionResponse> getAvailableClasses(Long semesterId) {
         Student student = getCurrentStudent();
-        List<ClassSection> allSectionsInSemester = classSectionRepository.findBySemesterId(semesterId);
+        var openRound = registrationRoundService.getOpenRound(semesterId);
+        if (openRound == null) {
+            return List.of();
+        }
+        List<ClassSection> allSectionsInSemester = classSectionRepository.findByRegistrationRoundId(openRound.getId());
 
         return allSectionsInSemester.stream()
                 .filter(section -> isVisibleForStudentMajor(section, student))
@@ -65,14 +71,56 @@ public class StudentEnrollmentService {
         ClassSection targetClass = classSectionRepository.findById(classSectionId)
                 .orElseThrow(() -> new RuntimeException("Lop hoc phan khong ton tai!"));
 
-        if (!targetClass.getSemester().isRegistrationOpen()) {
-            throw new RuntimeException("Hoc ky nay hien khong mo cong dang ky!");
+        RegistrationRound round = targetClass.getRegistrationRound();
+        if (round == null
+                || !round.isRegistrationOpen()
+                || round.isLocked()) {
+            throw new RuntimeException("Đợt đăng ký của lớp này đã đóng hoặc đã chốt.");
         }
-        if (targetClass.getSemester().isLocked()) {
-            throw new RuntimeException("Hoc ky nay da bi khoa/chot.");
+
+        boolean isValidSlot = false;
+        if (round.getTimeSlots() == null || round.getTimeSlots().isEmpty()) {
+            isValidSlot = true; // No constraints
+        } else {
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            for (var slot : round.getTimeSlots()) {
+                if (now.isBefore(slot.getStartTime()) || now.isAfter(slot.getEndTime())) {
+                    continue;
+                }
+                boolean majorMatch = true;
+                if (slot.getAllowedMajorIds() != null && !slot.getAllowedMajorIds().isBlank()) {
+                    List<Long> allowedMajors = java.util.Arrays.stream(slot.getAllowedMajorIds().split(","))
+                            .map(String::trim)
+                            .map(Long::parseLong)
+                            .toList();
+                    if (student.getMajor() == null || !allowedMajors.contains(student.getMajor().getId())) {
+                        majorMatch = false;
+                    }
+                }
+                
+                boolean cohortMatch = true;
+                if (slot.getAllowedCohorts() != null && !slot.getAllowedCohorts().isBlank()) {
+                    List<String> allowedCohorts = java.util.Arrays.stream(slot.getAllowedCohorts().split(","))
+                            .map(String::trim)
+                            .toList();
+                    if (student.getCohort() == null || !allowedCohorts.contains(student.getCohort())) {
+                        cohortMatch = false;
+                    }
+                }
+                
+                if (majorMatch && cohortMatch) {
+                    isValidSlot = true;
+                    break;
+                }
+            }
         }
+        
+        if (!isValidSlot) {
+            throw new RuntimeException("Thời gian hiện tại không nằm trong phân luồng đăng ký dành cho ngành và khóa của bạn.");
+        }
+
         if (targetClass.isClosed()) {
-            throw new RuntimeException("Lop hoc phan da bi khoa!");
+            throw new RuntimeException("Lớp học phần đã bị khóa!");
         }
 
         Enrollment existingEnrollment = enrollmentRepository.findByStudentIdAndClassSectionId(student.getId(), classSectionId)
@@ -138,9 +186,9 @@ public class StudentEnrollmentService {
         Enrollment enrollment = enrollmentRepository.findByStudentIdAndClassSectionId(student.getId(), classSectionId)
                 .orElseThrow(() -> new RuntimeException("Ban chua chon lop nay nen khong the bo chon!"));
 
-        if (!enrollment.getClassSection().getSemester().isRegistrationOpen()
-                || enrollment.getClassSection().getSemester().isLocked()) {
-            throw new RuntimeException("Da het han bo chon hoc phan!");
+        var round = enrollment.getClassSection().getRegistrationRound();
+        if (round == null || !round.isRegistrationOpen() || round.isLocked()) {
+            throw new RuntimeException("Da het han bo chon hoc phan.");
         }
         if (enrollment.getStatus() != EnrollmentStatus.PENDING) {
             throw new RuntimeException("Chi co the bo chon lop dang o trang thai PENDING.");

@@ -3,6 +3,7 @@ package com.example.ThangLongUniversityWeb.service;
 import com.example.ThangLongUniversityWeb.dto.request.SemesterRequest;
 import com.example.ThangLongUniversityWeb.dto.response.SemesterSummaryResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentSemesterResponse;
+import com.example.ThangLongUniversityWeb.entity.RegistrationRound;
 import com.example.ThangLongUniversityWeb.entity.Semester;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
@@ -27,6 +28,7 @@ public class SemesterService {
     private final ClassSectionRepository classSectionRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
+    private final RegistrationRoundService registrationRoundService;
 
     @Cacheable(cacheNames = "semesters")
     public List<StudentSemesterResponse> getAllSemesters() {
@@ -39,7 +41,7 @@ public class SemesterService {
     @CacheEvict(cacheNames = "semesters", allEntries = true)
     public StudentSemesterResponse createSemester(SemesterRequest request) {
         if (semesterRepository.findByName(request.getName()).isPresent()) {
-            throw new RuntimeException("Tên học kỳ đã tồn tại!");
+            throw new RuntimeException("Tên học kỳ đã tồn tại.");
         }
 
         Semester semester = new Semester();
@@ -47,20 +49,19 @@ public class SemesterService {
         semester.setStartDate(request.getStartDate());
         semester.setEndDate(request.getEndDate());
         semester.setRegistrationOpen(request.isRegistrationOpen());
-
-        return toStudentResponse(semesterRepository.save(semester));
+        Semester saved = semesterRepository.save(semester);
+        registrationRoundService.ensureDefaultRound(saved.getId());
+        return toStudentResponse(saved);
     }
 
     @Transactional
     @CacheEvict(cacheNames = "semesters", allEntries = true)
     public StudentSemesterResponse updateSemester(Long id, SemesterRequest request) {
-        Semester semester = semesterRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ!"));
+        Semester semester = getSemesterOrThrow(id);
 
         semester.setName(request.getName());
         semester.setStartDate(request.getStartDate());
         semester.setEndDate(request.getEndDate());
-        semester.setRegistrationOpen(request.isRegistrationOpen());
 
         return toStudentResponse(semesterRepository.save(semester));
     }
@@ -70,45 +71,45 @@ public class SemesterService {
     public void deleteSemester(Long id) {
         long classSectionCount = classSectionRepository.countBySemesterId(id);
         if (classSectionCount > 0) {
-            throw new RuntimeException("Không thể xóa học kỳ đã có lớp học phần. Vui lòng xóa lớp học phần trước.");
+            throw new RuntimeException("Không thể xóa học kỳ đã có lớp học phần.");
         }
         try {
             semesterRepository.deleteById(id);
             semesterRepository.flush();
         } catch (DataIntegrityViolationException ex) {
-            throw new RuntimeException("Không thể xóa học kỳ vì đã được tham chiếu bởi dữ liệu liên quan. Chỉ nên xóa học kỳ vừa tạo nhầm và chưa phát sinh dữ liệu.");
+            throw new RuntimeException("Không thể xóa học kỳ vì đã được tham chiếu bởi dữ liệu liên quan.");
         }
     }
-
-    // ── Lifecycle actions ──────────────────────────────────────────────────
 
     @Transactional
     @CacheEvict(cacheNames = "semesters", allEntries = true)
     public StudentSemesterResponse toggleRegistration(Long id, boolean open) {
-        Semester semester = getSemesterOrThrow(id);
-        if (semester.isLocked()) {
-            throw new RuntimeException("Học kỳ đã bị chốt, không thể thay đổi trạng thái đăng ký.");
+        RegistrationRound round = registrationRoundService.ensureDefaultRound(id);
+        if (open) {
+            registrationRoundService.openRound(id, round.getId());
+        } else if (round.isRegistrationOpen()) {
+            registrationRoundService.closeRound(id, round.getId());
         }
-        semester.setRegistrationOpen(open);
-        return toStudentResponse(semesterRepository.save(semester));
+        return toStudentResponse(getSemesterOrThrow(id));
     }
 
     @Transactional
     @CacheEvict(cacheNames = "semesters", allEntries = true)
     public int lockEnrollments(Long id) {
         Semester semester = getSemesterOrThrow(id);
-        var pending = enrollmentRepository.findByClassSectionSemesterIdAndStatus(id, EnrollmentStatus.PENDING);
-        for (var e : pending) {
-            e.setStatus(EnrollmentStatus.REGISTERED);
-            var cs = e.getClassSection();
-            cs.setCurrentSlots((cs.getCurrentSlots() == null ? 0 : cs.getCurrentSlots()) + 1);
-            classSectionRepository.save(cs);
-            enrollmentRepository.save(e);
+        
+        List<RegistrationRound> rounds = registrationRoundService.listRoundsRaw(id, "COURSE");
+        int count = 0;
+        for (RegistrationRound r : rounds) {
+            if (!r.isLocked()) {
+                count += registrationRoundService.lockRound(id, r.getId());
+            }
         }
+        
         semester.setRegistrationOpen(false);
         semester.setLocked(true);
         semesterRepository.save(semester);
-        return pending.size();
+        return count;
     }
 
     @Transactional
@@ -135,7 +136,7 @@ public class SemesterService {
             throw new RuntimeException("Phải chốt học phần trước khi mở đăng ký thi lại.");
         }
         if (semester.isRetakeLocked()) {
-            throw new RuntimeException("Đăng ký thi lại đã được chốt, không thể thay đổi.");
+            throw new RuntimeException("Đăng ký thi lại đã chốt, không thể thay đổi.");
         }
         semester.setRetakeOpen(open);
         return toStudentResponse(semesterRepository.save(semester));
@@ -145,20 +146,37 @@ public class SemesterService {
     @CacheEvict(cacheNames = "semesters", allEntries = true)
     public int lockRetakes(Long id) {
         Semester semester = getSemesterOrThrow(id);
-        var pending = examRegistrationRepository.findByClassSectionSemesterIdAndStatus(id, EnrollmentStatus.PENDING);
-        for (var r : pending) {
-            r.setStatus(EnrollmentStatus.REGISTERED);
-            examRegistrationRepository.save(r);
+        
+        List<RegistrationRound> rounds = registrationRoundService.listRoundsRaw(id, "RETAKE");
+        int count = 0;
+        for (RegistrationRound r : rounds) {
+            if (!r.isLocked()) {
+                count += registrationRoundService.lockRound(id, r.getId());
+            }
         }
+        
         semester.setRetakeOpen(false);
         semester.setRetakeLocked(true);
         semesterRepository.save(semester);
-        return pending.size();
+        return count;
     }
 
-    // ── Summary ────────────────────────────────────────────────────────────
+    @Transactional
+    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    public StudentSemesterResponse endSemester(Long id) {
+        Semester semester = getSemesterOrThrow(id);
+        RegistrationRound openRound = registrationRoundService.getOpenRound(id);
+        if (openRound != null) {
+            registrationRoundService.closeRound(id, openRound.getId());
+        }
+        semester.setRegistrationOpen(false);
+        semester.setRetakeOpen(false);
+        semester.setEnded(true);
+        return toStudentResponse(semesterRepository.save(semester));
+    }
 
     public SemesterSummaryResponse getSemesterSummary(Long id) {
+        registrationRoundService.ensureDefaultRound(id);
         Semester semester = getSemesterOrThrow(id);
         var classSections = classSectionRepository.findBySemesterId(id);
 
@@ -171,6 +189,11 @@ public class SemesterService {
 
         var retakes = examRegistrationRepository.findByClassSectionSemesterIdAndStatus(id, EnrollmentStatus.PENDING);
         var retakesReg = examRegistrationRepository.findByClassSectionSemesterIdAndStatus(id, EnrollmentStatus.REGISTERED);
+        var rounds = registrationRoundService.listRounds(id);
+        RegistrationRound activeRound = registrationRoundService.getOpenRound(id);
+        if (activeRound == null) {
+            activeRound = registrationRoundService.ensureDefaultRound(id);
+        }
 
         return SemesterSummaryResponse.builder()
                 .semesterId(semester.getId())
@@ -191,16 +214,25 @@ public class SemesterService {
                 .examPublished(semester.isExamPublished())
                 .retakeOpen(semester.isRetakeOpen())
                 .retakeLocked(semester.isRetakeLocked())
+                .ended(semester.isEnded())
                 .maxCreditsPerSemester(semester.getMaxCreditsPerSemester())
+                .activeRegistrationRoundId(activeRound.getId())
+                .activeRegistrationRoundName(activeRound.getName())
+                .activeRegistrationRoundNumber(activeRound.getRoundNumber())
+                .registrationRoundCount(rounds.size())
                 .build();
     }
 
     private Semester getSemesterOrThrow(Long id) {
         return semesterRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ!"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ."));
     }
 
     public StudentSemesterResponse toStudentResponse(Semester s) {
+        RegistrationRound activeRound = registrationRoundService.getOpenRound(s.getId());
+        if (activeRound == null) {
+            activeRound = registrationRoundService.ensureDefaultRound(s.getId());
+        }
         return StudentSemesterResponse.builder()
                 .id(s.getId())
                 .name(s.getName())
@@ -211,6 +243,10 @@ public class SemesterService {
                 .examPublished(s.isExamPublished())
                 .retakeOpen(s.isRetakeOpen())
                 .retakeLocked(s.isRetakeLocked())
+                .ended(s.isEnded())
+                .activeRegistrationRoundId(activeRound != null ? activeRound.getId() : null)
+                .activeRegistrationRoundName(activeRound != null ? activeRound.getName() : null)
+                .activeRegistrationRoundNumber(activeRound != null ? activeRound.getRoundNumber() : null)
                 .build();
     }
 }

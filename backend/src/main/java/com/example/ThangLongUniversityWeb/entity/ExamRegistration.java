@@ -46,6 +46,10 @@ public class ExamRegistration {
 
     private Integer attemptNumber;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registration_round_id")
+    private RegistrationRound registrationRound;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

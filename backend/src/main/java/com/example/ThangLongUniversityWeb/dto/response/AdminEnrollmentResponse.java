@@ -77,5 +77,11 @@ public class AdminEnrollmentResponse {
 
     @Schema(description = "Thời gian đăng ký", example = "2024-09-01T10:30:00")
     private String enrolledAt;
+
+    @Schema(description = "Tên đợt đăng ký", example = "Đợt 1")
+    private String registrationRoundName;
+
+    @Schema(description = "Số thứ tự đợt đăng ký", example = "1")
+    private Integer registrationRoundNumber;
 }
 

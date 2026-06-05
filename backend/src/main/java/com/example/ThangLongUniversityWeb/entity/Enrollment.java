@@ -5,6 +5,8 @@ import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(
         name = "enrollments",
@@ -37,11 +39,21 @@ public class Enrollment {
     @Column(name = "course_status")
     private CourseStudyStatus courseStatus = CourseStudyStatus.IN_PROGRESS;
 
+    @Column(name = "enrolled_at")
+    private LocalDateTime enrolledAt;
+
     /**
      * Grade là nguồn sự thật duy nhất cho điểm số.
      * TASK-011: Các field midTermScore/finalScore/totalScore đã bị xóa khỏi Enrollment.
      */
     @OneToOne(mappedBy = "enrollment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Grade grade;
+
+    @PrePersist
+    protected void onCreate() {
+        if (enrolledAt == null) {
+            enrolledAt = LocalDateTime.now();
+        }
+    }
 }
 

@@ -1,12 +1,14 @@
 package com.example.ThangLongUniversityWeb.dto.response;
 
 import com.example.ThangLongUniversityWeb.enums.CourseType;
+import com.example.ThangLongUniversityWeb.enums.ExamType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -44,6 +46,15 @@ public class ClassSectionResponse {
     
     @Schema(description = "Tên học kỳ", example = "HK1 2025-2026")
     private String semesterName;
+
+    @Schema(description = "ID dot dang ky", example = "1")
+    private Long registrationRoundId;
+
+    @Schema(description = "Ten dot dang ky", example = "Dot 1")
+    private String registrationRoundName;
+
+    @Schema(description = "So thu tu dot dang ky", example = "1")
+    private Integer registrationRoundNumber;
     
     @Schema(description = "ID giảng viên", example = "1")
     private Long teacherId;
@@ -74,4 +85,13 @@ public class ClassSectionResponse {
 
     @Schema(description = "Trạng thái khóa điểm", example = "false")
     private boolean gradeLocked;
+
+    @Schema(description = "Thời gian thi", example = "2026-06-01T08:00:00")
+    private LocalDateTime examAt;
+
+    @Schema(description = "Phòng thi", example = "A301")
+    private String examRoom;
+
+    @Schema(description = "Loại thi", example = "NORMAL")
+    private ExamType examType;
 }

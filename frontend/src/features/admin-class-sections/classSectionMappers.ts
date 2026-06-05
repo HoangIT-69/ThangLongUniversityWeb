@@ -34,7 +34,8 @@ export function mapApiClassSection(
   section: ClassSectionResponse,
   statusOverride?: AdminClassSectionStatus,
 ): ClassSectionRow {
-  const firstSchedule = section.schedules[0];
+  const schedules = section.schedules ?? [];
+  const firstSchedule = schedules[0];
 
   return {
     id: String(section.id),
@@ -45,6 +46,9 @@ export function mapApiClassSection(
     majorName: section.majorName ?? "-",
     semesterId: section.semesterId,
     semesterName: section.semesterName,
+    registrationRoundId: section.registrationRoundId,
+    registrationRoundName: section.registrationRoundName,
+    registrationRoundNumber: section.registrationRoundNumber,
     teacherId: section.teacherId ?? 0,
     teacherName: section.teacherName ?? "Chưa phân công",
     roomId: section.roomId ?? firstSchedule?.roomId ?? 0,
@@ -54,6 +58,13 @@ export function mapApiClassSection(
     startPeriod: firstSchedule?.startPeriod ?? 0,
     endPeriodId: firstSchedule?.endPeriodId ?? 0,
     endPeriod: firstSchedule?.endPeriod ?? 0,
+    schedules: schedules.map((schedule) => ({
+      key: String(schedule.id),
+      roomId: schedule.roomId ?? 0,
+      dayOfWeek: schedule.dayOfWeek,
+      startPeriodId: schedule.startPeriodId,
+      endPeriodId: schedule.endPeriodId,
+    })),
     currentSlots: section.currentSlots ?? 0,
     maxSlots: section.maxSlots ?? 0,
     status: statusOverride ?? (section.closed ? "CLOSED" : "OPEN"),
@@ -75,20 +86,29 @@ export function buildOptionSets(
 }
 
 export function toClassSectionRequest(values: ClassSectionFormValues) {
+  const schedules = values.schedules?.length
+    ? values.schedules
+    : [
+        {
+          dayOfWeek: values.dayOfWeek,
+          startPeriodId: values.startPeriodId,
+          endPeriodId: values.endPeriodId,
+          roomId: values.roomId,
+        },
+      ];
   return {
     classCode: values.classCode.trim(),
     courseId: values.courseId,
     semesterId: values.semesterId,
     teacherId: values.teacherId,
+    registrationRoundId: values.registrationRoundId ?? null,
     maxSlots: values.maxSlots,
-    schedules: [
-      {
-        dayOfWeek: values.dayOfWeek,
-        startPeriodId: values.startPeriodId,
-        endPeriodId: values.endPeriodId,
-        roomId: values.roomId,
-      },
-    ],
+    schedules: schedules.map((schedule) => ({
+      dayOfWeek: schedule.dayOfWeek,
+      startPeriodId: schedule.startPeriodId,
+      endPeriodId: schedule.endPeriodId,
+      roomId: schedule.roomId,
+    })),
   };
 }
 
@@ -110,7 +130,13 @@ export function mapApiClassSectionStudent(
 }
 
 function mapApiCourses(items?: ReferenceApiData["courses"]): CourseOption[] {
-  return (items ?? []).map((course) => ({ id: course.id, code: course.code, name: course.name }));
+  return (items ?? []).map((course) => ({
+    id: course.id,
+    code: course.code,
+    name: course.name,
+    departmentId: course.departmentId,
+    departmentName: course.departmentName,
+  }));
 }
 
 function mapApiSemesters(items?: ReferenceApiData["semesters"]): SemesterOption[] {
@@ -118,7 +144,12 @@ function mapApiSemesters(items?: ReferenceApiData["semesters"]): SemesterOption[
 }
 
 function mapApiTeachers(items?: ReferenceApiData["teachers"]): TeacherOption[] {
-  return (items ?? []).map((teacher) => ({ id: teacher.id, name: teacher.fullName }));
+  return (items ?? []).map((teacher) => ({
+    id: teacher.id,
+    name: teacher.fullName,
+    departmentId: teacher.departmentId,
+    departmentName: teacher.departmentName,
+  }));
 }
 
 function mapApiRooms(items?: ReferenceApiData["rooms"]): RoomOption[] {
@@ -164,5 +195,11 @@ function mergeRoomOptions(options: RoomOption[], rows: ClassSectionRow[]) {
 }
 
 function uniqueById<T extends { id: number }>(items: T[]) {
-  return Array.from(new Map(items.map((item) => [item.id, item])).values());
+  const map = new Map<number, T>();
+  for (const item of items) {
+    if (!map.has(item.id)) {
+      map.set(item.id, item);
+    }
+  }
+  return Array.from(map.values());
 }

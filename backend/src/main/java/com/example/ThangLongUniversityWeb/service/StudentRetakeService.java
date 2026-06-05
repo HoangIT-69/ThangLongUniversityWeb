@@ -16,6 +16,7 @@ import com.example.ThangLongUniversityWeb.enums.CourseStudyStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
+import com.example.ThangLongUniversityWeb.entity.RegistrationRound;
 import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
@@ -55,6 +56,7 @@ public class StudentRetakeService {
     private final ExamRegistrationRepository examRegistrationRepository;
     private final SystemSettingsRepository systemSettingsRepository;
     private final SemesterRepository semesterRepository;
+    private final RegistrationRoundService registrationRoundService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Lay phi thi lai tu system_settings (fallback mac dinh 200k)
@@ -92,11 +94,52 @@ public class StudentRetakeService {
         }
 
         Student student = getCurrentStudent();
-        Semester targetSemester = semesterRepository.findById(request.getSemesterId())
-                .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky dang ky thi lai / nang diem."));
-        if (!targetSemester.isRegistrationOpen() || targetSemester.isLocked()) {
-            throw new RuntimeException("Hoc ky nay da dong hoac da khoa dang ky thi lai / nang diem.");
+        RegistrationRound round = registrationRoundService.getOpenRound(request.getSemesterId(), "RETAKE");
+        if (round == null || !round.isRegistrationOpen() || round.isLocked()) {
+            throw new RuntimeException("Không có đợt đăng ký thi lại/nâng điểm nào đang mở.");
         }
+
+        boolean isValidSlot = false;
+        if (round.getTimeSlots() == null || round.getTimeSlots().isEmpty()) {
+            isValidSlot = true; // No constraints
+        } else {
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            for (var slot : round.getTimeSlots()) {
+                if (now.isBefore(slot.getStartTime()) || now.isAfter(slot.getEndTime())) {
+                    continue;
+                }
+                boolean majorMatch = true;
+                if (slot.getAllowedMajorIds() != null && !slot.getAllowedMajorIds().isBlank()) {
+                    List<Long> allowedMajors = java.util.Arrays.stream(slot.getAllowedMajorIds().split(","))
+                            .map(String::trim)
+                            .map(Long::parseLong)
+                            .toList();
+                    if (student.getMajor() == null || !allowedMajors.contains(student.getMajor().getId())) {
+                        majorMatch = false;
+                    }
+                }
+                
+                boolean cohortMatch = true;
+                if (slot.getAllowedCohorts() != null && !slot.getAllowedCohorts().isBlank()) {
+                    List<String> allowedCohorts = java.util.Arrays.stream(slot.getAllowedCohorts().split(","))
+                            .map(String::trim)
+                            .toList();
+                    if (student.getCohort() == null || !allowedCohorts.contains(student.getCohort())) {
+                        cohortMatch = false;
+                    }
+                }
+                
+                if (majorMatch && cohortMatch) {
+                    isValidSlot = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!isValidSlot) {
+            throw new RuntimeException("Thời gian hiện tại không nằm trong phân luồng đăng ký dành cho ngành và khóa của bạn.");
+        }
+
         long feePerCourse = getRetakeFee();
 
         // Build map ket qua moi nhat theo courseId
@@ -131,7 +174,7 @@ public class StudentRetakeService {
             int nextAttempt = (latestGrade.getAttemptNumber() != null ? latestGrade.getAttemptNumber() : 1) + 1;
 
             // Tim ClassSection co lich thi cho mon nay
-            ClassSection examSection = findExamSectionForRetake(course.getId(), targetSemester.getId());
+            ClassSection examSection = findExamSectionForRetake(course.getId(), request.getSemesterId());
 
             ExamRegistration existing = examRegistrationRepository.findByStudentIdAndClassSectionCourseId(student.getId(), course.getId())
                     .orElse(null);
@@ -151,6 +194,7 @@ public class StudentRetakeService {
             examReg.setRegistrationType(enrollmentType);
             examReg.setFeeCharged(feePerCourse);
             examReg.setAttemptNumber(nextAttempt);
+            examReg.setRegistrationRound(round);
             results.add(mapRegisteredItem(examRegistrationRepository.save(examReg)));
         }
 
@@ -165,7 +209,8 @@ public class StudentRetakeService {
         if (!reg.getStudent().getId().equals(student.getId())) {
             throw new RuntimeException("Ban khong co quyen bo chon dang ky nay.");
         }
-        if (!reg.getClassSection().getSemester().isRegistrationOpen() || reg.getClassSection().getSemester().isLocked()) {
+        RegistrationRound round = reg.getRegistrationRound();
+        if (round == null || !round.isRegistrationOpen() || round.isLocked()) {
             throw new RuntimeException("Da het han bo chon thi lai / nang diem.");
         }
         if (reg.getStatus() != EnrollmentStatus.PENDING) {

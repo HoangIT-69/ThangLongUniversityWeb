@@ -58,6 +58,8 @@ export interface TeacherGradeRow {
   gpa4: number | null;
   canEdit: boolean;
   gradeStatus: string;
+  courseStatus: string | null;
+  absenceCount: number | null;
 }
 
 const dayLabels: Record<number, string> = {
@@ -151,6 +153,9 @@ function mapApiRosterRow(row: TeacherStudentGradeResponse): TeacherRosterRow {
 }
 
 function mapApiGradeRow(row: GradeResponse): TeacherGradeRow {
+  const courseStatus = row.courseStatus ?? null;
+  const banned =
+    courseStatus === "BANNED_FROM_EXAM" || courseStatus === "REPEAT_COURSE";
   return {
     enrollmentId: String(row.enrollmentId),
     numericEnrollmentId: row.enrollmentId,
@@ -165,7 +170,9 @@ function mapApiGradeRow(row: GradeResponse): TeacherGradeRow {
     totalScore: row.totalScore ?? null,
     letterGrade: row.letterGrade ?? null,
     gpa4: row.gpa4 ?? row.gradePoint ?? null,
-    canEdit: true,
+    canEdit: !banned,
     gradeStatus: "OPEN",
+    courseStatus,
+    absenceCount: row.absenceCount ?? null,
   };
 }

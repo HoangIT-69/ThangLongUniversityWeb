@@ -36,5 +36,11 @@ public class SemesterSummaryResponse {
     private boolean examPublished;
     private boolean retakeOpen;
     private boolean retakeLocked;
+    private boolean ended;
     private int maxCreditsPerSemester;
+
+    private Long activeRegistrationRoundId;
+    private String activeRegistrationRoundName;
+    private Integer activeRegistrationRoundNumber;
+    private int registrationRoundCount;
 }

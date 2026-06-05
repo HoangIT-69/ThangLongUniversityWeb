@@ -35,6 +35,9 @@ public class ClassSectionRequest {
     )
     @NotNull(message = "ID học kỳ không được để trống")
     private Long semesterId;
+
+    @Schema(description = "ID dot dang ky trong hoc ky. Neu bo trong, backend gan vao dot dang mo.", example = "1")
+    private Long registrationRoundId;
     
     @Schema(
             description = "ID của giảng viên (có thể null nếu chưa giao)",

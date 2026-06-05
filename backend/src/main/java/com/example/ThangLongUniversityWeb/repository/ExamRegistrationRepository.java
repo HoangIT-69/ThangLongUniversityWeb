@@ -34,4 +34,8 @@ public interface ExamRegistrationRepository extends JpaRepository<ExamRegistrati
     List<ExamRegistration> findByStudentIdAndClassSectionSemesterIdAndStatus(Long studentId, Long semesterId, EnrollmentStatus status);
 
     List<ExamRegistration> findByOriginalGrade_Enrollment_Id(Long enrollmentId);
+
+    List<ExamRegistration> findByRegistrationRoundIdAndStatus(Long registrationRoundId, EnrollmentStatus status);
+
+    List<ExamRegistration> findByRegistrationRoundId(Long registrationRoundId);
 }

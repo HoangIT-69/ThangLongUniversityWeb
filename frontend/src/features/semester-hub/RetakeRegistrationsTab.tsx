@@ -21,33 +21,17 @@ interface Props {
 export function RetakeRegistrationsTab({ semesterId }: Props) {
   const [status, setStatus] = useState("");
 
-  const summaryQuery = useQuery({
-    queryKey: ["admin", "exam-reg-summary", semesterId],
-    queryFn: () => adminApi.getExamRegistrationSummary(semesterId),
-  });
 
   const listQuery = useQuery({
     queryKey: ["admin", "exam-registrations", semesterId, status],
     queryFn: () => adminApi.listExamRegistrations(semesterId, status || undefined),
   });
 
-  const summary = summaryQuery.data;
+
   const items = listQuery.data ?? [];
 
   return (
     <div className="space-y-4">
-      {/* Summary */}
-      {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <SumCard label="Tổng đăng ký" value={summary.total} />
-          <SumCard label="Chờ duyệt" value={summary.pending} />
-          <SumCard label="Đã xác nhận" value={summary.registered} />
-          <SumCard
-            label="Tổng phí"
-            value={`${(summary.totalFeeCharged ?? 0).toLocaleString("vi-VN")}₫`}
-          />
-        </div>
-      )}
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <Select value={status} onValueChange={(v) => setStatus(v === "__all__" ? "" : v)}>
@@ -137,14 +121,6 @@ export function RetakeRegistrationsTab({ semesterId }: Props) {
   );
 }
 
-function SumCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-lg border bg-card p-4 shadow-sm">
-      <div className="text-2xl font-semibold tabular-nums">{value}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
-    </div>
-  );
-}
 
 function RegistrationTypeBadge({ type }: { type?: string | null }) {
   if (type === "RETAKE")

@@ -40,10 +40,15 @@ const map: Record<string, Variant> = {
   OFFLINE: "muted",
   ONLINE: "info",
   PROJECT: "primary",
+  "ĐANG HỌC": "info",
+  "ĐỦ ĐIỀU KIỆN THI": "success",
+  "HỌC LẠI": "warning",
+  "REPEAT_COURSE": "warning",
 };
 
 export function StatusBadge({ value, variant }: { value: string; variant?: Variant }) {
-  const v = variant ?? map[value] ?? "muted";
+  const cleanVal = value ? value.toUpperCase() : "";
+  const v = variant ?? map[value] ?? map[cleanVal] ?? "muted";
   return (
     <span
       className={cn(

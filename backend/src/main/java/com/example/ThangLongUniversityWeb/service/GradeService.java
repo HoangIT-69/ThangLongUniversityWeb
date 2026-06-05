@@ -6,7 +6,6 @@ import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse;
 import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse.SemesterGpaSummary;
 import com.example.ThangLongUniversityWeb.entity.*;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
-import com.example.ThangLongUniversityWeb.repository.AcademicResultRepository;
 import com.example.ThangLongUniversityWeb.repository.AttendanceRecordRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.GradeRepository;
@@ -14,7 +13,6 @@ import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +20,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,7 +28,6 @@ public class GradeService {
 
     private final GradeRepository gradeRepository;
     private final EnrollmentRepository enrollmentRepository;
-    private final AcademicResultRepository academicResultRepository;
     private final StudentRepository studentRepository;
     private final SemesterRepository semesterRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
@@ -69,8 +65,10 @@ public class GradeService {
      */
     @Transactional(readOnly = true)
     public List<GradeResponse> getStudentGradesBySemester(Long studentId, Long semesterId) {
-        return gradeRepository.findByStudentIdAndSemesterId(studentId, semesterId).stream()
-                .map(this::mapToResponse)
+        return enrollmentRepository.findByStudentIdAndClassSection_SemesterId(studentId, semesterId).stream()
+                .filter(this::isVisibleInStudentGrades)
+                .sorted(studentEnrollmentComparator())
+                .map(enrollment -> mapToResponse(enrollment, enrollment.getGrade()))
                 .collect(Collectors.toList());
     }
 
@@ -79,8 +77,10 @@ public class GradeService {
      */
     @Transactional(readOnly = true)
     public List<GradeResponse> getStudentAllGrades(Long studentId) {
-        return gradeRepository.findByStudentId(studentId).stream()
-                .map(this::mapToResponse)
+        return enrollmentRepository.findByStudentId(studentId).stream()
+                .filter(this::isVisibleInStudentGrades)
+                .sorted(studentEnrollmentComparator())
+                .map(enrollment -> mapToResponse(enrollment, enrollment.getGrade()))
                 .collect(Collectors.toList());
     }
 
@@ -187,6 +187,20 @@ public class GradeService {
 
     private boolean hasCompletedGrade(GradeResponse grade) {
         return grade.getTotalScore() != null && grade.getGradePoint() != null && grade.getCredits() != null;
+    }
+
+    private boolean isVisibleInStudentGrades(Enrollment enrollment) {
+        return enrollment.getStatus() != EnrollmentStatus.PENDING
+                && enrollment.getStatus() != EnrollmentStatus.CANCELED;
+    }
+
+    private Comparator<Enrollment> studentEnrollmentComparator() {
+        return Comparator
+                .comparing((Enrollment enrollment) -> enrollment.getClassSection().getSemester().getId(),
+                        Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(enrollment -> enrollment.getClassSection().getCourse().getCode(),
+                        Comparator.nullsLast(String::compareTo))
+                .thenComparing(Enrollment::getId, Comparator.nullsLast(Comparator.reverseOrder()));
     }
 
     private java.time.LocalDate findSemesterOrderDate(Long semesterId) {
