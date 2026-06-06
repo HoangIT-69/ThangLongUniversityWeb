@@ -2,11 +2,14 @@ package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.ClassSectionRequest;
 import com.example.ThangLongUniversityWeb.dto.request.ExamScheduleRequest;
+import com.example.ThangLongUniversityWeb.dto.request.ExamSessionRequest;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.service.ClassSectionService;
+import com.example.ThangLongUniversityWeb.service.ExamSessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.CacheControl;
@@ -26,6 +29,7 @@ public class ClassSectionManagementController {
 
     private final ClassSectionService classSectionService;
     private final ClassSectionRepository classSectionRepository;
+    private final ExamSessionService examSessionService;
 
     @Operation(summary = "Lấy danh sách TOÀN BỘ lớp học phần (Đã làm phẳng dữ liệu)")
     @GetMapping
@@ -51,13 +55,22 @@ public class ClassSectionManagementController {
 
     @Operation(summary = "Mở một lớp học phần mới")
     @PostMapping
-    public ResponseEntity<?> createClassSection(@RequestBody ClassSectionRequest request) {
+    public ResponseEntity<?> createClassSection(@Valid @RequestBody ClassSectionRequest request) {
         return ResponseEntity.ok(classSectionService.createClassSection(request));
+    }
+
+    @Operation(summary = "Kiểm tra lớp học phần trước khi tạo/cập nhật")
+    @PostMapping("/validate")
+    public ResponseEntity<?> validateClassSection(
+            @Valid @RequestBody ClassSectionRequest request,
+            @RequestParam(required = false) Long excludeId
+    ) {
+        return ResponseEntity.ok(classSectionService.validateClassSection(request, request.getSemesterId(), excludeId));
     }
 
     @Operation(summary = "Cập nhật lớp học phần (Đổi phòng, đổi giảng viên...)")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateClassSection(@PathVariable Long id, @RequestBody ClassSectionRequest request) {
+    public ResponseEntity<?> updateClassSection(@PathVariable Long id, @Valid @RequestBody ClassSectionRequest request) {
         return ResponseEntity.ok(classSectionService.updateClassSection(id, request));
     }
 
@@ -93,5 +106,44 @@ public class ClassSectionManagementController {
     @GetMapping("/semester/{semesterId}/exam-schedules")
     public ResponseEntity<?> getExamSchedules(@PathVariable Long semesterId) {
         return ResponseEntity.ok(classSectionService.getExamSchedulesBySemester(semesterId));
+    }
+
+    @Operation(summary = "Lay lich thi theo mon va phong thi")
+    @GetMapping("/semester/{semesterId}/exam-sessions")
+    public ResponseEntity<?> getExamSessions(@PathVariable Long semesterId) {
+        return ResponseEntity.ok(examSessionService.listSessions(semesterId));
+    }
+
+    @Operation(summary = "Tao/cap nhat lich thi theo mon va tu dong chia phong")
+    @PostMapping("/semester/{semesterId}/exam-sessions")
+    public ResponseEntity<?> saveExamSession(
+            @PathVariable Long semesterId,
+            @RequestBody ExamSessionRequest request
+    ) {
+        return ResponseEntity.ok(examSessionService.saveSession(semesterId, request));
+    }
+
+    @Operation(summary = "Kiem tra trung lich thi cho sinh vien")
+    @PostMapping("/semester/{semesterId}/exam-sessions/validate-conflicts")
+    public ResponseEntity<?> validateExamConflicts(
+            @PathVariable Long semesterId,
+            @RequestBody ExamSessionRequest request
+    ) {
+        return ResponseEntity.ok(examSessionService.validateConflicts(semesterId, request));
+    }
+
+    @Operation(summary = "Lay danh sach sinh vien du kien du thi")
+    @GetMapping("/semester/{semesterId}/exam-sessions/candidates")
+    public ResponseEntity<?> getExamCandidates(
+            @PathVariable Long semesterId,
+            @RequestParam Long courseId
+    ) {
+        return ResponseEntity.ok(examSessionService.getCandidates(semesterId, courseId));
+    }
+
+    @Operation(summary = "Lay danh sach sinh vien trong mot lich thi theo mon")
+    @GetMapping("/exam-sessions/{examSessionId}/seats")
+    public ResponseEntity<?> getExamSessionSeats(@PathVariable Long examSessionId) {
+        return ResponseEntity.ok(examSessionService.listSeats(examSessionId));
     }
 }

@@ -6,11 +6,14 @@ import com.example.ThangLongUniversityWeb.dto.request.ExamScheduleRequest;
 import com.example.ThangLongUniversityWeb.dto.response.AdminClassSectionStudentResponse;
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionResponse;
 import com.example.ThangLongUniversityWeb.dto.response.ClassSectionScheduleResponse;
+import com.example.ThangLongUniversityWeb.dto.response.ClassSectionValidationIssueResponse;
+import com.example.ThangLongUniversityWeb.dto.response.ClassSectionValidationResponse;
 import com.example.ThangLongUniversityWeb.dto.response.ExamScheduleResponse;
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
 import com.example.ThangLongUniversityWeb.entity.ClassSectionSchedule;
 import com.example.ThangLongUniversityWeb.entity.Course;
 import com.example.ThangLongUniversityWeb.entity.Period;
+import com.example.ThangLongUniversityWeb.entity.RegistrationRound;
 import com.example.ThangLongUniversityWeb.entity.Room;
 import com.example.ThangLongUniversityWeb.entity.Semester;
 import com.example.ThangLongUniversityWeb.entity.Teacher;
@@ -20,17 +23,23 @@ import com.example.ThangLongUniversityWeb.repository.ClassSectionScheduleReposit
 import com.example.ThangLongUniversityWeb.repository.CourseRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.PeriodRepository;
+import com.example.ThangLongUniversityWeb.repository.RegistrationRoundRepository;
 import com.example.ThangLongUniversityWeb.repository.RoomRepository;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
+import com.example.ThangLongUniversityWeb.repository.GradeRepository;
+import com.example.ThangLongUniversityWeb.repository.AttendanceRecordRepository;
+import com.example.ThangLongUniversityWeb.enums.CourseStudyStatus;
+import com.example.ThangLongUniversityWeb.enums.AttendanceStatus;
+import com.example.ThangLongUniversityWeb.entity.Grade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 
 @Service
 @RequiredArgsConstructor
@@ -44,10 +53,69 @@ public class ClassSectionService {
     private final PeriodRepository periodRepository;
     private final RoomRepository roomRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final RegistrationRoundRepository registrationRoundRepository;
+    private final RegistrationRoundService registrationRoundService;
+    private final GradeRepository gradeRepository;
+    private final AttendanceRecordRepository attendanceRecordRepository;
 
     public void checkScheduleConflict(ClassSectionRequest request, Long semesterId, Long excludeId) {
-        // Kiểm tra conflict cho mỗi schedule, bao gồm cả phòng và lịch của giảng viên
-        for (ClassSectionScheduleRequest scheduleReq : request.getSchedules()) {
+        ClassSectionValidationResponse validation = validateClassSection(request, semesterId, excludeId);
+        if (!validation.isValid()) {
+            throw new RuntimeException(validation.getErrors().get(0).getMessage());
+        }
+    }
+
+    public ClassSectionValidationResponse validateClassSection(ClassSectionRequest request, Long semesterId, Long excludeId) {
+        List<ClassSectionValidationIssueResponse> errors = new ArrayList<>();
+        List<ClassSectionValidationIssueResponse> warnings = new ArrayList<>();
+        List<ClassSectionValidationIssueResponse> infos = new ArrayList<>();
+        Long effectiveSemesterId = semesterId != null ? semesterId : request.getSemesterId();
+
+        if (request.getClassCode() != null && !request.getClassCode().isBlank()) {
+            String classCode = request.getClassCode().trim();
+            classSectionRepository.findBySemesterIdAndClassCode(effectiveSemesterId, classCode)
+                    .filter(existing -> excludeId == null || !existing.getId().equals(excludeId))
+                    .ifPresent(existing -> errors.add(issue("DUPLICATE_CLASS_CODE", "Ma lop hoc phan da ton tai trong hoc ky nay.")));
+        }
+
+        if (effectiveSemesterId != null && request.getCourseId() != null) {
+            long courseClassCount = classSectionRepository
+                    .findBySemesterIdAndCourseId(effectiveSemesterId, request.getCourseId())
+                    .stream()
+                    .filter(section -> excludeId == null || !section.getId().equals(excludeId))
+                    .count();
+            if (courseClassCount > 0) {
+                infos.add(issue("COURSE_ALREADY_HAS_CLASSES", "Mon hoc nay da co " + courseClassCount + " lop trong hoc ky."));
+            }
+        }
+
+        validateTeacherDepartmentForRequest(request, errors);
+
+        if (request.getSchedules() == null || request.getSchedules().isEmpty()) {
+            errors.add(issue("MISSING_SCHEDULE", "Can khai bao it nhat mot lich hoc."));
+        } else {
+            validateInternalScheduleOverlaps(request.getSchedules(), errors);
+            for (ClassSectionScheduleRequest scheduleReq : request.getSchedules()) {
+                validateOneSchedule(request, effectiveSemesterId, excludeId, scheduleReq, errors);
+            }
+        }
+
+        return ClassSectionValidationResponse.builder()
+                .valid(errors.isEmpty())
+                .errors(errors)
+                .warnings(warnings)
+                .infos(infos)
+                .build();
+    }
+
+    private void validateOneSchedule(
+            ClassSectionRequest request,
+            Long semesterId,
+            Long excludeId,
+            ClassSectionScheduleRequest scheduleReq,
+            List<ClassSectionValidationIssueResponse> errors
+    ) {
+        try {
             Room room = getRoomOrThrow(scheduleReq.getRoomId());
             validateRoomCapacity(room, request.getMaxSlots());
 
@@ -58,193 +126,191 @@ public class ClassSectionService {
             Integer startNumber = startPeriod.getPeriodNumber();
             Integer endNumber = endPeriod.getPeriodNumber();
 
-            if (scheduleRepository.countRoomConflicts(semesterId, room.getId(), scheduleReq.getDayOfWeek(),
-                    startNumber, endNumber, excludeId) > 0) {
-                throw new RuntimeException("Phòng " + room.getName() + " đã được sử dụng vào thứ " +
-                        scheduleReq.getDayOfWeek() + " tiết " + startNumber + "-" + endNumber);
+            if (semesterId != null && scheduleRepository.countRoomConflicts(
+                    semesterId, room.getId(), scheduleReq.getDayOfWeek(), startNumber, endNumber, excludeId) > 0) {
+                errors.add(issue("ROOM_CONFLICT", "Phong " + room.getName() + " da duoc su dung trong khung gio nay."));
             }
 
-            if (request.getTeacherId() != null && !scheduleRepository.findTeacherConflicts(semesterId, request.getTeacherId(), scheduleReq.getDayOfWeek(),
-                    startNumber, endNumber, excludeId).isEmpty()) {
-                throw new RuntimeException("Giảng viên đã có lớp vào thứ " + scheduleReq.getDayOfWeek() +
-                        " tiết " + startNumber + "-" + endNumber);
+            if (semesterId != null && request.getTeacherId() != null && !scheduleRepository.findTeacherConflicts(
+                    semesterId, request.getTeacherId(), scheduleReq.getDayOfWeek(), startNumber, endNumber, excludeId).isEmpty()) {
+                errors.add(issue("TEACHER_CONFLICT", "Giang vien da co lop trong khung gio nay."));
             }
+        } catch (RuntimeException ex) {
+            errors.add(issue("INVALID_SCHEDULE", ex.getMessage()));
         }
+    }
+
+    private void validateInternalScheduleOverlaps(
+            List<ClassSectionScheduleRequest> scheduleRequests,
+            List<ClassSectionValidationIssueResponse> errors
+    ) {
+        try {
+            for (int i = 0; i < scheduleRequests.size(); i++) {
+                ClassSectionScheduleRequest current = scheduleRequests.get(i);
+                Period currentStart = getPeriodOrThrow(current.getStartPeriodId(), "startPeriodId");
+                Period currentEnd = getPeriodOrThrow(current.getEndPeriodId(), "endPeriodId");
+                for (int j = i + 1; j < scheduleRequests.size(); j++) {
+                    ClassSectionScheduleRequest other = scheduleRequests.get(j);
+                    if (!current.getDayOfWeek().equals(other.getDayOfWeek())) {
+                        continue;
+                    }
+                    Period otherStart = getPeriodOrThrow(other.getStartPeriodId(), "startPeriodId");
+                    Period otherEnd = getPeriodOrThrow(other.getEndPeriodId(), "endPeriodId");
+                    if (isPeriodOverlap(
+                            currentStart.getPeriodNumber(),
+                            currentEnd.getPeriodNumber(),
+                            otherStart.getPeriodNumber(),
+                            otherEnd.getPeriodNumber())) {
+                        errors.add(issue("CLASS_SCHEDULE_OVERLAP", "Cac buoi hoc trong cung lop bi trung khung gio."));
+                        return;
+                    }
+                }
+            }
+        } catch (RuntimeException ex) {
+            errors.add(issue("INVALID_SCHEDULE", ex.getMessage()));
+        }
+    }
+
+    private ClassSectionValidationIssueResponse issue(String code, String message) {
+        return ClassSectionValidationIssueResponse.builder()
+                .code(code)
+                .message(message)
+                .build();
     }
 
     public void checkStudentScheduleConflict(Long studentId, Long classSectionId) {
         ClassSection targetClass = classSectionRepository.findById(classSectionId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
 
-        List<ClassSection> enrolledClasses = enrollmentRepository.findCurrentSelectedOrRegisteredClasses(studentId, targetClass.getSemester().getId());
+        List<ClassSection> enrolledClasses = enrollmentRepository.findCurrentSelectedOrRegisteredClasses(
+                studentId, targetClass.getSemester().getId());
 
         for (ClassSectionSchedule targetSchedule : targetClass.getSchedules()) {
             for (ClassSection enrolledClass : enrolledClasses) {
                 for (ClassSectionSchedule enrolledSchedule : enrolledClass.getSchedules()) {
-                    if (targetSchedule.getDayOfWeek().equals(enrolledSchedule.getDayOfWeek())) {
-                        if (isPeriodOverlap(targetSchedule.getStartPeriod().getPeriodNumber(),
-                                targetSchedule.getEndPeriod().getPeriodNumber(),
-                                enrolledSchedule.getStartPeriod().getPeriodNumber(),
-                                enrolledSchedule.getEndPeriod().getPeriodNumber())) {
-                            throw new RuntimeException("Lịch học bị trùng với các lớp đã đăng ký trong học kỳ này!");
-                        }
+                    if (targetSchedule.getDayOfWeek().equals(enrolledSchedule.getDayOfWeek())
+                            && isPeriodOverlap(
+                            targetSchedule.getStartPeriod().getPeriodNumber(),
+                            targetSchedule.getEndPeriod().getPeriodNumber(),
+                            enrolledSchedule.getStartPeriod().getPeriodNumber(),
+                            enrolledSchedule.getEndPeriod().getPeriodNumber())) {
+                        throw new RuntimeException("Lich hoc bi trung voi lop da chon/dang ky.");
                     }
                 }
             }
         }
     }
 
-    private Period getPeriodOrThrow(Long periodId, String fieldName) {
-        if (periodId == null) {
-            throw new RuntimeException("Thiếu " + fieldName + "");
-        }
-        return periodRepository.findById(periodId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Period với id = " + periodId));
-    }
-
-    private Room getRoomOrThrow(Long roomId) {
-        if (roomId == null) {
-            throw new RuntimeException("Thiếu roomId");
-        }
-        return roomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng học!"));
-    }
-
-    private void validateRoomCapacity(Room room, Integer maxSlots) {
-        if (maxSlots != null && room.getCapacity() != null && maxSlots > room.getCapacity()) {
-            throw new RuntimeException("Số lượng sinh viên (" + maxSlots + ") vượt quá sức chứa phòng " +
-                    room.getName() + " (" + room.getCapacity() + ")");
-        }
-    }
-
-    private void validatePeriodOrder(Period startPeriod, Period endPeriod) {
-        if (startPeriod.getPeriodNumber() > endPeriod.getPeriodNumber()) {
-            throw new RuntimeException("StartPeriod phải nhỏ hơn hoặc bằng EndPeriod");
-        }
-    }
-
-    private boolean isPeriodOverlap(Integer start1, Integer end1, Integer start2, Integer end2) {
-        return start1 <= end1 && start2 <= end2 && start1 <= end2 && start2 <= end1;
-    }
-
     @Transactional
     public ClassSectionResponse createClassSection(ClassSectionRequest request) {
-        if (classSectionRepository.findByClassCode(request.getClassCode()).isPresent()) {
-            throw new RuntimeException("Mã lớp học phần đã tồn tại!");
+        if (classSectionRepository.findBySemesterIdAndClassCode(request.getSemesterId(), request.getClassCode().trim()).isPresent()) {
+            throw new RuntimeException("Ma lop hoc phan da ton tai trong hoc ky nay.");
         }
 
         checkScheduleConflict(request, request.getSemesterId(), null);
 
         Course course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học!"));
-
+                .orElseThrow(() -> new RuntimeException("Khong tim thay mon hoc."));
         Semester semester = semesterRepository.findById(request.getSemesterId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ!"));
-
-        Teacher teacher = null;
-        if (request.getTeacherId() != null) {
-            teacher = teacherRepository.findById(request.getTeacherId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy giảng viên!"));
-        }
+                .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky."));
+        Teacher teacher = getTeacherOrNull(request.getTeacherId());
+        validateTeacherDepartment(course, teacher);
+        RegistrationRound registrationRound = resolveRegistrationRound(request, semester.getId());
 
         ClassSection section = new ClassSection();
-        section.setClassCode(request.getClassCode());
+        section.setClassCode(request.getClassCode().trim());
         section.setCourse(course);
         section.setSemester(semester);
+        section.setRegistrationRound(registrationRound);
         section.setTeacher(teacher);
         section.setMaxSlots(request.getMaxSlots());
         section.setCurrentSlots(0);
         section.setClosed(false);
 
         ClassSection saved = classSectionRepository.save(section);
-
-        // Tạo danh sách schedules với phòng riêng cho mỗi ngày
-        for (ClassSectionScheduleRequest scheduleReq : request.getSchedules()) {
-            ClassSectionSchedule schedule = new ClassSectionSchedule();
-            schedule.setClassSection(saved);
-            schedule.setDayOfWeek(scheduleReq.getDayOfWeek());
-            schedule.setStartPeriod(getPeriodOrThrow(scheduleReq.getStartPeriodId(), "startPeriodId"));
-            schedule.setEndPeriod(getPeriodOrThrow(scheduleReq.getEndPeriodId(), "endPeriodId"));
-            schedule.setRoom(getRoomOrThrow(scheduleReq.getRoomId()));
-            scheduleRepository.save(schedule);
-        }
-
-        // Nếu tất cả lịch dùng cùng một phòng, giữ room top-level để tương thích
-        if (!saved.getSchedules().isEmpty()) {
-            saved.setRoom(saved.getSchedules().get(0).getRoom());
-            saved = classSectionRepository.save(saved);
-        }
-
-        // Reload để lấy schedules
+        replaceSchedules(saved, request.getSchedules());
         saved = classSectionRepository.findById(saved.getId()).orElseThrow();
         return mapToResponse(saved);
     }
 
     @Transactional
     public ClassSectionResponse updateClassSection(Long id, ClassSectionRequest request) {
-        System.out.println("Updating class section " + id + " with request: " + request);
         ClassSection section = classSectionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
 
         checkScheduleConflict(request, section.getSemester().getId(), id);
 
-        Teacher teacher = null;
-        if (request.getTeacherId() != null) {
-            teacher = teacherRepository.findById(request.getTeacherId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy giảng viên!"));
-        }
-
+        Teacher teacher = getTeacherOrNull(request.getTeacherId());
+        validateTeacherDepartment(section.getCourse(), teacher);
         section.setTeacher(teacher);
         section.setMaxSlots(request.getMaxSlots());
 
-        // Xóa old schedules
+        if (request.getRegistrationRoundId() != null) {
+            RegistrationRound round = registrationRoundRepository.findById(request.getRegistrationRoundId())
+                    .orElseThrow(() -> new RuntimeException("Khong tim thay dot dang ky."));
+            if (!round.getSemester().getId().equals(section.getSemester().getId())) {
+                throw new RuntimeException("Dot dang ky khong thuoc hoc ky cua lop hoc phan.");
+            }
+            if (round.isLocked()) {
+                throw new RuntimeException("Dot dang ky da chot, khong the chuyen lop vao dot nay.");
+            }
+            section.setRegistrationRound(round);
+        }
+
         scheduleRepository.deleteAll(section.getSchedules());
         section.getSchedules().clear();
-
-        // Thêm new schedules
-        for (ClassSectionScheduleRequest scheduleReq : request.getSchedules()) {
-            ClassSectionSchedule schedule = new ClassSectionSchedule();
-            schedule.setClassSection(section);
-            schedule.setDayOfWeek(scheduleReq.getDayOfWeek());
-            schedule.setStartPeriod(getPeriodOrThrow(scheduleReq.getStartPeriodId(), "startPeriodId"));
-            schedule.setEndPeriod(getPeriodOrThrow(scheduleReq.getEndPeriodId(), "endPeriodId"));
-            schedule.setRoom(getRoomOrThrow(scheduleReq.getRoomId()));
-            scheduleRepository.save(schedule);
-            section.getSchedules().add(schedule);
-        }
-
-        if (!section.getSchedules().isEmpty()) {
-            section.setRoom(section.getSchedules().get(0).getRoom());
-        }
+        replaceSchedules(section, request.getSchedules());
 
         ClassSection saved = classSectionRepository.save(section);
-        System.out.println("Saved class section: " + saved);
-        ClassSectionResponse response = mapToResponse(saved);
-        System.out.println("Response: " + response);
-        return response;
+        return mapToResponse(saved);
     }
 
     @Transactional
     public void deleteClassSection(Long id) {
         ClassSection section = classSectionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
         try {
             classSectionRepository.delete(section);
             classSectionRepository.flush();
         } catch (DataIntegrityViolationException ex) {
-            throw new RuntimeException("Không thể xóa lớp học phần vì đã được tham chiếu bởi đăng ký, điểm, lịch học hoặc dữ liệu liên quan. Chỉ nên xóa lớp vừa tạo nhầm và chưa phát sinh dữ liệu.");
+            throw new RuntimeException("Khong the xoa lop hoc phan vi da co du lieu lien quan.");
         }
     }
 
     public List<AdminClassSectionStudentResponse> getClassSectionStudents(Long classSectionId) {
         ClassSection section = classSectionRepository.findById(classSectionId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
 
         return enrollmentRepository.findByClassSectionId(section.getId()).stream()
                 .map(enrollment -> {
                     var student = enrollment.getStudent();
                     var major = student.getMajor();
                     var user = student.getUser();
+                    
+                    String displayStatus = "Đang học";
+                    Grade grade = enrollment.getGrade();
+                    if (grade != null && grade.getParticipationScore() != null && grade.getMidtermScore() != null) {
+                        float preFinalAvg = grade.getParticipationScore() * 0.25f + grade.getMidtermScore() * 0.75f;
+                        long absences = attendanceRecordRepository.countByEnrollmentIdAndStatus(
+                                enrollment.getId(), AttendanceStatus.ABSENT);
+                        
+                        if (preFinalAvg < 4.0f || absences > 3) {
+                            displayStatus = "Học lại";
+                        } else {
+                            displayStatus = "Đủ điều kiện thi";
+                        }
+                    } else {
+                        // Check if they are already repeating due to historical grades
+                        long courseId = section.getCourse().getId();
+                        List<Grade> prevGrades = gradeRepository.findByStudentId(student.getId()).stream()
+                            .filter(g -> g.getEnrollment().getClassSection().getCourse().getId().equals(courseId))
+                            .filter(g -> !g.getEnrollment().getId().equals(enrollment.getId()))
+                            .toList();
+                        if (!prevGrades.isEmpty()) {
+                            displayStatus = "Học lại";
+                        }
+                    }
+
                     return AdminClassSectionStudentResponse.builder()
                             .enrollmentId(enrollment.getId())
                             .studentId(student.getId())
@@ -256,8 +322,8 @@ public class ClassSectionService {
                             .majorName(major != null ? major.getName() : null)
                             .cohort(student.getCohort())
                             .academicYear(student.getAcademicYear())
-                            .enrolledAt(null)
-                            .status(enrollment.getStatus() != null ? enrollment.getStatus().name() : null)
+                            .enrolledAt(enrollment.getEnrolledAt() != null ? enrollment.getEnrolledAt().toString() : null)
+                            .status(displayStatus)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -270,9 +336,7 @@ public class ClassSectionService {
         int activeSlots = section.getId() == null
                 ? (section.getCurrentSlots() == null ? 0 : section.getCurrentSlots())
                 : (int) enrollmentRepository.countByClassSectionIdAndStatusIn(
-                section.getId(),
-                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED)
-        );
+                section.getId(), List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED));
 
         var distinctRooms = schedules.stream()
                 .map(ClassSectionScheduleResponse::getRoomName)
@@ -285,7 +349,7 @@ public class ClassSectionService {
         if (distinctRooms.size() == 1 && !schedules.isEmpty()) {
             topRoomName = schedules.get(0).getRoomName();
             topRoomId = schedules.get(0).getRoomId();
-            topRoomCapacity = (section.getRoom() != null ? section.getRoom().getCapacity() : null);
+            topRoomCapacity = section.getRoom() != null ? section.getRoom().getCapacity() : null;
         }
 
         return ClassSectionResponse.builder()
@@ -295,12 +359,16 @@ public class ClassSectionService {
                 .courseCode(section.getCourse().getCode())
                 .courseName(section.getCourse().getName())
                 .courseType(section.getCourse().getCourseType())
-                .courseTypeLabel(section.getCourse().getCourseType() != null && section.getCourse().getCourseType().name().equals("ELECTIVE") ? "Tu do" : "Bat buoc")
+                .courseTypeLabel(section.getCourse().getCourseType() != null
+                        && section.getCourse().getCourseType().name().equals("ELECTIVE") ? "Tu do" : "Bat buoc")
                 .credits(section.getCourse().getCredits())
                 .semesterId(section.getSemester().getId())
                 .semesterName(section.getSemester().getName())
+                .registrationRoundId(section.getRegistrationRound() != null ? section.getRegistrationRound().getId() : null)
+                .registrationRoundName(section.getRegistrationRound() != null ? section.getRegistrationRound().getName() : null)
+                .registrationRoundNumber(section.getRegistrationRound() != null ? section.getRegistrationRound().getRoundNumber() : null)
                 .teacherId(section.getTeacher() != null ? section.getTeacher().getId() : null)
-                .teacherName(section.getTeacher() != null ? section.getTeacher().getFullName() : "Chưa phân công")
+                .teacherName(section.getTeacher() != null ? section.getTeacher().getFullName() : "Chua phan cong")
                 .room(topRoomName)
                 .roomId(topRoomId)
                 .roomCapacity(topRoomCapacity)
@@ -309,6 +377,9 @@ public class ClassSectionService {
                 .currentSlots(activeSlots)
                 .isClosed(section.isClosed())
                 .gradeLocked(section.isGradeLocked())
+                .examAt(section.getExamAt())
+                .examRoom(section.getExamRoom())
+                .examType(section.getExamType())
                 .build();
     }
 
@@ -332,7 +403,7 @@ public class ClassSectionService {
     @Transactional
     public ExamScheduleResponse updateExamSchedule(Long classSectionId, ExamScheduleRequest request) {
         ClassSection section = classSectionRepository.findById(classSectionId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần!"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
         section.setExamAt(request.getExamAt());
         section.setExamRoom(request.getExamRoom());
         if (request.getExamType() != null) {
@@ -346,9 +417,9 @@ public class ClassSectionService {
     public List<ExamScheduleResponse> batchUpdateExamSchedules(Long semesterId, List<ExamScheduleRequest> requests) {
         return requests.stream().map(req -> {
             ClassSection section = classSectionRepository.findById(req.getClassSectionId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần id=" + req.getClassSectionId()));
+                    .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan id=" + req.getClassSectionId()));
             if (!section.getSemester().getId().equals(semesterId)) {
-                throw new RuntimeException("Lớp học phần " + req.getClassSectionId() + " không thuộc học kỳ " + semesterId);
+                throw new RuntimeException("Lop hoc phan khong thuoc hoc ky " + semesterId);
             }
             section.setExamAt(req.getExamAt());
             section.setExamRoom(req.getExamRoom());
@@ -368,16 +439,14 @@ public class ClassSectionService {
 
     private ExamScheduleResponse toExamScheduleResponse(ClassSection section) {
         int studentCount = (int) enrollmentRepository.countByClassSectionIdAndStatusIn(
-                section.getId(),
-                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED)
-        );
+                section.getId(), List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED));
         return ExamScheduleResponse.builder()
                 .classSectionId(section.getId())
                 .classCode(section.getClassCode())
                 .courseName(section.getCourse().getName())
                 .courseCode(section.getCourse().getCode())
                 .credits(section.getCourse().getCredits())
-                .teacherName(section.getTeacher() != null ? section.getTeacher().getFullName() : "Chưa phân công")
+                .teacherName(section.getTeacher() != null ? section.getTeacher().getFullName() : "Chua phan cong")
                 .examAt(section.getExamAt())
                 .examRoom(section.getExamRoom())
                 .examType(section.getExamType())
@@ -385,5 +454,105 @@ public class ClassSectionService {
                 .semesterId(section.getSemester().getId())
                 .semesterName(section.getSemester().getName())
                 .build();
+    }
+
+    private void replaceSchedules(ClassSection section, List<ClassSectionScheduleRequest> scheduleRequests) {
+        for (ClassSectionScheduleRequest scheduleReq : scheduleRequests) {
+            ClassSectionSchedule schedule = new ClassSectionSchedule();
+            schedule.setClassSection(section);
+            schedule.setDayOfWeek(scheduleReq.getDayOfWeek());
+            schedule.setStartPeriod(getPeriodOrThrow(scheduleReq.getStartPeriodId(), "startPeriodId"));
+            schedule.setEndPeriod(getPeriodOrThrow(scheduleReq.getEndPeriodId(), "endPeriodId"));
+            schedule.setRoom(getRoomOrThrow(scheduleReq.getRoomId()));
+            scheduleRepository.save(schedule);
+            section.getSchedules().add(schedule);
+        }
+        if (!section.getSchedules().isEmpty()) {
+            section.setRoom(section.getSchedules().get(0).getRoom());
+        }
+    }
+
+    private RegistrationRound resolveRegistrationRound(ClassSectionRequest request, Long semesterId) {
+        if (request.getRegistrationRoundId() != null) {
+            RegistrationRound round = registrationRoundRepository.findById(request.getRegistrationRoundId())
+                    .orElseThrow(() -> new RuntimeException("Khong tim thay dot dang ky."));
+            if (!round.getSemester().getId().equals(semesterId)) {
+                throw new RuntimeException("Dot dang ky khong thuoc hoc ky da chon.");
+            }
+            if (round.isLocked()) {
+                throw new RuntimeException("Dot dang ky da chot, khong the tao lop moi vao dot nay.");
+            }
+            return round;
+        }
+        RegistrationRound openRound = registrationRoundService.getOpenRound(semesterId);
+        return openRound;
+    }
+
+    private Teacher getTeacherOrNull(Long teacherId) {
+        if (teacherId == null) {
+            return null;
+        }
+        return teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay giang vien."));
+    }
+
+    private void validateTeacherDepartmentForRequest(ClassSectionRequest request, List<ClassSectionValidationIssueResponse> errors) {
+        if (request.getCourseId() == null || request.getTeacherId() == null) {
+            return;
+        }
+        try {
+            Course course = courseRepository.findById(request.getCourseId())
+                    .orElseThrow(() -> new RuntimeException("Khong tim thay mon hoc."));
+            Teacher teacher = getTeacherOrNull(request.getTeacherId());
+            validateTeacherDepartment(course, teacher);
+        } catch (RuntimeException ex) {
+            errors.add(issue("TEACHER_DEPARTMENT_MISMATCH", ex.getMessage()));
+        }
+    }
+
+    private void validateTeacherDepartment(Course course, Teacher teacher) {
+        if (teacher == null || course == null || course.getMajor() == null || course.getMajor().getDepartment() == null) {
+            return;
+        }
+        if (teacher.getDepartment() == null) {
+            throw new RuntimeException("Giang vien chua duoc gan khoa, khong the phan cong cho hoc phan theo nganh.");
+        }
+        Long courseDepartmentId = course.getMajor().getDepartment().getId();
+        Long teacherDepartmentId = teacher.getDepartment().getId();
+        if (!courseDepartmentId.equals(teacherDepartmentId)) {
+            throw new RuntimeException("Giang vien khong thuoc cung khoa voi nganh cua hoc phan.");
+        }
+    }
+
+    private Period getPeriodOrThrow(Long periodId, String fieldName) {
+        if (periodId == null) {
+            throw new RuntimeException("Thieu " + fieldName);
+        }
+        return periodRepository.findById(periodId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay tiet hoc id=" + periodId));
+    }
+
+    private Room getRoomOrThrow(Long roomId) {
+        if (roomId == null) {
+            throw new RuntimeException("Thieu roomId");
+        }
+        return roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay phong hoc."));
+    }
+
+    private void validateRoomCapacity(Room room, Integer maxSlots) {
+        if (maxSlots != null && room.getCapacity() != null && maxSlots > room.getCapacity()) {
+            throw new RuntimeException("Si so lop vuot qua suc chua phong " + room.getName() + ".");
+        }
+    }
+
+    private void validatePeriodOrder(Period startPeriod, Period endPeriod) {
+        if (startPeriod.getPeriodNumber() > endPeriod.getPeriodNumber()) {
+            throw new RuntimeException("Tiet bat dau phai nho hon hoac bang tiet ket thuc.");
+        }
+    }
+
+    private boolean isPeriodOverlap(Integer start1, Integer end1, Integer start2, Integer end2) {
+        return start1 <= end1 && start2 <= end2 && start1 <= end2 && start2 <= end1;
     }
 }

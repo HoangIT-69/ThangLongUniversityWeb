@@ -59,6 +59,12 @@ public class CourseResponse {
     )
     private String majorName;
 
+    @Schema(description = "Department ID owning the course major", example = "1")
+    private Long departmentId;
+
+    @Schema(description = "Department name owning the course major", example = "Khoa Toan Tin")
+    private String departmentName;
+
     @Schema(description = "List of prerequisite course IDs", example = "[1, 2]")
     private List<Long> prerequisiteCourseIds;
 

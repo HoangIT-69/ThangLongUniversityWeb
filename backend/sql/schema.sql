@@ -108,7 +108,12 @@ CREATE TABLE IF NOT EXISTS semesters (
     start_date           DATE,
     end_date             DATE,
     is_registration_open BOOLEAN NOT NULL DEFAULT FALSE,
-    is_locked            BOOLEAN NOT NULL DEFAULT FALSE
+    is_locked            BOOLEAN NOT NULL DEFAULT FALSE,
+    exam_published       BOOLEAN NOT NULL DEFAULT FALSE,
+    retake_open          BOOLEAN NOT NULL DEFAULT FALSE,
+    retake_locked        BOOLEAN NOT NULL DEFAULT FALSE,
+    ended                BOOLEAN NOT NULL DEFAULT FALSE,
+    max_credits_per_semester INTEGER NOT NULL DEFAULT 20
 );
 
 
@@ -119,7 +124,7 @@ CREATE TABLE IF NOT EXISTS semesters (
 -- 2.1 Class Sections — Lớp học phần
 CREATE TABLE IF NOT EXISTS class_sections (
     id              BIGSERIAL PRIMARY KEY,
-    class_code      VARCHAR(100) NOT NULL UNIQUE,
+    class_code      VARCHAR(100) NOT NULL,
     course_id       BIGINT       REFERENCES courses(id),
     semester_id     BIGINT       REFERENCES semesters(id),
     teacher_id      BIGINT       REFERENCES teachers(id),
@@ -318,6 +323,7 @@ CREATE INDEX IF NOT EXISTS idx_courses_major_id          ON courses(major_id);
 CREATE INDEX IF NOT EXISTS idx_class_sections_semester_id  ON class_sections(semester_id);
 CREATE INDEX IF NOT EXISTS idx_class_sections_teacher_id   ON class_sections(teacher_id);
 CREATE INDEX IF NOT EXISTS idx_class_sections_course_id    ON class_sections(course_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_class_sections_semester_class_code ON class_sections(semester_id, class_code);
 
 -- Class Section Schedules
 CREATE INDEX IF NOT EXISTS idx_css_class_section_id      ON class_section_schedules(class_section_id);

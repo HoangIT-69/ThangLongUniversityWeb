@@ -119,6 +119,12 @@ public class CourseService {
                 .courseTypeLabel(courseType == CourseType.ELECTIVE ? "Tu do" : "Bat buoc")
                 .majorId(course.getMajor() != null ? course.getMajor().getId() : null)
                 .majorName(course.getMajor() != null ? course.getMajor().getName() : "Dai cuong")
+                .departmentId(course.getMajor() != null && course.getMajor().getDepartment() != null
+                        ? course.getMajor().getDepartment().getId()
+                        : null)
+                .departmentName(course.getMajor() != null && course.getMajor().getDepartment() != null
+                        ? course.getMajor().getDepartment().getName()
+                        : null)
                 .prerequisiteCourseIds(course.getPrerequisites().stream()
                         .map(Course::getId)
                         .collect(Collectors.toList()))

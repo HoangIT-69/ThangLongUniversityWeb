@@ -3,6 +3,7 @@ import type {
   AdminUserUpdateRequest,
   AdminClassSectionRequest,
   AdminClassSectionStudentResponse,
+  ClassSectionValidationResponse,
   AdminCourseRequest,
   AdminRoomRequest,
   AdminStudentRequest,
@@ -20,6 +21,11 @@ import type {
   DepartmentResponse,
   ExamScheduleRequest,
   ExamScheduleResponse,
+  ExamSeatAssignmentResponse,
+  ExamSessionRequest,
+  ExamSessionResponse,
+  ExamConflictResponse,
+  ExamCandidateResponse,
   HomeroomRequest,
   HomeroomResponse,
   HomeroomStudentsRequest,
@@ -31,6 +37,8 @@ import type {
   RoomResponse,
   SemesterRequest,
   SemesterSummaryResponse,
+  RegistrationRoundRequest,
+  RegistrationRoundResponse,
   StudentSemesterResponse,
 } from "./types";
 
@@ -185,6 +193,41 @@ export const adminApi = {
     apiRequest<{ message: string }>(`/api/admin/semesters/${semesterId}/lock-retakes`, {
       method: "POST",
     }),
+  endSemester: (semesterId: number | string) =>
+    apiRequest<StudentSemesterResponse>(`/api/admin/semesters/${semesterId}/end`, {
+      method: "POST",
+    }),
+  listRegistrationRounds: (semesterId: number | string, roundType?: string) =>
+    apiRequest<RegistrationRoundResponse[]>(
+      `/api/admin/semesters/${semesterId}/registration-rounds${roundType ? `?roundType=${roundType}` : ""}`,
+    ),
+  createRegistrationRound: (semesterId: number | string, request?: RegistrationRoundRequest) =>
+    apiRequest<RegistrationRoundResponse>(`/api/admin/semesters/${semesterId}/registration-rounds`, {
+      method: "POST",
+      body: jsonBody(request ?? {}),
+    }),
+  openRegistrationRound: (
+    semesterId: number | string,
+    roundId: number | string,
+    request?: RegistrationRoundRequest,
+  ) =>
+    apiRequest<RegistrationRoundResponse>(
+      `/api/admin/semesters/${semesterId}/registration-rounds/${roundId}/open`,
+      {
+        method: "POST",
+        body: request ? jsonBody(request) : undefined,
+      },
+    ),
+  closeRegistrationRound: (semesterId: number | string, roundId: number | string) =>
+    apiRequest<RegistrationRoundResponse>(
+      `/api/admin/semesters/${semesterId}/registration-rounds/${roundId}/close`,
+      { method: "POST" },
+    ),
+  lockRegistrationRound: (semesterId: number | string, roundId: number | string) =>
+    apiRequest<{ message: string }>(
+      `/api/admin/semesters/${semesterId}/registration-rounds/${roundId}/lock`,
+      { method: "POST" },
+    ),
 
   listEnrollments: (params?: {
     semesterId?: number;
@@ -226,6 +269,30 @@ export const adminApi = {
         method: "PUT",
         body: jsonBody(requests),
       },
+    ),
+  listExamSessions: (semesterId: number | string) =>
+    apiRequest<ExamSessionResponse[]>(
+      `/api/admin/class-sections/semester/${semesterId}/exam-sessions`,
+    ),
+  saveExamSession: (semesterId: number | string, request: ExamSessionRequest) =>
+    apiRequest<ExamSessionResponse>(
+      `/api/admin/class-sections/semester/${semesterId}/exam-sessions`,
+      { method: "POST", body: jsonBody(request) },
+    ),
+  validateExamConflicts: (semesterId: number | string, request: ExamSessionRequest) =>
+    apiRequest<ExamConflictResponse[]>(
+      `/api/admin/class-sections/semester/${semesterId}/exam-sessions/validate-conflicts`,
+      { method: "POST", body: jsonBody(request) },
+    ),
+  listExamCandidates: (semesterId: number | string, courseId: number) => {
+    const qs = new URLSearchParams({ courseId: String(courseId) });
+    return apiRequest<ExamCandidateResponse[]>(
+      `/api/admin/class-sections/semester/${semesterId}/exam-sessions/candidates?${qs.toString()}`,
+    );
+  },
+  listExamSessionSeats: (examSessionId: number | string) =>
+    apiRequest<ExamSeatAssignmentResponse[]>(
+      `/api/admin/class-sections/exam-sessions/${examSessionId}/seats`,
     ),
 
   listExamRegistrations: (semesterId: number, status?: string) => {
@@ -272,6 +339,14 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify(request),
     }),
+  validateClassSection: (request: AdminClassSectionRequest, excludeId?: number | string | null) =>
+    apiRequest<ClassSectionValidationResponse>(
+      `/api/admin/class-sections/validate${excludeId ? `?excludeId=${excludeId}` : ""}`,
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      },
+    ),
   updateClassSection: (id: number | string, request: AdminClassSectionRequest) =>
     apiRequest<ClassSectionResponse>(`/api/admin/class-sections/${id}`, {
       method: "PUT",

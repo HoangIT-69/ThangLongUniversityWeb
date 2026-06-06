@@ -4,10 +4,13 @@ import com.example.ThangLongUniversityWeb.dto.response.StudentSemesterResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentDashboardResponse;
 import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
+import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.service.CourseService;
 import com.example.ThangLongUniversityWeb.service.EnrollmentRequestStatusService;
+import com.example.ThangLongUniversityWeb.service.ExamSessionService;
 import com.example.ThangLongUniversityWeb.service.GradeService;
 import com.example.ThangLongUniversityWeb.service.StudentEnrollmentService;
+import com.example.ThangLongUniversityWeb.service.RegistrationRoundService;
 import com.example.ThangLongUniversityWeb.service.StudentService;
 import com.example.ThangLongUniversityWeb.service.StudentTuitionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,9 +46,12 @@ public class StudentController {
     private final StudentTuitionService studentTuitionService;
     private final EnrollmentRequestStatusService enrollmentRequestStatusService;
     private final SemesterRepository semesterRepository;
+    private final StudentRepository studentRepository;
     private final CourseService courseService;
     private final GradeService gradeService;
     private final StudentService studentService;
+    private final RegistrationRoundService registrationRoundService;
+    private final ExamSessionService examSessionService;
 
     @Operation(summary = "Lay ho so sinh vien dang dang nhap")
     @GetMapping("/profile")
@@ -163,8 +169,35 @@ public class StudentController {
                         .examPublished(s.isExamPublished())
                         .retakeOpen(s.isRetakeOpen())
                         .retakeLocked(s.isRetakeLocked())
+                        .activeRegistrationRoundId(resolveActiveRoundId(s.getId()))
+                        .activeRegistrationRoundName(resolveActiveRoundName(s.getId()))
+                        .activeRegistrationRoundNumber(resolveActiveRoundNumber(s.getId()))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    private Long resolveActiveRoundId(Long semesterId) {
+        var round = registrationRoundService.getOpenRound(semesterId);
+        if (round == null) {
+            round = registrationRoundService.ensureDefaultRound(semesterId);
+        }
+        return round != null ? round.getId() : null;
+    }
+
+    private String resolveActiveRoundName(Long semesterId) {
+        var round = registrationRoundService.getOpenRound(semesterId);
+        if (round == null) {
+            round = registrationRoundService.ensureDefaultRound(semesterId);
+        }
+        return round != null ? round.getName() : null;
+    }
+
+    private Integer resolveActiveRoundNumber(Long semesterId) {
+        var round = registrationRoundService.getOpenRound(semesterId);
+        if (round == null) {
+            round = registrationRoundService.ensureDefaultRound(semesterId);
+        }
+        return round != null ? round.getRoundNumber() : null;
     }
 
     private StudentSemesterResponse resolveDashboardSemester(List<StudentSemesterResponse> semesters, Long semesterId) {
@@ -228,6 +261,13 @@ public class StudentController {
     @Operation(summary = "Xem lich thi theo hoc ky")
     @GetMapping("/exams")
     public ResponseEntity<?> getMyExams(@RequestParam Long semesterId) {
+        var username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        var student = studentRepository.findByUser_Username(username)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay thong tin sinh vien cua tai khoan nay."));
+        var examSeats = examSessionService.getStudentExams(student.getId(), semesterId);
+        if (!examSeats.isEmpty()) {
+            return ResponseEntity.ok(examSeats);
+        }
         return ResponseEntity.ok(studentEnrollmentService.getMyExams(semesterId));
     }
 

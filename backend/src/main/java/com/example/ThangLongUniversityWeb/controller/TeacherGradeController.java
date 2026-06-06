@@ -13,6 +13,7 @@ import com.example.ThangLongUniversityWeb.repository.UserRepository;
 import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
+import com.example.ThangLongUniversityWeb.enums.CourseStudyStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.service.GradeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -81,6 +82,8 @@ public class TeacherGradeController {
             List<ExamRegistration> retakes = examRegistrationRepository.findByOriginalGrade_Enrollment_Id(enrollmentId);
             for (ExamRegistration reg : retakes) {
                 if (reg.getStatus() == EnrollmentStatus.REGISTERED
+                        && reg.getClassSection() != null
+                        && reg.getClassSection().getTeacher() != null
                         && reg.getClassSection().getTeacher().getId().equals(currentTeacher.getId())) {
                     isAuthorized = true;
                     isClosed = reg.getClassSection().isClosed();
@@ -95,6 +98,15 @@ public class TeacherGradeController {
 
         if (isClosed) {
             return ResponseEntity.badRequest().body("Lớp đã đóng, không thể nhập điểm!");
+        }
+
+        // Chặn cập nhật điểm cho SV bị cấm thi hoặc học lại
+        CourseStudyStatus courseStatus = enrollment.getCourseStatus();
+        if (courseStatus == CourseStudyStatus.BANNED_FROM_EXAM) {
+            return ResponseEntity.badRequest().body("Sinh viên bị cấm thi do nghỉ quá buổi, không thể cập nhật điểm.");
+        }
+        if (courseStatus == CourseStudyStatus.REPEAT_COURSE) {
+            return ResponseEntity.badRequest().body("Sinh viên phải học lại, không thể cập nhật điểm.");
         }
 
         request.setEnrollmentId(enrollmentId);

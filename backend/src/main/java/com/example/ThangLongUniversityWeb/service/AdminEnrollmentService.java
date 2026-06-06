@@ -33,6 +33,7 @@ public class AdminEnrollmentService {
     private final SemesterRepository semesterRepository;
     private final GradeRepository gradeRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
+    private final RegistrationRoundService registrationRoundService;
 
     public Page<AdminEnrollmentResponse> search(Long semesterId, Long classSectionId, EnrollmentStatus status, Pageable pageable) {
         return enrollmentRepository.searchAdmin(semesterId, classSectionId, status, pageable)
@@ -68,32 +69,7 @@ public class AdminEnrollmentService {
     @Transactional
     @Audit(action = "ENROLLMENT_LOCK_SEMESTER", targetType = "Enrollment")
     public int lockPendingEnrollments(Long semesterId) {
-        Semester semester = semesterRepository.findById(semesterId)
-                .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky."));
-        var pendingEnrollments = enrollmentRepository.findByClassSectionSemesterIdAndStatus(semesterId, EnrollmentStatus.PENDING);
-
-        for (Enrollment enrollment : pendingEnrollments) {
-            enrollment.setStatus(EnrollmentStatus.REGISTERED);
-            Enrollment saved = enrollmentRepository.save(enrollment);
-
-            ClassSection classSection = saved.getClassSection();
-            classSection.setCurrentSlots((classSection.getCurrentSlots() == null ? 0 : classSection.getCurrentSlots()) + 1);
-            classSectionRepository.save(classSection);
-
-            if (saved.getGrade() == null) {
-                Grade grade = new Grade();
-                grade.setEnrollment(saved);
-                grade.setAttemptNumber(1);
-                grade.setEnrollmentType(EnrollmentType.ORDINARY);
-                gradeRepository.save(grade);
-            }
-        }
-
-        semester.setRegistrationOpen(false);
-        semester.setLocked(true);
-        semesterRepository.save(semester);
-
-        return pendingEnrollments.size();
+        return registrationRoundService.lockOpenRound(semesterId);
     }
 
     @Transactional
@@ -101,7 +77,10 @@ public class AdminEnrollmentService {
     public int lockPendingRetakes(Long semesterId) {
         Semester semester = semesterRepository.findById(semesterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky."));
-        var pendingRetakes = examRegistrationRepository.findByClassSectionSemesterIdAndStatus(semesterId, EnrollmentStatus.PENDING);
+        if (!semester.isLocked()) {
+            throw new RuntimeException("Phai khoa tong dang ky hoc phan truoc khi khoa tong thi lai.");
+        }
+        var pendingRetakes = examRegistrationRepository.findBySemesterIdAndStatus(semesterId, EnrollmentStatus.PENDING);
 
         for (ExamRegistration registration : pendingRetakes) {
             registration.setStatus(EnrollmentStatus.REGISTERED);
@@ -116,6 +95,7 @@ public class AdminEnrollmentService {
     }
 
     private AdminEnrollmentResponse toAdminResponse(Enrollment e) {
+        var round = e.getClassSection().getRegistrationRound();
         return AdminEnrollmentResponse.builder()
                 .enrollmentId(e.getId())
                 .studentId(e.getStudent().getId())
@@ -128,8 +108,10 @@ public class AdminEnrollmentService {
                 .courseName(e.getClassSection().getCourse().getName())
                 .courseCode(e.getClassSection().getCourse().getCode())
                 .credits(e.getClassSection().getCourse().getCredits())
-                .enrolledAt(null)
+                .enrolledAt(e.getEnrolledAt() != null ? e.getEnrolledAt().toString() : null)
                 .status(e.getStatus() == null ? null : e.getStatus().name())
+                .registrationRoundName(round != null ? round.getName() : null)
+                .registrationRoundNumber(round != null ? round.getRoundNumber() : null)
                 .build();
     }
 }

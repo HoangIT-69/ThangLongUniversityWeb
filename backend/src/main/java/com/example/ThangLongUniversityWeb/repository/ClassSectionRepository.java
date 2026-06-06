@@ -13,9 +13,11 @@ import java.util.Optional;
 
 @Repository
 public interface ClassSectionRepository extends JpaRepository<ClassSection, Long> {
-    Optional<ClassSection> findByClassCode(String classCode);
-
     List<ClassSection> findBySemesterId(Long semesterId);
+
+    Optional<ClassSection> findBySemesterIdAndClassCode(Long semesterId, String classCode);
+
+    List<ClassSection> findByRegistrationRoundId(Long registrationRoundId);
 
     List<ClassSection> findBySemesterIdAndCourseId(Long semesterId, Long courseId);
 
@@ -58,4 +60,6 @@ public interface ClassSectionRepository extends JpaRepository<ClassSection, Long
     Optional<ClassSection> findByIdForUpdate(@Param("id") Long id);
 
     long countBySemesterId(Long semesterId);
+
+    long countByRegistrationRoundId(Long registrationRoundId);
 }

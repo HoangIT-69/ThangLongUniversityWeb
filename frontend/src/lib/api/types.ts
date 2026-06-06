@@ -97,6 +97,13 @@ export interface AdminSemesterResponse {
   endDate?: string | null;
   registrationOpen?: boolean;
   locked?: boolean;
+  examPublished?: boolean;
+  retakeOpen?: boolean;
+  retakeLocked?: boolean;
+  ended?: boolean;
+  activeRegistrationRoundId?: number | null;
+  activeRegistrationRoundName?: string | null;
+  activeRegistrationRoundNumber?: number | null;
 }
 
 export interface AdminUserResponse {
@@ -279,9 +286,22 @@ export interface AdminClassSectionRequest {
   classCode: string;
   courseId: number;
   semesterId: number;
+  registrationRoundId?: number | null;
   teacherId?: number | null;
   schedules: ClassSectionScheduleRequest[];
   maxSlots: number;
+}
+
+export interface ClassSectionValidationIssueResponse {
+  code: string;
+  message: string;
+}
+
+export interface ClassSectionValidationResponse {
+  valid: boolean;
+  errors: ClassSectionValidationIssueResponse[];
+  warnings: ClassSectionValidationIssueResponse[];
+  infos?: ClassSectionValidationIssueResponse[];
 }
 
 export interface AdminClassSectionStudentResponse {
@@ -311,6 +331,9 @@ export interface ClassSectionResponse {
   credits: number;
   semesterId: number;
   semesterName: string;
+  registrationRoundId?: number | null;
+  registrationRoundName?: string | null;
+  registrationRoundNumber?: number | null;
   teacherId?: number | null;
   teacherName?: string | null;
   room?: string | null;
@@ -323,6 +346,8 @@ export interface ClassSectionResponse {
   isClosed?: boolean;
   gradeLocked?: boolean | null;
   gradeStatus?: "DRAFT" | "SUBMITTED" | "LOCKED" | string | null;
+  examAt?: string | null;
+  examRoom?: string | null;
   examType?: "NORMAL" | "RETAKE" | "IMPROVE" | null;
 }
 
@@ -364,6 +389,9 @@ export interface StudentSemesterResponse {
   examPublished: boolean;
   retakeOpen: boolean;
   retakeLocked: boolean;
+  activeRegistrationRoundId?: number | null;
+  activeRegistrationRoundName?: string | null;
+  activeRegistrationRoundNumber?: number | null;
 }
 
 export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT";
@@ -664,6 +692,8 @@ export interface CourseResponse {
   courseTypeLabel?: string | null;
   majorId?: number | null;
   majorName?: string | null;
+  departmentId?: number | null;
+  departmentName?: string | null;
   prerequisiteCourseIds?: number[];
   prerequisiteNames?: string[];
 }
@@ -700,6 +730,8 @@ export interface AdminEnrollmentResponse {
   credits?: number | null;
   enrolledAt?: string | null;
   status: string;
+  registrationRoundName?: string | null;
+  registrationRoundNumber?: number | null;
 }
 
 export interface AdminOverrideEnrollmentRequest {
@@ -730,6 +762,87 @@ export interface ExamScheduleResponse {
   semesterName: string;
 }
 
+export interface RegistrationTimeSlotRequest {
+  startTime: string;
+  endTime: string;
+  allowedMajorIds?: number[];
+  allowedCohorts?: string[];
+}
+
+export interface RegistrationTimeSlotResponse {
+  id: number;
+  startTime: string;
+  endTime: string;
+  allowedMajorIds?: number[];
+  allowedCohorts?: string[];
+}
+
+export interface RegistrationRoundRequest {
+  name?: string;
+  open?: boolean;
+  roundType?: string;
+  timeSlots?: RegistrationTimeSlotRequest[];
+}
+
+export interface RegistrationRoundResponse {
+  id: number;
+  semesterId: number;
+  semesterName: string;
+  name: string;
+  roundNumber: number;
+  registrationOpen: boolean;
+  locked: boolean;
+  classSectionCount: number;
+  pendingEnrollments: number;
+  registeredEnrollments: number;
+  createdAt?: string | null;
+  lockedAt?: string | null;
+  roundType?: string;
+  timeSlots?: RegistrationTimeSlotResponse[];
+}
+
+export interface ExamSessionRequest {
+  courseId: number;
+  examType?: "NORMAL" | "RETAKE" | "IMPROVE" | null;
+  examAt: string;
+  roomIds: number[];
+  allocationMethod?: "SEQUENTIAL" | "BALANCED" | null;
+}
+
+export interface ExamRoomAssignmentResponse {
+  id: number;
+  roomId: number;
+  roomName: string;
+  capacity: number;
+  assignedCount: number;
+}
+
+export interface ExamSessionResponse {
+  id: number;
+  semesterId: number;
+  semesterName: string;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  credits: number;
+  examType: "NORMAL" | "RETAKE" | "IMPROVE";
+  examAt: string;
+  studentCount: number;
+  rooms: ExamRoomAssignmentResponse[];
+}
+
+export interface ExamSeatAssignmentResponse {
+  id: number;
+  studentId: number;
+  studentCode: string;
+  studentName: string;
+  roomId: number;
+  roomName: string;
+  sourceType: string;
+  enrollmentId?: number | null;
+  examRegistrationId?: number | null;
+}
+
 export interface SemesterSummaryResponse {
   semesterId: number;
   name: string;
@@ -749,7 +862,12 @@ export interface SemesterSummaryResponse {
   examPublished: boolean;
   retakeOpen: boolean;
   retakeLocked: boolean;
+  ended?: boolean;
   maxCreditsPerSemester: number;
+  activeRegistrationRoundId?: number | null;
+  activeRegistrationRoundName?: string | null;
+  activeRegistrationRoundNumber?: number | null;
+  registrationRoundCount?: number | null;
 }
 
 export interface AdminExamRegistrationResponse {
@@ -779,4 +897,18 @@ export interface AdminExamRegistrationSummary {
   pending: number;
   registered: number;
   totalFeeCharged: number;
+}
+
+export interface ExamConflictResponse {
+  studentCode: string;
+  studentName: string;
+  conflictingCourseCode: string;
+  conflictingCourseName: string;
+}
+
+export interface ExamCandidateResponse {
+  studentId: number;
+  studentCode: string;
+  studentName: string;
+  sourceType: string;
 }

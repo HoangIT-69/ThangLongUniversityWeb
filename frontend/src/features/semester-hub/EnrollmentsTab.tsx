@@ -131,7 +131,7 @@ export function EnrollmentsTab({ semesterId }: Props) {
                 <th className="text-left p-3 font-medium">Môn học</th>
                 <th className="text-left p-3 font-medium">Tín chỉ</th>
                 <th className="text-left p-3 font-medium">Trạng thái</th>
-                <th className="text-left p-3 font-medium">Ngày ĐK</th>
+                <th className="text-left p-3 font-medium">Đợt đăng ký</th>
               </tr>
             </thead>
             <tbody>
@@ -146,9 +146,15 @@ export function EnrollmentsTab({ semesterId }: Props) {
                     <EnrollmentStatusBadge status={e.status} />
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {e.enrolledAt
-                      ? new Intl.DateTimeFormat("vi-VN").format(new Date(e.enrolledAt))
-                      : "—"}
+                    <div className="font-medium text-foreground">{e.registrationRoundName || "—"}</div>
+                    {e.enrolledAt && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {new Intl.DateTimeFormat("vi-VN", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        }).format(new Date(e.enrolledAt))}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

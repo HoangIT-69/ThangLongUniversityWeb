@@ -39,10 +39,8 @@ public class AdminExamRegistrationController {
         }
 
         List<ExamRegistration> registrations = statusEnum != null
-                ? examRegistrationRepository.findByClassSectionSemesterIdAndStatus(semesterId, statusEnum)
-                : examRegistrationRepository.findAll().stream()
-                    .filter(r -> r.getClassSection().getSemester().getId().equals(semesterId))
-                    .collect(Collectors.toList());
+                ? examRegistrationRepository.findBySemesterIdAndStatus(semesterId, statusEnum)
+                : examRegistrationRepository.findBySemesterId(semesterId);
 
         List<Map<String, Object>> result = registrations.stream().map(r -> {
             Map<String, Object> item = new HashMap<>();
@@ -50,19 +48,22 @@ public class AdminExamRegistrationController {
             item.put("studentId", r.getStudent().getId());
             item.put("studentCode", r.getStudent().getStudentCode());
             item.put("studentName", r.getStudent().getFullName());
-            item.put("classSectionId", r.getClassSection().getId());
-            item.put("classCode", r.getClassSection().getClassCode());
-            item.put("courseName", r.getClassSection().getCourse().getName());
-            item.put("courseCode", r.getClassSection().getCourse().getCode());
-            item.put("credits", r.getClassSection().getCourse().getCredits());
-            item.put("semesterId", r.getClassSection().getSemester().getId());
-            item.put("semesterName", r.getClassSection().getSemester().getName());
+            var classSection = r.getClassSection();
+            var course = r.getCourse() != null ? r.getCourse() : classSection.getCourse();
+            var semester = r.getSemester() != null ? r.getSemester() : classSection.getSemester();
+            item.put("classSectionId", classSection != null ? classSection.getId() : null);
+            item.put("classCode", classSection != null ? classSection.getClassCode() : "Chua xep lop thi");
+            item.put("courseName", course.getName());
+            item.put("courseCode", course.getCode());
+            item.put("credits", course.getCredits());
+            item.put("semesterId", semester.getId());
+            item.put("semesterName", semester.getName());
             item.put("status", r.getStatus() != null ? r.getStatus().name() : null);
             item.put("registrationType", r.getRegistrationType() != null ? r.getRegistrationType().name() : null);
             item.put("feeCharged", r.getFeeCharged());
             item.put("attemptNumber", r.getAttemptNumber());
-            item.put("examAt", r.getClassSection().getExamAt() != null ? r.getClassSection().getExamAt().toString() : null);
-            item.put("examRoom", r.getClassSection().getExamRoom());
+            item.put("examAt", classSection != null && classSection.getExamAt() != null ? classSection.getExamAt().toString() : null);
+            item.put("examRoom", classSection != null ? classSection.getExamRoom() : null);
             item.put("createdAt", r.getCreatedAt() != null ? r.getCreatedAt().toString() : null);
             return item;
         }).collect(Collectors.toList());
@@ -73,9 +74,7 @@ public class AdminExamRegistrationController {
     @Operation(summary = "Tổng hợp đăng ký thi lại theo học kỳ")
     @GetMapping("/semester/{semesterId}/summary")
     public ResponseEntity<?> summary(@PathVariable Long semesterId) {
-        List<ExamRegistration> all = examRegistrationRepository.findAll().stream()
-                .filter(r -> r.getClassSection().getSemester().getId().equals(semesterId))
-                .collect(Collectors.toList());
+        List<ExamRegistration> all = examRegistrationRepository.findBySemesterId(semesterId);
 
         long pending = all.stream().filter(r -> r.getStatus() == EnrollmentStatus.PENDING).count();
         long registered = all.stream().filter(r -> r.getStatus() == EnrollmentStatus.REGISTERED).count();

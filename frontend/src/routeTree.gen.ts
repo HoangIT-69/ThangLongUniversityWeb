@@ -57,6 +57,7 @@ import { Route as AdminAcademicResultsRouteImport } from './routes/admin.academi
 import { Route as AdminSemestersIndexRouteImport } from './routes/admin.semesters.index'
 import { Route as AdminSemestersIdRouteImport } from './routes/admin.semesters.$id'
 import { Route as TeacherClassesClassSectionIdStudentsRouteImport } from './routes/teacher.classes.$classSectionId.students'
+import { Route as AdminSemestersIdClassesCreateRouteImport } from './routes/admin.semesters.$id_.classes.create'
 
 const TeacherRoute = TeacherRouteImport.update({
   id: '/teacher',
@@ -301,6 +302,12 @@ const TeacherClassesClassSectionIdStudentsRoute =
     path: '/$classSectionId/students',
     getParentRoute: () => TeacherClassesRoute,
   } as any)
+const AdminSemestersIdClassesCreateRoute =
+  AdminSemestersIdClassesCreateRouteImport.update({
+    id: '/$id_/classes/create',
+    path: '/$id/classes/create',
+    getParentRoute: () => AdminSemestersRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -351,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/admin/semesters/$id': typeof AdminSemestersIdRoute
   '/admin/semesters/': typeof AdminSemestersIndexRoute
   '/teacher/classes/$classSectionId/students': typeof TeacherClassesClassSectionIdStudentsRoute
+  '/admin/semesters/$id/classes/create': typeof AdminSemestersIdClassesCreateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -400,6 +408,7 @@ export interface FileRoutesByTo {
   '/admin/semesters/$id': typeof AdminSemestersIdRoute
   '/admin/semesters': typeof AdminSemestersIndexRoute
   '/teacher/classes/$classSectionId/students': typeof TeacherClassesClassSectionIdStudentsRoute
+  '/admin/semesters/$id/classes/create': typeof AdminSemestersIdClassesCreateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -451,6 +460,7 @@ export interface FileRoutesById {
   '/admin/semesters/$id': typeof AdminSemestersIdRoute
   '/admin/semesters/': typeof AdminSemestersIndexRoute
   '/teacher/classes/$classSectionId/students': typeof TeacherClassesClassSectionIdStudentsRoute
+  '/admin/semesters/$id_/classes/create': typeof AdminSemestersIdClassesCreateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/admin/semesters/$id'
     | '/admin/semesters/'
     | '/teacher/classes/$classSectionId/students'
+    | '/admin/semesters/$id/classes/create'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -552,6 +563,7 @@ export interface FileRouteTypes {
     | '/admin/semesters/$id'
     | '/admin/semesters'
     | '/teacher/classes/$classSectionId/students'
+    | '/admin/semesters/$id/classes/create'
   id:
     | '__root__'
     | '/'
@@ -602,6 +614,7 @@ export interface FileRouteTypes {
     | '/admin/semesters/$id'
     | '/admin/semesters/'
     | '/teacher/classes/$classSectionId/students'
+    | '/admin/semesters/$id_/classes/create'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -951,17 +964,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeacherClassesClassSectionIdStudentsRouteImport
       parentRoute: typeof TeacherClassesRoute
     }
+    '/admin/semesters/$id_/classes/create': {
+      id: '/admin/semesters/$id_/classes/create'
+      path: '/$id/classes/create'
+      fullPath: '/admin/semesters/$id/classes/create'
+      preLoaderRoute: typeof AdminSemestersIdClassesCreateRouteImport
+      parentRoute: typeof AdminSemestersRoute
+    }
   }
 }
 
 interface AdminSemestersRouteChildren {
   AdminSemestersIdRoute: typeof AdminSemestersIdRoute
   AdminSemestersIndexRoute: typeof AdminSemestersIndexRoute
+  AdminSemestersIdClassesCreateRoute: typeof AdminSemestersIdClassesCreateRoute
 }
 
 const AdminSemestersRouteChildren: AdminSemestersRouteChildren = {
   AdminSemestersIdRoute: AdminSemestersIdRoute,
   AdminSemestersIndexRoute: AdminSemestersIndexRoute,
+  AdminSemestersIdClassesCreateRoute: AdminSemestersIdClassesCreateRoute,
 }
 
 const AdminSemestersRouteWithChildren = AdminSemestersRoute._addFileChildren(

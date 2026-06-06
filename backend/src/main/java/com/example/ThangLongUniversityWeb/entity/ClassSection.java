@@ -19,7 +19,7 @@ public class ClassSection {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String classCode;
 
     @ManyToOne
@@ -29,6 +29,10 @@ public class ClassSection {
     @ManyToOne
     @JoinColumn(name = "semester_id")
     private Semester semester;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registration_round_id")
+    private RegistrationRound registrationRound;
 
     @ManyToOne
     @JoinColumn(name = "teacher_id")

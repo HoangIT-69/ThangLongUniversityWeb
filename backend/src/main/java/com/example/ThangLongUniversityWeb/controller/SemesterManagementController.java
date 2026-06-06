@@ -1,6 +1,8 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.SemesterRequest;
+import com.example.ThangLongUniversityWeb.dto.request.RegistrationRoundRequest;
+import com.example.ThangLongUniversityWeb.service.RegistrationRoundService;
 import com.example.ThangLongUniversityWeb.service.SemesterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -19,6 +21,7 @@ import java.util.Map;
 public class SemesterManagementController {
 
     private final SemesterService semesterService;
+    private final RegistrationRoundService registrationRoundService;
 
     @Operation(summary = "Lấy danh sách tất cả học kỳ")
     @GetMapping
@@ -87,9 +90,56 @@ public class SemesterManagementController {
         return ResponseEntity.ok(Map.of("message", "Đã chốt " + count + " đăng ký thi lại cho học kỳ " + id));
     }
 
+    @Operation(summary = "Kết thúc học kỳ thủ công")
+    @PostMapping("/{id}/end")
+    public ResponseEntity<?> endSemester(@PathVariable Long id) {
+        return ResponseEntity.ok(semesterService.endSemester(id));
+    }
+
     @Operation(summary = "Lấy thống kê tổng hợp học kỳ")
     @GetMapping("/{id}/summary")
     public ResponseEntity<?> getSummary(@PathVariable Long id) {
         return ResponseEntity.ok(semesterService.getSemesterSummary(id));
+    }
+
+    @Operation(summary = "Lay danh sach dot dang ky trong hoc ky")
+    @GetMapping("/{id}/registration-rounds")
+    public ResponseEntity<?> getRegistrationRounds(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "COURSE") String roundType
+    ) {
+        return ResponseEntity.ok(registrationRoundService.listRounds(id, roundType));
+    }
+
+    @Operation(summary = "Tao dot dang ky moi trong hoc ky")
+    @PostMapping("/{id}/registration-rounds")
+    public ResponseEntity<?> createRegistrationRound(
+            @PathVariable Long id,
+            @RequestBody(required = false) RegistrationRoundRequest request
+    ) {
+        return ResponseEntity.ok(registrationRoundService.createRound(id, request));
+    }
+
+    @Operation(summary = "Mo/Cap nhat dot dang ky")
+    @PostMapping("/{id}/registration-rounds/{roundId}/open")
+    public ResponseEntity<?> openRegistrationRound(
+            @PathVariable Long id,
+            @PathVariable Long roundId,
+            @RequestBody(required = false) RegistrationRoundRequest request
+    ) {
+        return ResponseEntity.ok(registrationRoundService.openRound(id, roundId, request));
+    }
+
+    @Operation(summary = "Dong dot dang ky")
+    @PostMapping("/{id}/registration-rounds/{roundId}/close")
+    public ResponseEntity<?> closeRegistrationRound(@PathVariable Long id, @PathVariable Long roundId) {
+        return ResponseEntity.ok(registrationRoundService.closeRound(id, roundId));
+    }
+
+    @Operation(summary = "Chot dot dang ky")
+    @PostMapping("/{id}/registration-rounds/{roundId}/lock")
+    public ResponseEntity<?> lockRegistrationRound(@PathVariable Long id, @PathVariable Long roundId) {
+        int count = registrationRoundService.lockRound(id, roundId);
+        return ResponseEntity.ok(Map.of("message", "Đã chốt " + count + " đăng ký cho đợt " + roundId));
     }
 }

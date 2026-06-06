@@ -1,18 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { ArrowLeft, Check, Download, Plus, Save, Search, Users, AlertTriangle, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Download, Save, Users } from "lucide-react";
 import { adminApi } from "@/lib/api/admin";
-import type {
-  AdminClassSectionStudentResponse,
-  AdminStudentResponse,
-  AdminExamRegistrationResponse,
-  ExamScheduleRequest,
-  ExamScheduleResponse,
-} from "@/lib/api/types";
+import type { ExamSeatAssignmentResponse, ExamSessionResponse, ExamConflictResponse, ExamCandidateResponse } from "@/lib/api/types";
 import { triggerBrowserDownload } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -21,342 +16,909 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Props {
   semesterId: number;
 }
 
-type ExamStudentRow = {
-  key: string;
-  studentCode: string;
-  studentName: string;
-  email?: string | null;
-  majorName?: string | null;
-  examKind: "NORMAL" | "RETAKE" | "IMPROVE";
-  status?: string | null;
-  feeCharged?: number | null;
-};
-
 export function ExamSchedulesTab({ semesterId }: Props) {
   const queryClient = useQueryClient();
-  const [studentsSchedule, setStudentsSchedule] = useState<ExamScheduleResponse | null>(null);
-  const [edits, setEdits] = useState<Record<number, Partial<ExamScheduleRequest>>>({});
+  const [courseId, setCourseId] = useState("");
+  const examType = "NORMAL" as const;
+  const [examAt, setExamAt] = useState("");
+  const [roomIds, setRoomIds] = useState<number[]>([]);
+  const [search, setSearch] = useState("");
+  const [selectedSession, setSelectedSession] = useState<ExamSessionResponse | null>(null);
 
-  const schedulesQuery = useQuery({
-    queryKey: ["admin", "exam-schedules", semesterId],
-    queryFn: () => adminApi.getExamSchedules(semesterId),
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // States for student conflicts
+  const [conflicts, setConflicts] = useState<ExamConflictResponse[]>([]);
+  const [isValidating, setIsValidating] = useState(false);
+
+  // Advanced Exam Scheduling States
+  const [allocationMethod, setAllocationMethod] = useState<"SEQUENTIAL" | "BALANCED">("SEQUENTIAL");
+  const [candidates, setCandidates] = useState<ExamCandidateResponse[]>([]);
+  const [isLoadingCandidates, setIsLoadingCandidates] = useState(false);
+  const [selectedRoomPreview, setSelectedRoomPreview] = useState<{ roomName: string; students: ExamCandidateResponse[] } | null>(null);
+  const [ignoreConflicts, setIgnoreConflicts] = useState(false);
+
+  const sessionsQuery = useQuery({
+    queryKey: ["admin", "exam-sessions", semesterId],
+    queryFn: () => adminApi.listExamSessions(semesterId),
+  });
+  const coursesQuery = useQuery({
+    queryKey: ["admin", "courses"],
+    queryFn: adminApi.listCourses,
+    staleTime: 300_000,
+  });
+  const roomsQuery = useQuery({
+    queryKey: ["admin", "rooms"],
+    queryFn: adminApi.listRooms,
+    staleTime: 3_600_000,
+  });
+  const classSectionsQuery = useQuery({
+    queryKey: ["admin", "class-sections", semesterId],
+    queryFn: () => adminApi.listClassSectionsBySemester(semesterId),
   });
 
-  const retakeQuery = useQuery({
-    queryKey: ["admin", "exam-registrations", semesterId, "all"],
-    queryFn: () => adminApi.listExamRegistrations(semesterId),
+  const sessions = sessionsQuery.data ?? [];
+  const courses = coursesQuery.data ?? [];
+  const rooms = roomsQuery.data ?? [];
+  const classSections = classSectionsQuery.data ?? [];
+
+  const filteredSessions = sessions.filter((session) => {
+    const keyword = search.trim().toLowerCase();
+    return (
+      !keyword ||
+      session.courseCode.toLowerCase().includes(keyword) ||
+      session.courseName.toLowerCase().includes(keyword) ||
+      session.rooms.some((room) => room.roomName.toLowerCase().includes(keyword))
+    );
   });
 
-  const schedules = schedulesQuery.data ?? [];
-  const retakeRegistrations = retakeQuery.data ?? [];
+  const totalRoomCapacity = useMemo(
+    () =>
+      rooms
+        .filter((room) => roomIds.includes(room.id))
+        .reduce((sum, room) => sum + (room.capacity ?? 0), 0),
+    [rooms, roomIds],
+  );
 
-  const updateMutation = useMutation({
-    mutationFn: ({ classSectionId, req }: { classSectionId: number; req: ExamScheduleRequest }) =>
-      adminApi.updateExamSchedule(classSectionId, req),
-    onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "exam-schedules", semesterId] });
-      queryClient.invalidateQueries({
-        queryKey: ["admin", "class-sections", "semester", semesterId],
+  // Calculate candidates (registered students in class sections of this course or from candidates API)
+  const totalCandidates = useMemo(() => {
+    if (candidates.length > 0) return candidates.length;
+    if (!courseId) return 0;
+    const selectedCourseSections = classSections.filter(
+      (cs) => String(cs.courseId) === courseId
+    );
+    return selectedCourseSections.reduce(
+      (sum, cs) => sum + (cs.currentSlots ?? 0),
+      0
+    );
+  }, [courseId, classSections, candidates]);
+
+  // Simulate seat allocation with room preview details and method support
+  const simulatedAllocation = useMemo(() => {
+    if (!courseId || roomIds.length === 0) return { allocation: [], remainingCandidates: totalCandidates };
+
+    const selectedRooms = rooms
+      .filter((r) => roomIds.includes(r.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const totalCapacity = selectedRooms.reduce((sum, r) => sum + (r.capacity ?? 0), 0);
+    let remainingCandidates = totalCandidates;
+    const allocation: Array<{
+      roomId: number;
+      roomName: string;
+      capacity: number;
+      assigned: number;
+      percentage: number;
+      students: ExamCandidateResponse[];
+    }> = [];
+
+    const targetCounts = new Array(selectedRooms.length).fill(0);
+    if (allocationMethod === "BALANCED") {
+      let allocated = 0;
+      for (let i = 0; i < selectedRooms.length; i++) {
+        const cap = selectedRooms[i].capacity ?? 0;
+        targetCounts[i] = Math.floor((totalCandidates * cap) / (totalCapacity || 1));
+        allocated += targetCounts[i];
+      }
+      let remaining = totalCandidates - allocated;
+      let i = 0;
+      while (remaining > 0) {
+        const cap = selectedRooms[i].capacity ?? 0;
+        if (targetCounts[i] < cap) {
+          targetCounts[i]++;
+          remaining--;
+        }
+        i = (i + 1) % selectedRooms.length;
+      }
+    } else {
+      // SEQUENTIAL
+      let allocated = 0;
+      for (let i = 0; i < selectedRooms.length; i++) {
+        const cap = selectedRooms[i].capacity ?? 0;
+        const toAllocate = Math.min(totalCandidates - allocated, cap);
+        targetCounts[i] = toAllocate;
+        allocated += toAllocate;
+      }
+    }
+
+    let candidateIndex = 0;
+    for (let i = 0; i < selectedRooms.length; i++) {
+      const room = selectedRooms[i];
+      const capacity = room.capacity ?? 0;
+      const assigned = targetCounts[i];
+      const assignedStudents = candidates.slice(candidateIndex, candidateIndex + assigned);
+      candidateIndex += assigned;
+
+      allocation.push({
+        roomId: room.id,
+        roomName: room.name,
+        capacity,
+        assigned,
+        percentage: capacity > 0 ? (assigned / capacity) * 100 : 0,
+        students: assignedStudents,
       });
+      remainingCandidates -= assigned;
+    }
+
+    return {
+      allocation,
+      remainingCandidates,
+    };
+  }, [courseId, roomIds, rooms, totalCandidates, allocationMethod, candidates]);
+
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      adminApi.saveExamSession(semesterId, {
+        courseId: Number(courseId),
+        examType,
+        examAt: `${examAt}:00`,
+        roomIds,
+        allocationMethod,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "exam-sessions", semesterId] });
       queryClient.invalidateQueries({ queryKey: ["admin", "semester-summary", semesterId] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "exam-registrations", semesterId] });
-      toast.success("Đã lưu lịch thi");
-      setEdits((current) => {
-        const next = { ...current };
-        delete next[vars.classSectionId];
-        return next;
-      });
+      toast.success("Đã lưu và chia phòng thi thành công");
+      handleCancel();
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : "Không lưu được lịch thi"),
   });
 
-  function getField<K extends keyof ExamScheduleRequest>(
-    id: number,
-    field: K,
-    original: ExamScheduleRequest[K],
-  ) {
-    return edits[id]?.[field] !== undefined ? edits[id][field] : original;
-  }
+  const checkConflicts = async (timeValue: string) => {
+    if (!courseId || !timeValue) {
+      setConflicts([]);
+      return;
+    }
+    setIsValidating(true);
+    try {
+      const res = await adminApi.validateExamConflicts(semesterId, {
+        courseId: Number(courseId),
+        examType,
+        examAt: `${timeValue}:00` as any,
+        roomIds: [],
+      });
+      setConflicts(res);
+    } catch (err) {
+      console.error("Lỗi khi kiểm tra trùng lịch thi:", err);
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
-  function setField<K extends keyof ExamScheduleRequest>(
-    id: number,
-    field: K,
-    value: ExamScheduleRequest[K],
-  ) {
-    setEdits((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
-  }
+  const [isStep1CandidatesOpen, setIsStep1CandidatesOpen] = useState(false);
 
-  function saveRow(schedule: ExamScheduleResponse) {
-    const edit = edits[schedule.classSectionId] ?? {};
-    updateMutation.mutate({
-      classSectionId: schedule.classSectionId,
-      req: {
-        classSectionId: schedule.classSectionId,
-        examAt: (edit.examAt !== undefined ? edit.examAt : schedule.examAt) || null,
-        examRoom: (edit.examRoom !== undefined ? edit.examRoom : schedule.examRoom) || null,
-        examType: "NORMAL",
-      },
-    });
-  }
+  const handleCourseChange = (val: string) => {
+    setCourseId(val);
+    void loadCandidates(val);
+  };
 
-  if (schedulesQuery.isLoading) return <Skeleton className="h-64 w-full" />;
+  const loadCandidates = async (cId: string) => {
+    if (!cId) {
+      setCandidates([]);
+      return;
+    }
+    setIsLoadingCandidates(true);
+    try {
+      const res = await adminApi.listExamCandidates(semesterId, Number(cId));
+      setCandidates(res);
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách thí sinh:", err);
+      toast.error("Không tải được danh sách sinh viên dự thi");
+    } finally {
+      setIsLoadingCandidates(false);
+    }
+  };
 
-  const scheduledCount = schedules.filter((schedule) => schedule.examAt).length;
-  const retakeCount = retakeRegistrations.filter((item) =>
-    ["RETAKE", "IMPROVE"].includes(item.registrationType ?? ""),
-  ).length;
+  const handleCancel = () => {
+    setCourseId("");
+    setExamAt("");
+    setRoomIds([]);
+    setConflicts([]);
+    setCandidates([]);
+    setAllocationMethod("SEQUENTIAL");
+    setIgnoreConflicts(false);
+    setSelectedRoomPreview(null);
+    setIsScheduling(false);
+    setCurrentStep(1);
+  };
+
+  const handleNextStep = () => {
+    if (currentStep === 1) {
+      setCurrentStep(2);
+      if (examAt) {
+        void checkConflicts(examAt);
+      }
+    } else if (currentStep === 2) {
+      setCurrentStep(3);
+    }
+  };
+
+  const hasCapacityShortage = totalRoomCapacity < totalCandidates;
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{scheduledCount}</span>/{schedules.length}{" "}
-            lớp đã có lịch thi
-          </span>
-          <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
-            Bao gồm {retakeCount} đăng ký thi lại/nâng điểm
-          </span>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            void adminApi
-              .exportExamSchedules(semesterId)
-              .catch((error) =>
-                toast.error(error instanceof Error ? error.message : "Không xuất được Excel"),
-              )
-          }
-        >
-          <Download className="mr-1 h-4 w-4" />
-          Xuất Excel
-        </Button>
-      </div>
+      {isScheduling ? (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" className="gap-1.5 pl-0 hover:bg-transparent hover:text-primary" onClick={handleCancel}>
+              <ArrowLeft className="h-4 w-4" />
+              Quay lại danh sách
+            </Button>
+            <h3 className="text-base font-semibold">Xếp lịch thi học phần</h3>
+          </div>
 
-      <div className="overflow-hidden rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="p-3 text-left font-medium">Lớp HP</th>
-              <th className="p-3 text-left font-medium">Môn học</th>
-              <th className="p-3 text-left font-medium">Giảng viên</th>
-              <th className="p-3 text-left font-medium">Thời gian thi</th>
-              <th className="p-3 text-left font-medium">Phòng thi</th>
-              <th className="p-3 text-left font-medium">Sinh viên thi</th>
-              <th className="p-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {schedules.map((schedule) => {
-              const examAt = getField(schedule.classSectionId, "examAt", schedule.examAt) as
-                | string
-                | null;
-              const examRoom = getField(schedule.classSectionId, "examRoom", schedule.examRoom) as
-                | string
-                | null;
-              const hasEdit = !!edits[schedule.classSectionId];
-              const noSchedule = !schedule.examAt && !edits[schedule.classSectionId]?.examAt;
-              const extraStudents = getMatchingRetakeRegistrations(
-                schedule,
-                retakeRegistrations,
-              ).length;
+          {/* Stepper Progress Bar */}
+          <div className="flex items-center justify-center gap-2 max-w-lg mx-auto py-2">
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold border transition-all ${
+                  currentStep >= 1
+                    ? "bg-emerald-500 text-white border-emerald-500 shadow-sm shadow-emerald-500/20"
+                    : "bg-muted text-muted-foreground border-border"
+                }`}
+              >
+                {currentStep > 1 ? <Check className="h-4 w-4" /> : "1"}
+              </div>
+              <span className={`text-xs font-semibold ${currentStep >= 1 ? "text-foreground" : "text-muted-foreground"}`}>
+                Môn & Loại thi
+              </span>
+            </div>
+            <div className={`h-[2px] flex-1 max-w-16 transition-colors ${currentStep >= 2 ? "bg-emerald-500" : "bg-border"}`} />
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold border transition-all ${
+                  currentStep >= 2
+                    ? "bg-emerald-500 text-white border-emerald-500 shadow-sm shadow-emerald-500/20"
+                    : "bg-muted text-muted-foreground border-border"
+                }`}
+              >
+                {currentStep > 2 ? <Check className="h-4 w-4" /> : "2"}
+              </div>
+              <span className={`text-xs font-semibold ${currentStep >= 2 ? "text-foreground" : "text-muted-foreground"}`}>
+                Thời gian & Phòng
+              </span>
+            </div>
+            <div className={`h-[2px] flex-1 max-w-16 transition-colors ${currentStep >= 3 ? "bg-emerald-500" : "bg-border"}`} />
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold border transition-all ${
+                  currentStep >= 3
+                    ? "bg-emerald-500 text-white border-emerald-500 shadow-sm shadow-emerald-500/20"
+                    : "bg-muted text-muted-foreground border-border"
+                }`}
+              >
+                3
+              </div>
+              <span className={`text-xs font-semibold ${currentStep >= 3 ? "text-foreground" : "text-muted-foreground"}`}>
+                Xác nhận
+              </span>
+            </div>
+          </div>
 
-              return (
-                <tr
-                  key={schedule.classSectionId}
-                  className={`border-t hover:bg-muted/30 ${hasEdit ? "bg-muted/40" : noSchedule ? "bg-muted/20" : ""}`}
-                >
-                  <td className="p-3 font-mono text-xs">{schedule.classCode}</td>
-                  <td className="p-3">{schedule.courseName}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{schedule.teacherName}</td>
-                  <td className="p-3">
-                    <Input
-                      type="datetime-local"
-                      className="h-8 w-44 text-xs"
-                      value={examAt ? examAt.slice(0, 16) : ""}
-                      onChange={(event) =>
-                        setField(
-                          schedule.classSectionId,
-                          "examAt",
-                          event.target.value ? `${event.target.value}:00` : null,
-                        )
-                      }
-                    />
-                  </td>
-                  <td className="p-3">
-                    <Input
-                      className="h-8 w-28 text-xs"
-                      value={examRoom ?? ""}
-                      onChange={(event) =>
-                        setField(schedule.classSectionId, "examRoom", event.target.value || null)
-                      }
-                    />
-                  </td>
-                  <td className="p-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5"
-                      onClick={() => setStudentsSchedule(schedule)}
-                    >
-                      <Users className="h-3.5 w-3.5" />
-                      {schedule.studentCount + extraStudents}
-                    </Button>
-                  </td>
-                  <td className="p-3">
-                    {hasEdit && (
-                      <Button
-                        size="sm"
-                        className="h-7 text-xs"
-                        disabled={updateMutation.isPending}
-                        onClick={() => saveRow(schedule)}
-                      >
-                        <Save className="mr-1 h-3 w-3" />
-                        Lưu
-                      </Button>
+          {/* Form Card for Current Step */}
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm max-w-xl mx-auto overflow-hidden">
+            <div className="p-6 space-y-4">
+              {currentStep === 1 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Chọn môn thi</label>
+                    <Select value={courseId} onValueChange={handleCourseChange}>
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="Chọn môn học phần..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((course) => (
+                          <SelectItem key={course.id} value={String(course.id)}>
+                            {course.code} - {course.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {courseId && (
+                    <div className="rounded-lg border bg-muted/10 p-3.5 text-xs space-y-2 text-muted-foreground">
+                      <div className="flex justify-between items-center">
+                        <span>Số lớp học phần trong kỳ:</span>
+                        <span className="font-semibold text-foreground">
+                          {classSections.filter((cs) => String(cs.courseId) === courseId).length} lớp
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Tổng số sinh viên dự thi dự kiến:</span>
+                        <span className="font-bold text-foreground text-sm">
+                          {totalCandidates} sinh viên
+                        </span>
+                      </div>
+                      <div className="flex justify-end pt-2 border-t border-muted mt-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1.5 text-xs bg-background hover:bg-muted/30"
+                          disabled={isLoadingCandidates || candidates.length === 0}
+                          onClick={() => setIsStep1CandidatesOpen(true)}
+                        >
+                          {isLoadingCandidates ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                              Đang tải danh sách...
+                            </>
+                          ) : (
+                            <>
+                              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                              Xem danh sách sinh viên
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentStep === 2 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Thời gian thi</label>
+                    <div className="relative">
+                      <Input
+                        type="datetime-local"
+                        value={examAt}
+                        onChange={(event) => {
+                          const val = event.target.value;
+                          setExamAt(val);
+                          setIgnoreConflicts(false);
+                          void checkConflicts(val);
+                        }}
+                        className="w-full h-10"
+                      />
+                      {isValidating && (
+                        <div className="absolute right-3 top-3">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Phương thức phân bổ phòng thi</label>
+                    <Select value={allocationMethod} onValueChange={(value) => setAllocationMethod(value as any)}>
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="Chọn phương thức phân bổ..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SEQUENTIAL">Phân bổ dồn phòng (Sequential)</SelectItem>
+                        <SelectItem value="BALANCED">Phân bổ chia đều (Balanced)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Exam conflicts notification */}
+                  {!isValidating && conflicts.length > 0 && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-2 text-sm text-amber-800 animate-in fade-in duration-200">
+                      <div className="flex items-start gap-2 font-semibold text-amber-900">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                        <span>Phát hiện {conflicts.length} sinh viên bị trùng giờ thi!</span>
+                      </div>
+                      <p className="text-xs text-amber-700">
+                        Những sinh viên dưới đây đã có lịch thi môn khác vào cùng thời điểm này:
+                      </p>
+                      <div className="border border-amber-200 rounded-md overflow-hidden bg-background max-h-32 overflow-y-auto mt-2">
+                        <table className="w-full text-[11px] text-left text-foreground">
+                          <thead className="bg-muted text-muted-foreground">
+                            <tr>
+                              <th className="p-1.5 font-medium">MSSV</th>
+                              <th className="p-1.5 font-medium">Họ tên</th>
+                              <th className="p-1.5 font-medium">Môn bị trùng</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {conflicts.map((c, idx) => (
+                              <tr key={idx} className="border-t border-muted">
+                                <td className="p-1.5 font-mono">{c.studentCode}</td>
+                                <td className="p-1.5">{c.studentName}</td>
+                                <td className="p-1.5 text-muted-foreground truncate max-w-[150px]">
+                                  {c.conflictingCourseCode} - {c.conflictingCourseName}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-amber-200/50">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className={`h-8 text-xs ${
+                            ignoreConflicts 
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100" 
+                              : "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200"
+                          }`}
+                          onClick={() => {
+                            setIgnoreConflicts(!ignoreConflicts);
+                            if (!ignoreConflicts) {
+                              toast.warning("Đã xác nhận bỏ qua xung đột trùng lịch.");
+                            }
+                          }}
+                        >
+                          {ignoreConflicts ? "✓ Đã bỏ qua xung đột" : "Bỏ qua & Vẫn xếp"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-amber-800 hover:bg-amber-200/40 h-8 text-xs"
+                          onClick={() => {
+                            setExamAt("");
+                            setConflicts([]);
+                            setIgnoreConflicts(false);
+                          }}
+                        >
+                          Chọn lại giờ thi
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isValidating && conflicts.length === 0 && examAt && (
+                    <div className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                      <CheckCircle className="h-4 w-4 shrink-0" />
+                      <span>Không có xung đột trùng lịch thi cho sinh viên.</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Chọn phòng thi</label>
+                    <div className="grid gap-2 sm:grid-cols-2 max-h-48 overflow-y-auto pr-1 border rounded-lg p-3 bg-muted/10">
+                      {rooms.map((room) => {
+                        const checked = roomIds.includes(room.id);
+                        return (
+                          <label
+                            key={room.id}
+                            className={`flex items-center justify-between gap-3 rounded-md border p-2 text-sm cursor-pointer transition-colors ${
+                              checked ? "border-emerald-500 bg-emerald-500/5" : "hover:bg-muted/30"
+                            }`}
+                          >
+                            <span className="truncate">
+                              <span className="font-medium text-foreground">{room.name}</span>
+                              <span className="ml-2 text-xs text-muted-foreground">{room.capacity} chỗ</span>
+                            </span>
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(value) =>
+                                setRoomIds((current) =>
+                                  value ? [...current, room.id] : current.filter((id) => id !== room.id),
+                                )
+                              }
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs mt-2">
+                      <span className="text-muted-foreground">
+                        Sinh viên dự thi: <span className="font-semibold text-foreground">{totalCandidates}</span>
+                      </span>
+                      <span className="text-muted-foreground">
+                        Tổng sức chứa đã chọn:{" "}
+                        <span className={`font-semibold ${hasCapacityShortage ? "text-amber-600 font-bold" : "text-foreground"}`}>
+                          {totalRoomCapacity} / {totalCandidates}
+                        </span>
+                      </span>
+                    </div>
+
+                    {hasCapacityShortage && roomIds.length > 0 && (
+                      <div className="flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
+                        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                        <span>Sức chứa phòng thi đã chọn ({totalRoomCapacity} chỗ) không đủ cho số sinh viên dự thi ({totalCandidates}). Vui lòng chọn thêm phòng.</span>
+                      </div>
                     )}
-                  </td>
-                </tr>
-              );
-            })}
-            {schedules.length === 0 && (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                  Chưa có lịch thi
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </div>
+                </div>
+              )}
 
-      <ExamStudentsDialog
-        open={!!studentsSchedule}
-        schedule={studentsSchedule}
-        retakeRegistrations={retakeRegistrations}
+              {currentStep === 3 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="text-sm font-semibold text-emerald-600">Xác nhận thông tin lịch thi</div>
+                  
+                  <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 text-sm">
+                    <div className="grid grid-cols-[100px_1fr] items-start">
+                      <span className="text-muted-foreground font-medium">Môn thi:</span>
+                      <span className="font-semibold text-foreground">
+                        {courses.find((c) => String(c.id) === courseId)?.code} -{" "}
+                        {courses.find((c) => String(c.id) === courseId)?.name}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-[100px_1fr]">
+                      <span className="text-muted-foreground font-medium">Loại thi:</span>
+                      <span className="font-semibold text-foreground">
+                        {examType === "NORMAL" ? "Thi kết thúc" : examType === "RETAKE" ? "Thi lại" : "Nâng điểm"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-[100px_1fr]">
+                      <span className="text-muted-foreground font-medium">Thời gian:</span>
+                      <span className="font-semibold text-foreground">{formatDateTime(examAt)}</span>
+                    </div>
+                    <div className="grid grid-cols-[100px_1fr] border-t pt-2 mt-2">
+                      <span className="text-muted-foreground font-medium">Sinh viên:</span>
+                      <span className="font-semibold text-foreground">{totalCandidates} thí sinh</span>
+                    </div>
+                  </div>
+
+                  {/* Seat Allocation Preview */}
+                  <div className="space-y-2.5">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                      Bản xem trước phân bổ phòng thi ({allocationMethod === "BALANCED" ? "Chia đều" : "Dồn phòng"})
+                    </label>
+                    <div className="border rounded-lg p-4 space-y-4 bg-muted/5 max-h-60 overflow-y-auto">
+                      {simulatedAllocation.allocation.map((item, idx) => (
+                        <div key={idx} className="space-y-1.5 pb-2 border-b last:border-b-0 border-muted">
+                          <div className="flex justify-between items-center text-xs font-medium">
+                            <span className="text-foreground font-semibold">Phòng {item.roomName}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">
+                                {item.assigned} / {item.capacity} thí sinh
+                              </span>
+                              <Button
+                                type="button"
+                                variant="link"
+                                size="sm"
+                                className="h-auto p-0 text-xs text-primary font-normal hover:underline"
+                                disabled={item.assigned === 0}
+                                onClick={() => setSelectedRoomPreview({ roomName: item.roomName, students: item.students })}
+                              >
+                                Xem chi tiết
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div
+                              className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                              style={{ width: `${item.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+
+                      {simulatedAllocation.remainingCandidates > 0 && (
+                        <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center gap-1.5">
+                          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                          <span>Thiếu chỗ cho {simulatedAllocation.remainingCandidates} thí sinh do phòng thi đã chọn không đủ sức chứa!</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between border-t px-6 py-4 bg-muted/20">
+              {currentStep > 1 ? (
+                <Button variant="outline" size="sm" onClick={() => setCurrentStep((s) => s - 1)}>
+                  Quay lại
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={handleCancel}>
+                  Hủy bỏ
+                </Button>
+              )}
+
+              {currentStep < 3 ? (
+                <Button
+                  size="sm"
+                  disabled={
+                    (currentStep === 1 && (!courseId || isLoadingCandidates)) ||
+                    (currentStep === 2 && (!examAt || roomIds.length === 0 || hasCapacityShortage || (conflicts.length > 0 && !ignoreConflicts)))
+                  }
+                  onClick={handleNextStep}
+                >
+                  Tiếp theo
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  disabled={saveMutation.isPending || simulatedAllocation.remainingCandidates > 0}
+                  onClick={() => saveMutation.mutate()}
+                >
+                  {saveMutation.isPending ? "Đang xử lý..." : "Lưu và chia phòng"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Tìm môn hoặc phòng thi..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-9 pl-8"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground hidden md:inline text-right">
+                Tổng cộng: {filteredSessions.length}/{sessions.length} lịch thi
+              </span>
+              <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => setIsScheduling(true)}>
+                <Plus className="mr-1.5 h-4 w-4" />
+                Xếp lịch thi
+              </Button>
+            </div>
+          </div>
+
+          {sessionsQuery.isLoading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : (
+            <div className="overflow-hidden rounded-lg border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-3 text-left font-medium">Môn thi</th>
+                    <th className="p-3 text-left font-medium">Thời gian</th>
+                    <th className="p-3 text-left font-medium">Phòng</th>
+                    <th className="p-3 text-left font-medium">Sinh viên</th>
+                    <th className="p-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSessions.map((session) => (
+                    <tr key={session.id} className="border-t hover:bg-muted/30">
+                      <td className="p-3">
+                        <div className="font-medium text-foreground">{session.courseName}</div>
+                        <div className="text-xs text-muted-foreground">{session.courseCode}</div>
+                      </td>
+                      <td className="p-3 text-xs text-muted-foreground">
+                        {formatDateTime(session.examAt)}
+                      </td>
+                      <td className="p-3 text-xs">
+                        {session.rooms
+                          .map((room) => `${room.roomName} (${room.assignedCount}/${room.capacity})`)
+                          .join(", ")}
+                      </td>
+                      <td className="p-3 font-medium">{session.studentCount}</td>
+                      <td className="p-3 text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => setSelectedSession(session)}
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                          Danh sách
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredSessions.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                        Chưa có lịch thi theo môn
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      <ExamSeatsDialog
+        session={selectedSession}
         onOpenChange={(open) => {
-          if (!open) setStudentsSchedule(null);
+          if (!open) setSelectedSession(null);
         }}
       />
+
+      <Dialog open={isStep1CandidatesOpen} onOpenChange={setIsStep1CandidatesOpen}>
+        <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Danh sách sinh viên dự kiến dự thi</DialogTitle>
+            <DialogDescription>
+              Môn học: {courses.find((c) => String(c.id) === courseId)?.code} - {courses.find((c) => String(c.id) === courseId)?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-hidden rounded-lg border mt-2">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="p-2 text-left font-medium w-12 text-center">STT</th>
+                  <th className="p-2 text-left font-medium">MSSV</th>
+                  <th className="p-2 text-left font-medium">Họ tên</th>
+                  <th className="p-2 text-left font-medium">Loại đăng ký</th>
+                </tr>
+              </thead>
+              <tbody>
+                {candidates.map((candidate, index) => (
+                  <tr key={candidate.studentId} className="border-t hover:bg-muted/30">
+                    <td className="p-2 text-center text-muted-foreground text-xs">{index + 1}</td>
+                    <td className="p-2 font-mono text-xs">{candidate.studentCode}</td>
+                    <td className="p-2">{candidate.studentName}</td>
+                    <td className="p-2 text-xs">
+                      {candidate.sourceType === "RETAKE" ? (
+                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Thi lại</Badge>
+                      ) : candidate.sourceType === "IMPROVE" ? (
+                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Nâng điểm</Badge>
+                      ) : candidate.sourceType === "REPEAT_COURSE" ? (
+                        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Học lại</Badge>
+                      ) : (
+                        <Badge variant="outline">Thi kết thúc</Badge>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {candidates.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                      Không có sinh viên dự kiến thi môn này
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedRoomPreview} onOpenChange={(open) => { if (!open) setSelectedRoomPreview(null); }}>
+        <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Danh sách thí sinh dự kiến - Phòng {selectedRoomPreview?.roomName}</DialogTitle>
+            <DialogDescription>
+              Tổng số: {selectedRoomPreview?.students.length} thí sinh (Phân bổ theo mã sinh viên)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-hidden rounded-lg border mt-2">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="p-2 text-left font-medium w-12 text-center">STT</th>
+                  <th className="p-2 text-left font-medium">MSSV</th>
+                  <th className="p-2 text-left font-medium">Họ tên</th>
+                  <th className="p-2 text-left font-medium">Nguồn</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedRoomPreview?.students.map((student, index) => (
+                  <tr key={student.studentId} className="border-t hover:bg-muted/30">
+                    <td className="p-2 text-center text-muted-foreground text-xs">{index + 1}</td>
+                    <td className="p-2 font-mono text-xs">{student.studentCode}</td>
+                    <td className="p-2">{student.studentName}</td>
+                    <td className="p-2 text-xs">
+                      {student.sourceType === "RETAKE" ? (
+                        <span className="text-red-600 font-medium">Thi lại</span>
+                      ) : student.sourceType === "IMPROVE" ? (
+                        <span className="text-blue-600 font-medium">Nâng điểm</span>
+                      ) : student.sourceType === "REPEAT_COURSE" ? (
+                        <span className="text-amber-600 font-medium">Học lại</span>
+                      ) : (
+                        <span className="text-muted-foreground">Thi kết thúc</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {(!selectedRoomPreview || selectedRoomPreview.students.length === 0) && (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                      Không có thí sinh phân vào phòng này
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function ExamStudentsDialog({
-  open,
-  schedule,
-  retakeRegistrations,
+function ExamSeatsDialog({
+  session,
   onOpenChange,
 }: {
-  open: boolean;
-  schedule: ExamScheduleResponse | null;
-  retakeRegistrations: AdminExamRegistrationResponse[];
+  session: ExamSessionResponse | null;
   onOpenChange: (open: boolean) => void;
 }) {
-  const studentsQuery = useQuery({
-    queryKey: ["admin", "class-sections", schedule?.classSectionId, "students", "exam"],
-    queryFn: () => adminApi.listClassSectionStudents(schedule?.classSectionId ?? 0),
-    enabled: open && !!schedule?.classSectionId,
-    retry: false,
+  const seatsQuery = useQuery({
+    queryKey: ["admin", "exam-session-seats", session?.id],
+    queryFn: () => adminApi.listExamSessionSeats(session?.id ?? 0),
+    enabled: !!session,
   });
-  const allStudentsQuery = useQuery({
-    queryKey: ["admin", "students", "exam-dialog"],
-    queryFn: adminApi.listStudents,
-    enabled: open,
-    staleTime: 60_000,
-    retry: false,
-  });
-
-  const rows = useMemo(() => {
-    if (!schedule) return [];
-    return buildExamStudentRows(
-      studentsQuery.data ?? [],
-      getMatchingRetakeRegistrations(schedule, retakeRegistrations),
-      allStudentsQuery.data ?? [],
-    );
-  }, [schedule, studentsQuery.data, retakeRegistrations, allStudentsQuery.data]);
-
-  const exportRows = () => {
-    if (!schedule) return;
-    exportExamRoomStudents(schedule, rows);
-  };
+  const rows = seatsQuery.data ?? [];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-5xl overflow-y-auto">
+    <Dialog open={!!session} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[88vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Danh sách sinh viên thi
-          </DialogTitle>
+          <DialogTitle>Danh sách phòng thi</DialogTitle>
           <DialogDescription>
-            {schedule
-              ? `${schedule.classCode} - ${schedule.courseName} - ${formatDateTime(schedule.examAt)} - Phòng ${schedule.examRoom ?? "-"}`
-              : "Sinh viên dự thi theo lịch thi đã chọn"}
+            {session
+              ? `${session.courseCode} - ${session.courseName} - ${formatDateTime(session.examAt)}`
+              : "Danh sách sinh viên thi"}
           </DialogDescription>
-          <div className="pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={exportRows}
-              disabled={rows.length === 0}
-            >
-              <Download className="h-4 w-4" />
-              Xuất danh sách phòng thi
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-fit gap-2"
+            disabled={rows.length === 0 || !session}
+            onClick={() => session && exportSeats(session, rows)}
+          >
+            <Download className="h-4 w-4" />
+            Xuất CSV
+          </Button>
         </DialogHeader>
 
-        {studentsQuery.isPending ? (
-          <div className="space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
+        {seatsQuery.isLoading ? (
+          <Skeleton className="h-64 w-full" />
         ) : (
           <div className="overflow-hidden rounded-lg border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
+                  <th className="p-3 text-left font-medium">Phòng</th>
                   <th className="p-3 text-left font-medium">MSSV</th>
                   <th className="p-3 text-left font-medium">Họ tên</th>
-                  <th className="p-3 text-left font-medium">Email</th>
-                  <th className="p-3 text-left font-medium">Ngành</th>
-                  <th className="p-3 text-left font-medium">Hình thức thi</th>
-                  <th className="p-3 text-left font-medium">Trạng thái</th>
-                  <th className="p-3 text-left font-medium">Phí</th>
+                  <th className="p-3 text-left font-medium">Nguồn</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.key} className="border-t hover:bg-muted/30">
+                  <tr key={row.id} className="border-t hover:bg-muted/30">
+                    <td className="p-3 font-medium">{row.roomName}</td>
                     <td className="p-3 font-mono text-xs">{row.studentCode}</td>
-                    <td className="p-3 font-medium">{row.studentName}</td>
-                    <td className="p-3 text-xs text-muted-foreground">{row.email ?? "-"}</td>
-                    <td className="p-3 text-xs text-muted-foreground">{row.majorName ?? "-"}</td>
+                    <td className="p-3">{row.studentName}</td>
                     <td className="p-3">
-                      <ExamKindBadge kind={row.examKind} />
-                    </td>
-                    <td className="p-3 text-xs text-muted-foreground">
-                      {formatStatus(row.status)}
-                    </td>
-                    <td className="p-3 text-xs tabular-nums">
-                      {row.feeCharged != null ? `${row.feeCharged.toLocaleString("vi-VN")}đ` : "-"}
+                      <ExamTypeBadge type={row.sourceType} />
                     </td>
                   </tr>
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                      Chưa có sinh viên trong lịch thi này
+                    <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                      Chưa có sinh viên được xếp phòng
                     </td>
                   </tr>
                 )}
@@ -369,74 +931,11 @@ function ExamStudentsDialog({
   );
 }
 
-function buildExamStudentRows(
-  normalStudents: AdminClassSectionStudentResponse[],
-  retakeRegistrations: AdminExamRegistrationResponse[],
-  allStudents: AdminStudentResponse[],
-): ExamStudentRow[] {
-  const knownStudents = new Map<string, AdminClassSectionStudentResponse | AdminStudentResponse>();
-  for (const student of allStudents) knownStudents.set(student.studentCode, student);
-  for (const student of normalStudents) knownStudents.set(student.studentCode, student);
-
-  const normalRows: ExamStudentRow[] = normalStudents.map((student) => ({
-    key: `normal-${student.enrollmentId}`,
-    studentCode: student.studentCode,
-    studentName: student.fullName,
-    email: student.email,
-    majorName: student.majorName,
-    examKind: "NORMAL",
-    status: student.status,
-  }));
-
-  const retakeRows: ExamStudentRow[] = retakeRegistrations.map((item) => ({
-    ...buildRetakeStudentRow(item, knownStudents.get(item.studentCode)),
-  }));
-
-  return [...normalRows, ...retakeRows].sort((a, b) => a.studentCode.localeCompare(b.studentCode));
-}
-
-function buildRetakeStudentRow(
-  item: AdminExamRegistrationResponse,
-  fallback?: AdminClassSectionStudentResponse | AdminStudentResponse,
-): ExamStudentRow {
-  return {
-    key: `retake-${item.id}`,
-    studentCode: item.studentCode,
-    studentName: item.studentName || fallback?.fullName || "-",
-    email: fallback?.email,
-    majorName: fallback?.majorName,
-    examKind: item.registrationType === "IMPROVE" ? "IMPROVE" : "RETAKE",
-    status: item.status,
-    feeCharged: item.feeCharged,
-  };
-}
-
-function getMatchingRetakeRegistrations(
-  schedule: ExamScheduleResponse,
-  retakeRegistrations: AdminExamRegistrationResponse[],
-) {
-  return retakeRegistrations.filter((item) => {
-    if (!["RETAKE", "IMPROVE"].includes(item.registrationType ?? "")) return false;
-    if (item.classSectionId === schedule.classSectionId) return true;
-    const sameCourse = item.courseCode === schedule.courseCode;
-    const sameExamAt = !!item.examAt && !!schedule.examAt && item.examAt === schedule.examAt;
-    const sameRoom = !item.examRoom || !schedule.examRoom || item.examRoom === schedule.examRoom;
-    return sameCourse && sameExamAt && sameRoom;
-  });
-}
-
-function ExamKindBadge({ kind }: { kind: ExamStudentRow["examKind"] }) {
-  if (kind === "NORMAL") return <Badge variant="outline">Thi thường</Badge>;
-  if (kind === "IMPROVE")
-    return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Nâng điểm</Badge>;
-  return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Thi lại</Badge>;
-}
-
-function formatStatus(status?: string | null) {
-  if (status === "REGISTERED") return "Đã xác nhận";
-  if (status === "PENDING") return "Chờ duyệt";
-  if (status === "CANCELED") return "Đã hủy";
-  return status ?? "-";
+function ExamTypeBadge({ type }: { type?: string | null }) {
+  if (type === "RETAKE") return <Badge className="bg-red-100 text-red-800">Thi lại</Badge>;
+  if (type === "IMPROVE") return <Badge className="bg-blue-100 text-blue-800">Nâng điểm</Badge>;
+  if (type === "REPEAT_COURSE") return <Badge className="bg-amber-100 text-amber-800">Học lại</Badge>;
+  return <Badge variant="outline">Thi kết thúc</Badge>;
 }
 
 function formatDateTime(value?: string | null) {
@@ -452,29 +951,18 @@ function formatDateTime(value?: string | null) {
   });
 }
 
-function exportExamRoomStudents(schedule: ExamScheduleResponse, rows: ExamStudentRow[]) {
-  const header = ["STT", "MSSV", "Họ tên", "Email", "Ngành", "Hình thức thi", "Trạng thái", "Phí"];
+function exportSeats(session: ExamSessionResponse, rows: ExamSeatAssignmentResponse[]) {
+  const header = ["STT", "Phong", "MSSV", "Ho ten", "Nguon"];
   const lines = rows.map((row, index) => [
     index + 1,
+    row.roomName,
     row.studentCode,
     row.studentName,
-    row.email ?? "",
-    row.majorName ?? "",
-    formatExamKind(row.examKind),
-    formatStatus(row.status),
-    row.feeCharged ?? "",
+    row.sourceType,
   ]);
   const csv = [header, ...lines].map((line) => line.map(csvCell).join(",")).join("\r\n");
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-  const room = schedule.examRoom ? schedule.examRoom.replace(/\s+/g, "-") : "chua-co-phong";
-  const classCode = schedule.classCode.replace(/\s+/g, "-");
-  triggerBrowserDownload(blob, `danh-sach-thi-${classCode}-${room}.csv`);
-}
-
-function formatExamKind(kind: ExamStudentRow["examKind"]) {
-  if (kind === "NORMAL") return "Thi thường";
-  if (kind === "IMPROVE") return "Nâng điểm";
-  return "Thi lại";
+  triggerBrowserDownload(blob, `lich-thi-${session.courseCode}-${session.examType}.csv`);
 }
 
 function csvCell(value: unknown) {

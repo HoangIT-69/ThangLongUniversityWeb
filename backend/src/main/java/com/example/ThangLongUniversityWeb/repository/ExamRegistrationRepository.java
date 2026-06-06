@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface ExamRegistrationRepository extends JpaRepository<ExamRegistration, Long> {
 
-    @Query("SELECT e FROM ExamRegistration e WHERE e.student.id = :studentId AND e.classSection.semester.id = :semesterId AND e.registrationType IN :types")
+    @Query("SELECT e FROM ExamRegistration e WHERE e.student.id = :studentId AND e.semester.id = :semesterId AND e.registrationType IN :types")
     List<ExamRegistration> findRetakeRequests(
             @Param("studentId") Long studentId,
             @Param("semesterId") Long semesterId,
@@ -23,15 +23,23 @@ public interface ExamRegistrationRepository extends JpaRepository<ExamRegistrati
     
     Optional<ExamRegistration> findByStudentIdAndClassSectionId(Long studentId, Long classSectionId);
 
-    Optional<ExamRegistration> findByStudentIdAndClassSectionCourseId(Long studentId, Long courseId);
+    Optional<ExamRegistration> findByStudentIdAndCourseIdAndSemesterId(Long studentId, Long courseId, Long semesterId);
 
     List<ExamRegistration> findByClassSectionId(Long classSectionId);
 
     List<ExamRegistration> findByClassSectionIdAndStatus(Long classSectionId, EnrollmentStatus status);
 
-    List<ExamRegistration> findByClassSectionSemesterIdAndStatus(Long semesterId, EnrollmentStatus status);
+    List<ExamRegistration> findBySemesterId(Long semesterId);
 
-    List<ExamRegistration> findByStudentIdAndClassSectionSemesterIdAndStatus(Long studentId, Long semesterId, EnrollmentStatus status);
+    List<ExamRegistration> findBySemesterIdAndStatus(Long semesterId, EnrollmentStatus status);
+
+    List<ExamRegistration> findBySemesterIdAndCourseIdAndStatus(Long semesterId, Long courseId, EnrollmentStatus status);
+
+    List<ExamRegistration> findByStudentIdAndSemesterIdAndStatus(Long studentId, Long semesterId, EnrollmentStatus status);
 
     List<ExamRegistration> findByOriginalGrade_Enrollment_Id(Long enrollmentId);
+
+    List<ExamRegistration> findByRegistrationRoundIdAndStatus(Long registrationRoundId, EnrollmentStatus status);
+
+    List<ExamRegistration> findByRegistrationRoundId(Long registrationRoundId);
 }

@@ -66,7 +66,7 @@ public class StudentTuitionService {
 
         List<Enrollment> enrollments = enrollmentRepository.findByStudentIdAndClassSection_SemesterIdAndStatus(
                 student.getId(), semesterId, EnrollmentStatus.REGISTERED);
-        List<ExamRegistration> retakeRegistrations = examRegistrationRepository.findByStudentIdAndClassSectionSemesterIdAndStatus(
+        List<ExamRegistration> retakeRegistrations = examRegistrationRepository.findByStudentIdAndSemesterIdAndStatus(
                 student.getId(), semesterId, EnrollmentStatus.REGISTERED);
 
         int totalCredits = enrollments.stream()
@@ -108,7 +108,7 @@ public class StudentTuitionService {
         }).toList();
 
         List<TuitionItemResponse> retakeItems = retakeRegistrations.stream().map(reg -> {
-            var course = reg.getClassSection().getCourse();
+            var course = reg.getCourse() != null ? reg.getCourse() : reg.getClassSection().getCourse();
             long fee = reg.getFeeCharged() != null ? reg.getFeeCharged() : 0L;
             return new TuitionItemResponse(
                     "RETAKE",

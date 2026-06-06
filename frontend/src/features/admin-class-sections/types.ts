@@ -19,6 +19,9 @@ export interface ClassSectionRow {
   majorName: string;
   semesterId: number;
   semesterName: string;
+  registrationRoundId?: number | null;
+  registrationRoundName?: string | null;
+  registrationRoundNumber?: number | null;
   teacherId: number;
   teacherName: string;
   roomId: number;
@@ -28,6 +31,7 @@ export interface ClassSectionRow {
   startPeriod: number;
   endPeriodId: number;
   endPeriod: number;
+  schedules?: ClassSectionScheduleFormValue[];
   currentSlots: number;
   maxSlots: number;
   status: AdminClassSectionStatus;
@@ -51,6 +55,8 @@ export interface CourseOption {
   id: number;
   code: string;
   name: string;
+  departmentId?: number | null;
+  departmentName?: string | null;
 }
 
 export interface SemesterOption {
@@ -61,6 +67,8 @@ export interface SemesterOption {
 export interface TeacherOption {
   id: number;
   name: string;
+  departmentId?: number | null;
+  departmentName?: string | null;
 }
 
 export interface RoomOption {
@@ -83,10 +91,19 @@ export interface ClassSectionOptionSets {
   periods: PeriodOption[];
 }
 
+export interface ClassSectionScheduleFormValue {
+  key?: string;
+  roomId: number;
+  dayOfWeek: number;
+  startPeriodId: number;
+  endPeriodId: number;
+}
+
 export interface ClassSectionFormValues {
   classCode: string;
   courseId: number;
   semesterId: number;
+  registrationRoundId?: number | null;
   teacherId: number;
   roomId: number;
   dayOfWeek: number;
@@ -94,6 +111,7 @@ export interface ClassSectionFormValues {
   endPeriodId: number;
   maxSlots: number;
   status: AdminClassSectionStatus;
+  schedules?: ClassSectionScheduleFormValue[];
 }
 
 export interface ReferenceApiData {

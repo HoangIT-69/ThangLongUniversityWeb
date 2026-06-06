@@ -367,7 +367,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <Breadcrumbs pathname={pathname} />
 
           <div className="ml-auto flex items-center gap-2">
-            {role && (
+            {role && role !== "ADMIN" && (
               <Link to={chatByRole[role]}>
                 <Button variant="ghost" size="icon" className="h-9 w-9" title="Trò chuyện">
                   <MessageSquare className="h-5 w-5" />
@@ -472,9 +472,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
         <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
       </div>
-      <Suspense fallback={null}>
-        <ChatbotWidget />
-      </Suspense>
+      {role !== "ADMIN" && (
+        <Suspense fallback={null}>
+          <ChatbotWidget />
+        </Suspense>
+      )}
     </div>
   );
 }

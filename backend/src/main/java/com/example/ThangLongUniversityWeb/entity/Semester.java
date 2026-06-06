@@ -30,6 +30,9 @@ public class Semester {
     @Column(name = "retake_locked", nullable = false, columnDefinition = "boolean DEFAULT false NOT NULL")
     private boolean retakeLocked = false;
 
+    @Column(name = "ended", nullable = false, columnDefinition = "boolean DEFAULT false NOT NULL")
+    private boolean ended = false;
+
     // Credit limit per semester
     @Column(name = "max_credits_per_semester", nullable = false, columnDefinition = "integer DEFAULT 20 NOT NULL")
     private int maxCreditsPerSemester = 20;

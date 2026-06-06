@@ -11,6 +11,14 @@ import {
 } from "@/components/ui/table";
 import type { TeacherGradeRow } from "./teacherMappers";
 
+const COURSE_STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  IN_PROGRESS: { label: "Đang học", className: "bg-muted text-muted-foreground" },
+  PASSED: { label: "Đạt", className: "bg-green-100 text-green-700" },
+  BANNED_FROM_EXAM: { label: "Cấm thi", className: "bg-destructive/15 text-destructive" },
+  REPEAT_COURSE: { label: "Học lại", className: "bg-destructive/15 text-destructive" },
+  RETAKE_EXAM: { label: "Thi lại", className: "bg-amber-100 text-amber-700" },
+};
+
 interface TeacherGradeTableProps {
   rows: TeacherGradeRow[];
   disabled?: boolean;
@@ -32,12 +40,13 @@ export function TeacherGradeTable({ rows, disabled, onChange, onSave }: TeacherG
             <TableHead>Tổng</TableHead>
             <TableHead>Chữ</TableHead>
             <TableHead>GPA4</TableHead>
+            <TableHead>Trạng thái</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">
+              <TableCell colSpan={9} className="py-12 text-center text-sm text-muted-foreground">
                 Chưa có sinh viên trong bảng điểm lớp này
               </TableCell>
             </TableRow>
@@ -99,8 +108,11 @@ function GradeRow({
     }
   };
 
+  const isBanned =
+    row.courseStatus === "BANNED_FROM_EXAM" || row.courseStatus === "REPEAT_COURSE";
+
   return (
-    <TableRow>
+    <TableRow className={isBanned ? "bg-destructive/5" : undefined}>
       <TableCell>
         <div className="min-w-52">
           <div className="font-medium">{row.studentName}</div>
@@ -142,6 +154,17 @@ function GradeRow({
         </span>
       </TableCell>
       <TableCell className="tabular-nums">{row.gpa4 != null ? row.gpa4.toFixed(1) : "-"}</TableCell>
+      <TableCell>
+        {row.courseStatus && COURSE_STATUS_LABELS[row.courseStatus] ? (
+          <span
+            className={`rounded px-2 py-0.5 text-xs font-semibold ${COURSE_STATUS_LABELS[row.courseStatus].className}`}
+          >
+            {COURSE_STATUS_LABELS[row.courseStatus].label}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        )}
+      </TableCell>
     </TableRow>
   );
 }

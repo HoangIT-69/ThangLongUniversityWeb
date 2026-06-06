@@ -11,10 +11,12 @@ import {
   CalendarDays,
   ClipboardList,
   Layers,
+  GraduationCap,
 } from "lucide-react";
 import { OverviewTab } from "@/features/semester-hub/OverviewTab";
 import { ClassSectionsTab } from "@/features/semester-hub/ClassSectionsTab";
 import { EnrollmentsTab } from "@/features/semester-hub/EnrollmentsTab";
+import { RetakeRegistrationsTab } from "@/features/semester-hub/RetakeRegistrationsTab";
 import { ExamSchedulesTab } from "@/features/semester-hub/ExamSchedulesTab";
 
 export const Route = createFileRoute("/admin/semesters/$id")({ component: SemesterHubPage });
@@ -88,7 +90,7 @@ function SemesterHubPage() {
 
       {/* Hub tabs */}
       <Tabs defaultValue="overview">
-        <TabsList className="grid w-full grid-cols-4 h-11 bg-muted/50 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-5 h-11 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger
             value="overview"
             className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5"
@@ -108,6 +110,12 @@ function SemesterHubPage() {
             <ClipboardList className="h-3.5 w-3.5" /> Đăng ký học
           </TabsTrigger>
           <TabsTrigger
+            value="retake-registrations"
+            className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5"
+          >
+            <GraduationCap className="h-3.5 w-3.5" /> Đăng ký thi lại/nâng
+          </TabsTrigger>
+          <TabsTrigger
             value="exam-schedules"
             className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5"
           >
@@ -123,6 +131,9 @@ function SemesterHubPage() {
         </TabsContent>
         <TabsContent value="enrollments" className="mt-6">
           <EnrollmentsTab semesterId={semesterId} />
+        </TabsContent>
+        <TabsContent value="retake-registrations" className="mt-6">
+          <RetakeRegistrationsTab semesterId={semesterId} />
         </TabsContent>
         <TabsContent value="exam-schedules" className="mt-6">
           <ExamSchedulesTab semesterId={semesterId} />

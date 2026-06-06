@@ -110,9 +110,7 @@ public class ExportService {
      * Export danh sách đăng ký thi lại của một học kỳ ra Excel.
      */
     public byte[] exportRetakesToExcel(Long semesterId) {
-        var retakes = examRegistrationRepository.findAll().stream()
-                .filter(r -> r.getClassSection().getSemester().getId().equals(semesterId))
-                .toList();
+        var retakes = examRegistrationRepository.findBySemesterId(semesterId);
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = wb.createSheet("Dang ky thi lai");
             CellStyle headerStyle = createHeaderStyle(wb);
@@ -132,8 +130,10 @@ public class ExportService {
                 row.createCell(0).setCellValue(rowNum - 1);
                 row.createCell(1).setCellValue(r.getStudent().getStudentCode());
                 row.createCell(2).setCellValue(r.getStudent().getFullName());
-                row.createCell(3).setCellValue(r.getClassSection().getClassCode());
-                row.createCell(4).setCellValue(r.getClassSection().getCourse().getName());
+                var classSection = r.getClassSection();
+                var course = r.getCourse() != null ? r.getCourse() : classSection.getCourse();
+                row.createCell(3).setCellValue(classSection != null ? classSection.getClassCode() : "Chua xep lop thi");
+                row.createCell(4).setCellValue(course.getName());
                 row.createCell(5).setCellValue(r.getRegistrationType() != null ? r.getRegistrationType().name() : "");
                 row.createCell(6).setCellValue(r.getAttemptNumber() != null ? r.getAttemptNumber() : 0);
                 row.createCell(7).setCellValue(r.getFeeCharged() != null ? r.getFeeCharged() : 0L);

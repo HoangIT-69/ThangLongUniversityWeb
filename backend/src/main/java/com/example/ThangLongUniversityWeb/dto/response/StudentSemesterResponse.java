@@ -21,4 +21,8 @@ public class StudentSemesterResponse {
     private boolean examPublished;
     private boolean retakeOpen;
     private boolean retakeLocked;
+    private boolean ended;
+    private Long activeRegistrationRoundId;
+    private String activeRegistrationRoundName;
+    private Integer activeRegistrationRoundNumber;
 }
