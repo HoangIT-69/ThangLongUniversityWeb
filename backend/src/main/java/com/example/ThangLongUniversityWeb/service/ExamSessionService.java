@@ -246,9 +246,8 @@ public class ExamSessionService {
                 .forEach(e -> byStudent.putIfAbsent(e.getStudent().getId(), new ExamCandidate(e.getStudent(), e, null, "NORMAL")));
 
         // 2. Retake & Improve students
-        examRegistrationRepository.findByClassSectionSemesterIdAndStatus(semesterId, EnrollmentStatus.REGISTERED)
+        examRegistrationRepository.findBySemesterIdAndCourseIdAndStatus(semesterId, courseId, EnrollmentStatus.REGISTERED)
                 .stream()
-                .filter(r -> r.getClassSection().getCourse().getId().equals(courseId))
                 .filter(r -> r.getRegistrationType() != null)
                 .forEach(r -> {
                     String type = r.getRegistrationType().name();

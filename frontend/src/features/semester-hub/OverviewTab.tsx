@@ -179,6 +179,9 @@ export function OverviewTab({ semesterId }: Props) {
   const step2Done = s.retakeLocked;
   const step3Done = s.examPublished;
   const step4Done = Boolean(s.ended);
+  const canUseStep2 = step1Done;
+  const canUseStep3 = step1Done && step2Done;
+  const canUseStep4 = step1Done && step2Done && step3Done;
 
   const anyCourseRoundOpen = courseRounds.some((round) => round.registrationOpen);
   const anyRetakeRoundOpen = retakeRounds.some((round) => round.registrationOpen);
@@ -458,7 +461,7 @@ export function OverviewTab({ semesterId }: Props) {
                     size="sm"
                     variant="default"
                     className="h-7 text-xs px-2.5 bg-amber-600 hover:bg-amber-700 text-white"
-                    disabled={lockRetakeMutation.isPending || anyRetakeRoundOpen || step4Done}
+                    disabled={lockRetakeMutation.isPending || anyRetakeRoundOpen || step4Done || !canUseStep2}
                     onClick={() => {
                       if (confirm("Bạn có chắc chắn muốn khóa tổng toàn bộ đăng ký thi lại/nâng điểm? Hành động này sẽ chuyển sang bước tiếp theo.")) {
                         lockRetakeMutation.mutate();
@@ -473,7 +476,7 @@ export function OverviewTab({ semesterId }: Props) {
                   size="sm"
                   variant="outline"
                   className="h-7 text-xs px-2.5"
-                  disabled={createRoundMutation.isPending || step2Done || step4Done || !step1Done}
+                  disabled={createRoundMutation.isPending || step2Done || step4Done || !canUseStep2}
                   onClick={() => createRoundMutation.mutate({ roundType: "RETAKE", open: false })}
                 >
                   <Plus className="mr-1 h-3.5 w-3.5" />
@@ -511,7 +514,7 @@ export function OverviewTab({ semesterId }: Props) {
                     </div>
                     <LifecycleBadge done={round.locked} open={round.registrationOpen} />
                   </div>
-                  {!round.locked && !step2Done && !step4Done && (
+                  {!round.locked && !step2Done && !step4Done && canUseStep2 && (
                     <div className="mt-3 flex gap-2">
                       {round.registrationOpen ? (
                         <>
@@ -540,7 +543,7 @@ export function OverviewTab({ semesterId }: Props) {
                           variant="outline"
                           size="sm"
                           className="h-8 text-xs"
-                          disabled={openRoundMutation.isPending || anyRetakeRoundOpen}
+                          disabled={openRoundMutation.isPending || anyRetakeRoundOpen || !canUseStep2}
                           onClick={() => handleConfigRoundClick(round)}
                         >
                           <Power className="mr-1 h-3.5 w-3.5" />
@@ -550,7 +553,7 @@ export function OverviewTab({ semesterId }: Props) {
                       <Button
                         size="sm"
                         className="h-8 text-xs ml-auto"
-                        disabled={lockRoundMutation.isPending}
+                        disabled={lockRoundMutation.isPending || !canUseStep2}
                         onClick={() => lockRoundMutation.mutate(round.id)}
                       >
                         <Lock className="mr-1 h-3.5 w-3.5" />
@@ -585,7 +588,7 @@ export function OverviewTab({ semesterId }: Props) {
             !step4Done ? (
             <div className="flex flex-wrap gap-2">
               {!step3Done ? (
-                <Button size="sm" disabled={publishExamMutation.isPending || !step2Done} onClick={() => publishExamMutation.mutate()}>
+                <Button size="sm" disabled={publishExamMutation.isPending || !canUseStep3} onClick={() => publishExamMutation.mutate()}>
                   <Megaphone className="mr-1 h-3.5 w-3.5" />
                   Công bố lịch thi
                 </Button>
@@ -609,7 +612,7 @@ export function OverviewTab({ semesterId }: Props) {
           statusBadge={step4Done ? <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Đã kết thúc</Badge> : <Badge variant="outline">Chưa kết thúc</Badge>}
           actions={
             !step4Done ? (
-              <Button size="sm" disabled={endSemesterMutation.isPending} onClick={() => endSemesterMutation.mutate()}>
+              <Button size="sm" disabled={endSemesterMutation.isPending || !canUseStep4} onClick={() => endSemesterMutation.mutate()}>
                 <Flag className="mr-1 h-3.5 w-3.5" />
                 Kết thúc kỳ học
               </Button>

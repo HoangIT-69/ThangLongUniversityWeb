@@ -82,6 +82,8 @@ public class TeacherGradeController {
             List<ExamRegistration> retakes = examRegistrationRepository.findByOriginalGrade_Enrollment_Id(enrollmentId);
             for (ExamRegistration reg : retakes) {
                 if (reg.getStatus() == EnrollmentStatus.REGISTERED
+                        && reg.getClassSection() != null
+                        && reg.getClassSection().getTeacher() != null
                         && reg.getClassSection().getTeacher().getId().equals(currentTeacher.getId())) {
                     isAuthorized = true;
                     isClosed = reg.getClassSection().isClosed();

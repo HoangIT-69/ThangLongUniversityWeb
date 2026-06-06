@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "exam_registrations",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_exam_reg_student_class",
-                columnNames = {"student_id", "class_section_id"}
+                name = "uk_exam_reg_student_semester_course",
+                columnNames = {"student_id", "semester_id", "course_id"}
         )
 )
 @Getter
@@ -29,7 +29,15 @@ public class ExamRegistration {
     private Student student;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_section_id", nullable = false)
+    @JoinColumn(name = "semester_id")
+    private Semester semester;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id")
+    private Course course;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "class_section_id")
     private ClassSection classSection;
 
     @ManyToOne(fetch = FetchType.LAZY)

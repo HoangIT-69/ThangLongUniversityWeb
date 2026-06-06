@@ -116,6 +116,12 @@ public class SemesterService {
     @CacheEvict(cacheNames = "semesters", allEntries = true)
     public StudentSemesterResponse publishExamSchedules(Long id) {
         Semester semester = getSemesterOrThrow(id);
+        if (!semester.isLocked()) {
+            throw new RuntimeException("Phai khoa tong dang ky hoc phan truoc khi cong bo lich thi.");
+        }
+        if (!semester.isRetakeLocked()) {
+            throw new RuntimeException("Phai khoa tong dang ky thi lai truoc khi cong bo lich thi.");
+        }
         semester.setExamPublished(true);
         return toStudentResponse(semesterRepository.save(semester));
     }
@@ -138,14 +144,29 @@ public class SemesterService {
         if (semester.isRetakeLocked()) {
             throw new RuntimeException("Đăng ký thi lại đã chốt, không thể thay đổi.");
         }
-        semester.setRetakeOpen(open);
-        return toStudentResponse(semesterRepository.save(semester));
+        if (open) {
+            RegistrationRound round = registrationRoundService.ensureDefaultRound(id, "RETAKE");
+            registrationRoundService.openRound(id, round.getId());
+        } else {
+            RegistrationRound openRound = registrationRoundService.getOpenRound(id, "RETAKE");
+            if (openRound != null) {
+                registrationRoundService.closeRound(id, openRound.getId());
+            } else {
+                semester.setRetakeOpen(false);
+                semesterRepository.save(semester);
+            }
+        }
+
+        return toStudentResponse(getSemesterOrThrow(id));
     }
 
     @Transactional
     @CacheEvict(cacheNames = "semesters", allEntries = true)
     public int lockRetakes(Long id) {
         Semester semester = getSemesterOrThrow(id);
+        if (!semester.isLocked()) {
+            throw new RuntimeException("Phai khoa tong dang ky hoc phan truoc khi khoa tong thi lai.");
+        }
         
         List<RegistrationRound> rounds = registrationRoundService.listRoundsRaw(id, "RETAKE");
         int count = 0;
@@ -165,6 +186,15 @@ public class SemesterService {
     @CacheEvict(cacheNames = "semesters", allEntries = true)
     public StudentSemesterResponse endSemester(Long id) {
         Semester semester = getSemesterOrThrow(id);
+        if (!semester.isLocked()) {
+            throw new RuntimeException("Phai khoa tong dang ky hoc phan truoc khi ket thuc hoc ky.");
+        }
+        if (!semester.isRetakeLocked()) {
+            throw new RuntimeException("Phai khoa tong dang ky thi lai truoc khi ket thuc hoc ky.");
+        }
+        if (!semester.isExamPublished()) {
+            throw new RuntimeException("Phai cong bo lich thi truoc khi ket thuc hoc ky.");
+        }
         RegistrationRound openRound = registrationRoundService.getOpenRound(id);
         if (openRound != null) {
             registrationRoundService.closeRound(id, openRound.getId());
@@ -187,8 +217,8 @@ public class SemesterService {
         int pending = (int) enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.PENDING).count();
         int registered = (int) enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.REGISTERED).count();
 
-        var retakes = examRegistrationRepository.findByClassSectionSemesterIdAndStatus(id, EnrollmentStatus.PENDING);
-        var retakesReg = examRegistrationRepository.findByClassSectionSemesterIdAndStatus(id, EnrollmentStatus.REGISTERED);
+        var retakes = examRegistrationRepository.findBySemesterIdAndStatus(id, EnrollmentStatus.PENDING);
+        var retakesReg = examRegistrationRepository.findBySemesterIdAndStatus(id, EnrollmentStatus.REGISTERED);
         var rounds = registrationRoundService.listRounds(id);
         RegistrationRound activeRound = registrationRoundService.getOpenRound(id);
         if (activeRound == null) {

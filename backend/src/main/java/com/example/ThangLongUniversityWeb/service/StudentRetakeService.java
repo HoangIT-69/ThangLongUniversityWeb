@@ -18,7 +18,6 @@ import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
 import com.example.ThangLongUniversityWeb.entity.RegistrationRound;
 import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
-import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.GradeRepository;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
@@ -52,7 +51,6 @@ public class StudentRetakeService {
 
     private final StudentRepository studentRepository;
     private final GradeRepository gradeRepository;
-    private final ClassSectionRepository classSectionRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
     private final SystemSettingsRepository systemSettingsRepository;
     private final SemesterRepository semesterRepository;
@@ -94,6 +92,8 @@ public class StudentRetakeService {
         }
 
         Student student = getCurrentStudent();
+        Semester semester = semesterRepository.findById(request.getSemesterId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky dang ky thi lai."));
         RegistrationRound round = registrationRoundService.getOpenRound(request.getSemesterId(), "RETAKE");
         if (round == null || !round.isRegistrationOpen() || round.isLocked()) {
             throw new RuntimeException("Không có đợt đăng ký thi lại/nâng điểm nào đang mở.");
@@ -173,10 +173,8 @@ public class StudentRetakeService {
                     ? EnrollmentType.RETAKE : EnrollmentType.IMPROVE;
             int nextAttempt = (latestGrade.getAttemptNumber() != null ? latestGrade.getAttemptNumber() : 1) + 1;
 
-            // Tim ClassSection co lich thi cho mon nay
-            ClassSection examSection = findExamSectionForRetake(course.getId(), request.getSemesterId());
-
-            ExamRegistration existing = examRegistrationRepository.findByStudentIdAndClassSectionCourseId(student.getId(), course.getId())
+            ExamRegistration existing = examRegistrationRepository.findByStudentIdAndCourseIdAndSemesterId(
+                            student.getId(), course.getId(), semester.getId())
                     .orElse(null);
             if (existing != null && existing.getStatus() == EnrollmentStatus.REGISTERED) {
                 throw new RuntimeException("Ban da duoc chot dang ky thi mon " + course.getName() + " truoc do roi.");
@@ -188,7 +186,8 @@ public class StudentRetakeService {
 
             ExamRegistration examReg = existing != null ? existing : new ExamRegistration();
             examReg.setStudent(student);
-            examReg.setClassSection(examSection);
+            examReg.setSemester(semester);
+            examReg.setCourse(course);
             examReg.setOriginalGrade(latestGrade);
             examReg.setStatus(EnrollmentStatus.PENDING);
             examReg.setRegistrationType(enrollmentType);
@@ -217,7 +216,7 @@ public class StudentRetakeService {
             throw new RuntimeException("Chi co the bo chon dang ky thi lai / nang diem o trang thai PENDING.");
         }
 
-        String courseName = reg.getClassSection().getCourse().getName();
+        String courseName = getCourse(reg).getName();
         examRegistrationRepository.delete(reg);
         return "Da bo chon thi lai / nang diem mon " + courseName + ".";
     }
@@ -240,22 +239,6 @@ public class StudentRetakeService {
     // ─────────────────────────────────────────────────────────────────────────
     // Private helpers
     // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Tim ClassSection co lich thi (examAt != null) cua course trong hoc ky.
-     * Uu tien hoc ky hien tai, fallback bat ky hoc ky nao, cuoi cung lay lop dau tien.
-     */
-    private ClassSection findExamSectionForRetake(Long courseId, Long preferredSemesterId) {
-        List<ClassSection> inSameSemester =
-                classSectionRepository.findBySemesterIdAndCourseId(preferredSemesterId, courseId);
-
-        return inSameSemester.stream()
-                .filter(cs -> cs.getExamAt() != null)
-                .findFirst()
-                .orElseGet(() -> inSameSemester.stream().findFirst()
-                        .orElseThrow(() -> new RuntimeException(
-                                "Khong tim thay lop hoc phan/lich thi lai cho mon nay trong hoc ky dang chon.")));
-    }
 
     private Student getCurrentStudent() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -301,16 +284,17 @@ public class StudentRetakeService {
 
     private RetakeRequestResponse mapRequest(ExamRegistration reg) {
         ClassSection cs = reg.getClassSection();
-        Course course = cs.getCourse();
+        Course course = getCourse(reg);
+        Semester semester = getSemester(reg);
         return new RetakeRequestResponse(
                 reg.getId(), // Return ExamRegistration ID instead of Enrollment ID
-                cs.getId(),
-                cs.getClassCode(),
+                cs != null ? cs.getId() : null,
+                cs != null ? cs.getClassCode() : "Chua xep lop thi",
                 course.getId(),
                 course.getCode(),
                 course.getName(),
-                cs.getSemester().getId(),
-                cs.getSemester().getName(),
+                semester.getId(),
+                semester.getName(),
                 reg.getStatus() != null ? reg.getStatus().name() : null,
                 reg.getRegistrationType() != null ? reg.getRegistrationType().name() : null,
                 reg.getAttemptNumber(),
@@ -320,7 +304,7 @@ public class StudentRetakeService {
 
     private RetakeRegisteredItemResponse mapRegisteredItem(ExamRegistration reg) {
         ClassSection examSection = reg.getClassSection();
-        Course course = examSection.getCourse();
+        Course course = getCourse(reg);
         RetakeRegisteredItemResponse item = new RetakeRegisteredItemResponse();
         item.setCourseId(course.getId());
         item.setCourseCode(course.getCode());
@@ -329,11 +313,19 @@ public class StudentRetakeService {
         item.setRegistrationType(reg.getRegistrationType() != null ? reg.getRegistrationType().name() : null);
         item.setAttemptNumber(reg.getAttemptNumber());
         item.setFeeCharged(reg.getFeeCharged());
-        if (examSection.getExamAt() != null) {
+        if (examSection != null && examSection.getExamAt() != null) {
             item.setExamAt(examSection.getExamAt()
                     .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
             item.setExamRoom(examSection.getExamRoom());
         }
         return item;
+    }
+
+    private Course getCourse(ExamRegistration reg) {
+        return reg.getCourse() != null ? reg.getCourse() : reg.getClassSection().getCourse();
+    }
+
+    private Semester getSemester(ExamRegistration reg) {
+        return reg.getSemester() != null ? reg.getSemester() : reg.getClassSection().getSemester();
     }
 }

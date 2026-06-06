@@ -77,7 +77,10 @@ public class AdminEnrollmentService {
     public int lockPendingRetakes(Long semesterId) {
         Semester semester = semesterRepository.findById(semesterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky."));
-        var pendingRetakes = examRegistrationRepository.findByClassSectionSemesterIdAndStatus(semesterId, EnrollmentStatus.PENDING);
+        if (!semester.isLocked()) {
+            throw new RuntimeException("Phai khoa tong dang ky hoc phan truoc khi khoa tong thi lai.");
+        }
+        var pendingRetakes = examRegistrationRepository.findBySemesterIdAndStatus(semesterId, EnrollmentStatus.PENDING);
 
         for (ExamRegistration registration : pendingRetakes) {
             registration.setStatus(EnrollmentStatus.REGISTERED);
