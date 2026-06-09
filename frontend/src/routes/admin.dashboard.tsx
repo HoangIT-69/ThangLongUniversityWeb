@@ -139,12 +139,7 @@ function AdminDashboard() {
       <PageHeader
         title="Tổng quan hệ thống"
         description="Bảng điều hành nhanh cho dữ liệu đào tạo, học kỳ và lớp học phần"
-        actions={
-          <Button variant="outline" className="gap-2" onClick={refreshAll}>
-            <RefreshCw className="h-4 w-4" />
-            Làm mới
-          </Button>
-        }
+        
       />
 
       {hasError && (

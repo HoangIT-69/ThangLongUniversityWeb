@@ -193,10 +193,17 @@ public class RegistrationRoundService {
         if ("COURSE".equals(round.getRoundType())) {
             var pending = enrollmentRepository.findByClassSectionRegistrationRoundIdAndStatus(roundId, EnrollmentStatus.PENDING);
             for (var enrollment : pending) {
+                var cs = classSectionRepository.findByIdForUpdate(enrollment.getClassSection().getId())
+                        .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
+                int currentSlots = cs.getCurrentSlots() == null ? 0 : cs.getCurrentSlots();
+                if (cs.getMaxSlots() != null && currentSlots >= cs.getMaxSlots()) {
+                    throw new RuntimeException("Lop " + cs.getClassCode() + " da day si so, khong the chot them dang ky.");
+                }
+
                 enrollment.setStatus(EnrollmentStatus.REGISTERED);
                 var saved = enrollmentRepository.save(enrollment);
-                var cs = saved.getClassSection();
-                cs.setCurrentSlots((cs.getCurrentSlots() == null ? 0 : cs.getCurrentSlots()) + 1);
+                saved.setClassSection(cs);
+                cs.setCurrentSlots(currentSlots + 1);
                 classSectionRepository.save(cs);
 
                 if (saved.getGrade() == null) {

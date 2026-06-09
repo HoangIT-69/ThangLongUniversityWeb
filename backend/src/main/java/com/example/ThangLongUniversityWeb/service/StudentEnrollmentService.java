@@ -19,6 +19,7 @@ import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
+import com.example.ThangLongUniversityWeb.service.EnrollmentProcessor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class StudentEnrollmentService {
     private final StudentRepository studentRepository;
     private final ClassSectionService classSectionService;
     private final RegistrationRoundService registrationRoundService;
+    private final EnrollmentProcessor enrollmentProcessor;
 
     private Student getCurrentStudent() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -122,6 +124,13 @@ public class StudentEnrollmentService {
         if (targetClass.isClosed()) {
             throw new RuntimeException("Lớp học phần đã bị khóa!");
         }
+        long activeSlots = enrollmentRepository.countByClassSectionIdAndStatusIn(
+                classSectionId,
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED)
+        );
+        if (targetClass.getMaxSlots() != null && activeSlots >= targetClass.getMaxSlots()) {
+            throw new RuntimeException("Lớp " + targetClass.getClassCode() + " đã đầy sĩ số.");
+        }
 
         Enrollment existingEnrollment = enrollmentRepository.findByStudentIdAndClassSectionId(student.getId(), classSectionId)
                 .orElse(null);
@@ -170,14 +179,14 @@ public class StudentEnrollmentService {
             throw new RuntimeException("Vượt quá giới hạn " + maxCredits + " tín chỉ/kỳ. Hiện tại: " + currentCredits + " TC, thêm: " + newCredits + " TC.");
         }
 
-        Enrollment enrollment = existingEnrollment != null ? existingEnrollment : new Enrollment();
-        enrollment.setStudent(student);
-        enrollment.setClassSection(targetClass);
-        enrollment.setStatus(EnrollmentStatus.PENDING);
-        enrollmentRepository.save(enrollment);
+        // Nếu đã có enrollment PENDING trước đó (ví dụ: message bị retry), xóa đi để tránh duplicate
+        if (existingEnrollment != null) {
+            enrollmentRepository.delete(existingEnrollment);
+            enrollmentRepository.flush();
+        }
 
-        return new EnrollmentRequestResponse(null,
-                "Da them lop " + targetClass.getClassCode() + " vao danh sach chon.");
+        // Delegate xử lý cho EnrollmentProcessor (Kafka hoặc Direct tuỳ cấu hình)
+        return enrollmentProcessor.process(student, targetClass);
     }
 
     @Transactional
