@@ -119,6 +119,20 @@ function buildSelectedScheduleCells(selected: EnrollmentResponse[]) {
   return cells;
 }
 
+function mergeEnrollments(...groups: EnrollmentResponse[][]) {
+  const map = new Map<string, EnrollmentResponse>();
+
+  groups.flat().forEach((item) => {
+    const key =
+      item.classSectionId != null
+        ? `class-${item.classSectionId}`
+        : `enrollment-${item.enrollmentId}`;
+    map.set(key, item);
+  });
+
+  return Array.from(map.values());
+}
+
 function overlapsSelectedSchedule(section: ClassSectionResponse, selected: EnrollmentResponse[]) {
   return section.schedules.some((schedule) =>
     selected.some(
@@ -192,6 +206,12 @@ function CourseRegistrationPage() {
     enabled: semesterId != null,
   });
 
+  const scheduleQuery = useQuery({
+    queryKey: ["student", "schedule", semesterId],
+    queryFn: () => studentApi.getSchedule(semesterId as number),
+    enabled: semesterId != null,
+  });
+
   const invalidateRegistration = () => {
     queryClient.invalidateQueries({ queryKey: ["student", "available-classes", semesterId] });
     queryClient.invalidateQueries({ queryKey: ["student", "selected-enrollments", semesterId] });
@@ -201,11 +221,56 @@ function CourseRegistrationPage() {
 
   const enrollMutation = useMutation({
     mutationFn: (classSectionId: number) => studentApi.enrollClass(classSectionId),
-    onSuccess: (response) => {
-      invalidateRegistration();
-      toast.success(response.message || "Đã chọn lớp học phần");
+    onMutate: async (classSectionId) => {
+      // Cancel any in-flight refetches so they don't overwrite the optimistic update
+      await queryClient.cancelQueries({ queryKey: ["student", "selected-enrollments", semesterId] });
+
+      const previousSelected = queryClient.getQueryData<EnrollmentResponse[]>([
+        "student",
+        "selected-enrollments",
+        semesterId,
+      ]);
+
+      // Add an optimistic PENDING entry immediately so the UI responds in 1 click
+      const section = classesQuery.data?.find((s) => s.id === classSectionId);
+      if (section) {
+        const firstSchedule = section.schedules?.[0];
+        const optimisticEntry: EnrollmentResponse = {
+          enrollmentId: -classSectionId, // temporary negative id
+          classSectionId,
+          classCode: section.classCode,
+          courseName: section.courseName,
+          courseCode: section.courseCode,
+          credits: section.credits,
+          room: section.room ?? null,
+          schedules: section.schedules,
+          dayOfWeek: firstSchedule?.dayOfWeek ?? 0,
+          startPeriod: firstSchedule?.startPeriod ?? 0,
+          endPeriod: firstSchedule?.endPeriod ?? 0,
+          teacherName: section.teacherName ?? null,
+          status: "PENDING",
+        };
+        queryClient.setQueryData<EnrollmentResponse[]>(
+          ["student", "selected-enrollments", semesterId],
+          (old) => [...(old ?? []), optimisticEntry],
+        );
+      }
+
+      return { previousSelected };
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Chọn lớp thất bại"),
+    onSuccess: (response) => {
+      toast.success(response.message || "Đã chọn lớp học phần");
+      // Delay invalidation to let async processing (Kafka consumer) commit to DB
+      setTimeout(invalidateRegistration, 1500);
+    },
+    onError: (error, _classSectionId, context) => {
+      // Roll back optimistic update
+      queryClient.setQueryData(
+        ["student", "selected-enrollments", semesterId],
+        context?.previousSelected,
+      );
+      toast.error(error instanceof Error ? error.message : "Chọn lớp thất bại");
+    },
   });
 
   const cancelMutation = useMutation({
@@ -218,6 +283,11 @@ function CourseRegistrationPage() {
   });
 
   const selected = selectedQuery.data ?? emptyEnrollments;
+  const registeredSchedule = scheduleQuery.data ?? emptyEnrollments;
+  const timetableEnrollments = useMemo(
+    () => mergeEnrollments(registeredSchedule, selected),
+    [registeredSchedule, selected],
+  );
   const selectedByClassId = useMemo(() => {
     const map = new Map<number, EnrollmentResponse>();
     selected.forEach((item) => {
@@ -231,7 +301,10 @@ function CourseRegistrationPage() {
     [selected],
   );
   const selectedCredits = selected.reduce((sum, item) => sum + (item.credits ?? 0), 0);
-  const selectedScheduleCells = useMemo(() => buildSelectedScheduleCells(selected), [selected]);
+  const selectedScheduleCells = useMemo(
+    () => buildSelectedScheduleCells(timetableEnrollments),
+    [timetableEnrollments],
+  );
 
   const groups = useMemo(() => groupByCourse(classesQuery.data ?? []), [classesQuery.data]);
   const visibleGroups = groups.filter((group) => group.courseType === activeType);
@@ -263,7 +336,7 @@ function CourseRegistrationPage() {
         </div>
       )}
 
-      {(classesQuery.isError || selectedQuery.isError) && (
+      {(classesQuery.isError || selectedQuery.isError || scheduleQuery.isError) && (
         <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           Không tải được dữ liệu đăng ký học phần.
         </div>
@@ -330,7 +403,7 @@ function CourseRegistrationPage() {
                         const selectedClass = selectedByClassId.get(section.id);
                         const hasSelectedOtherClass = courseSelected && !selectedClass;
                         const overlapsSelected =
-                          !selectedClass && overlapsSelectedSchedule(section, selected);
+                          !selectedClass && overlapsSelectedSchedule(section, timetableEnrollments);
                         const seats = getSeats(section);
                         const closed = section.closed || seats <= 0;
                         const enrolling =
@@ -491,17 +564,17 @@ function CourseRegistrationPage() {
 
       <section className="mt-6 space-y-3">
         <div>
-          <h2 className="text-lg font-semibold">Lịch học đã chọn</h2>
+          <h2 className="text-lg font-semibold">Lịch học dự kiến</h2>
           <p className="text-sm text-muted-foreground">
-            Xem trực quan các lớp học phần đã đăng ký theo từng ngày và tiết học.
+            Xem trực quan các lớp học phần đã đăng ký hoặc đang chọn theo từng ngày và tiết học.
           </p>
         </div>
 
-        {selectedQuery.isLoading ? (
+        {selectedQuery.isLoading || scheduleQuery.isLoading ? (
           <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
-            Đang tải lịch học đã chọn...
+            Đang tải lịch học dự kiến...
           </div>
-        ) : selected.length === 0 ? (
+        ) : timetableEnrollments.length === 0 ? (
           <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
             Chưa có lớp học phần nào để hiển thị trên thời khóa biểu.
           </div>

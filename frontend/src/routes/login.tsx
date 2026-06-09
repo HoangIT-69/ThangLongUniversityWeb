@@ -49,6 +49,21 @@ function resolveDashboard(role: Role) {
   return "/student/dashboard";
 }
 
+function getLoginErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "Đăng nhập thất bại";
+  const normalized = message.trim().toLowerCase();
+
+  if (
+    normalized === "bad credentials" ||
+    normalized === "invalid username or password" ||
+    normalized.includes("bad credentials")
+  ) {
+    return "Sai tên đăng nhập hoặc mật khẩu.";
+  }
+
+  return message || "Đăng nhập thất bại";
+}
+
 const HERO_STATS = [
   { label: "Năm thành lập", value: "1988" },
   { label: "Ngành đào tạo", value: "30+" },
@@ -86,7 +101,7 @@ function LoginPage() {
       toast.success(`Đăng nhập thành công với vai trò ${role.toLowerCase()}`);
       navigate({ to: resolveDashboard(role) });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Đăng nhập thất bại";
+      const message = getLoginErrorMessage(error);
       setErrorMessage(message);
       toast.error(message);
     } finally {

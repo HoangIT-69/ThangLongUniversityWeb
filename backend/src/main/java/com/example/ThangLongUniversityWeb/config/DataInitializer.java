@@ -34,6 +34,7 @@ import com.example.ThangLongUniversityWeb.repository.SystemSettingsRepository;
 import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
 import com.example.ThangLongUniversityWeb.repository.TuitionBillRepository;
 import com.example.ThangLongUniversityWeb.repository.UserRepository;
+import com.example.ThangLongUniversityWeb.service.CourseOutcomeService;
 import com.example.ThangLongUniversityWeb.service.StudentRetakeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -72,6 +73,7 @@ public class DataInitializer implements CommandLineRunner {
     private final TuitionBillRepository tuitionBillRepository;
     private final SystemSettingsRepository systemSettingsRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CourseOutcomeService courseOutcomeService;
 
     @Override
     @Transactional
@@ -603,14 +605,20 @@ public class DataInitializer implements CommandLineRunner {
             existing.setParticipationScore(participation);
             existing.setMidtermScore(midterm);
             existing.setFinalScore(finalScore);
-            return gradeRepository.save(existing);
+            Grade saved = gradeRepository.save(existing);
+            enrollment.setGrade(saved);
+            courseOutcomeService.recalculate(enrollment);
+            return saved;
         }).orElseGet(() -> {
             Grade grade = new Grade();
             grade.setEnrollment(enrollment);
             grade.setParticipationScore(participation);
             grade.setMidtermScore(midterm);
             grade.setFinalScore(finalScore);
-            return gradeRepository.save(grade);
+            Grade saved = gradeRepository.save(grade);
+            enrollment.setGrade(saved);
+            courseOutcomeService.recalculate(enrollment);
+            return saved;
         });
     }
 

@@ -58,3 +58,12 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+// Fix mojibake on Windows: force UTF-8 for all Java compilation and runtime
+tasks.withType<JavaCompile> {
+	options.encoding = "UTF-8"
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+	jvmArgs("-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8")
+}

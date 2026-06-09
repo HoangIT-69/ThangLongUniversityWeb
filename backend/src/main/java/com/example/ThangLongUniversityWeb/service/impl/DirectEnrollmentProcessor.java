@@ -18,15 +18,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
-/**
- * Xử lý đăng ký học phần trực tiếp vào DB (không qua Kafka).
- * Kích hoạt khi spring.kafka.enabled=false (mặc định cho môi trường local).
- *
- * Sau khi lưu DB thành công, push realtime về client qua WebSocket:
- *   /user/{username}/queue/enrollment-status
- */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -42,48 +36,54 @@ public class DirectEnrollmentProcessor implements EnrollmentProcessor {
     @Transactional
     public EnrollmentRequestResponse process(Student student, ClassSection targetClass) {
         String requestId = UUID.randomUUID().toString();
-        String username  = student.getUser().getUsername();
+        String username = student.getUser().getUsername();
         String classCode = targetClass.getClassCode();
 
-        statusService.markProcessing(requestId, "Đang ghi nhận đăng ký...");
+        statusService.markProcessing(requestId, "Dang ghi nhan dang ky...");
 
         try {
-            // Lưu enrollment vào DB
+            ClassSection lockedClass = classSectionRepository.findByIdForUpdate(targetClass.getId())
+                    .orElseThrow(() -> new RuntimeException("Lop hoc phan khong ton tai."));
+
+            if (lockedClass.isClosed() || isSelectionFull(lockedClass)) {
+                throw new RuntimeException("Lop " + lockedClass.getClassCode() + " da day si so hoac da bi khoa.");
+            }
+
             Enrollment enrollment = new Enrollment();
             enrollment.setStudent(student);
-            enrollment.setClassSection(targetClass);
-            enrollment.setStatus(EnrollmentStatus.REGISTERED);
+            enrollment.setClassSection(lockedClass);
+            enrollment.setStatus(EnrollmentStatus.PENDING);
             enrollmentRepository.save(enrollment);
 
-            // Tăng currentSlots
-            targetClass.setCurrentSlots(targetClass.getCurrentSlots() + 1);
-            classSectionRepository.save(targetClass);
+            String successMessage = "Da them lop " + classCode + " vao danh sach cho xac nhan.";
+            statusService.markSuccess(requestId, successMessage);
+            log.info("[Direct] Student {} selected class {}", username, classCode);
 
-            statusService.markSuccess(requestId, "Đăng ký lớp " + classCode + " thành công!");
-            log.info("✅ [Direct] Sinh viên {} đăng ký lớp {} thành công.", username, classCode);
-
-            // Push WebSocket về user
-            pushStatus(username, requestId, EnrollmentRequestStatus.SUCCESS,
-                    classCode, "Đăng ký lớp " + classCode + " thành công!");
-
-            return new EnrollmentRequestResponse(requestId,
-                    "Đăng ký lớp " + classCode + " thành công!");
-
+            pushStatus(username, requestId, EnrollmentRequestStatus.SUCCESS, classCode, successMessage);
+            return new EnrollmentRequestResponse(requestId, successMessage);
         } catch (Exception e) {
-            statusService.markFailed(requestId, "Lỗi hệ thống: " + e.getMessage());
-            log.error("❌ [Direct] Lỗi đăng ký lớp {} cho SV {}: {}", classCode, username, e.getMessage());
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "Loi he thong khi xu ly dang ky.";
+            statusService.markFailed(requestId, errorMessage);
+            log.error("[Direct] Enrollment failed for class {} and student {}: {}", classCode, username, errorMessage);
 
-            // Push WebSocket thất bại
-            pushStatus(username, requestId, EnrollmentRequestStatus.FAILED,
-                    classCode, "Đăng ký thất bại: " + e.getMessage());
-
-            throw new RuntimeException("Lỗi hệ thống khi xử lý đăng ký. Vui lòng thử lại!");
+            pushStatus(username, requestId, EnrollmentRequestStatus.FAILED, classCode, "Dang ky that bai: " + errorMessage);
+            throw new RuntimeException(errorMessage);
         }
     }
 
-    // ─── helper ──────────────────────────────────────────────
+    private boolean isSelectionFull(ClassSection targetClass) {
+        if (targetClass.getMaxSlots() == null) {
+            return false;
+        }
+        long activeSlots = enrollmentRepository.countByClassSectionIdAndStatusIn(
+                targetClass.getId(),
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED)
+        );
+        return activeSlots >= targetClass.getMaxSlots();
+    }
+
     private void pushStatus(String username, String requestId,
-                             EnrollmentRequestStatus status, String classCode, String message) {
+                            EnrollmentRequestStatus status, String classCode, String message) {
         try {
             EnrollmentStatusNotification notification = EnrollmentStatusNotification.builder()
                     .requestId(requestId)
@@ -93,13 +93,9 @@ public class DirectEnrollmentProcessor implements EnrollmentProcessor {
                     .timestamp(System.currentTimeMillis())
                     .build();
 
-            messagingTemplate.convertAndSendToUser(
-                    username,
-                    "/queue/enrollment-status",
-                    notification
-            );
+            messagingTemplate.convertAndSendToUser(username, "/queue/enrollment-status", notification);
         } catch (Exception e) {
-            log.warn("⚠️ Không thể push WebSocket status cho user {}: {}", username, e.getMessage());
+            log.warn("Cannot push enrollment status to user {}: {}", username, e.getMessage());
         }
     }
 }
