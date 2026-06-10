@@ -6,6 +6,8 @@ import com.example.ThangLongUniversityWeb.entity.Period;
 import com.example.ThangLongUniversityWeb.exception.ConflictException;
 import com.example.ThangLongUniversityWeb.repository.PeriodRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ public class PeriodService {
 
     private final PeriodRepository periodRepository;
 
+    @Cacheable(cacheNames = "periods")
     public List<PeriodResponse> getAllPeriods() {
         return periodRepository.findAll().stream()
                 .map(this::toResponse)
@@ -26,6 +29,7 @@ public class PeriodService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"periods", "classSectionOptions"}, allEntries = true)
     public PeriodResponse createPeriod(PeriodRequest request) {
         if (request.getPeriodNumber() == null) {
             throw new RuntimeException("Số tiết không được để trống");
@@ -43,6 +47,7 @@ public class PeriodService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"periods", "classSectionOptions"}, allEntries = true)
     public PeriodResponse updatePeriod(Long id, PeriodRequest request) {
         Period period = periodRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tiết học!"));
@@ -62,6 +67,7 @@ public class PeriodService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"periods", "classSectionOptions"}, allEntries = true)
     public void deletePeriod(Long id) {
         Period period = periodRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay tiet hoc!"));

@@ -30,10 +30,7 @@ export function formatClassDay(dayOfWeek: number) {
   return dayLabels[dayOfWeek] ?? `Thứ ${dayOfWeek}`;
 }
 
-export function mapApiClassSection(
-  section: ClassSectionResponse,
-  statusOverride?: AdminClassSectionStatus,
-): ClassSectionRow {
+export function mapApiClassSection(section: ClassSectionResponse): ClassSectionRow {
   const schedules = section.schedules ?? [];
   const firstSchedule = schedules[0];
 
@@ -67,9 +64,19 @@ export function mapApiClassSection(
     })),
     currentSlots: section.currentSlots ?? 0,
     maxSlots: section.maxSlots ?? 0,
-    status: statusOverride ?? (section.closed ? "CLOSED" : "OPEN"),
+    status: normalizeClassSectionStatus(section.status, section.closed ?? section.isClosed),
     source: "API",
   };
+}
+
+function normalizeClassSectionStatus(
+  status: ClassSectionResponse["status"],
+  closed?: boolean,
+): AdminClassSectionStatus {
+  if (status === "DRAFT" || status === "OPEN" || status === "CLOSED" || status === "CANCELLED") {
+    return status;
+  }
+  return closed ? "CLOSED" : "OPEN";
 }
 
 export function buildOptionSets(

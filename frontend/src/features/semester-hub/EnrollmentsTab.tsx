@@ -19,11 +19,11 @@ interface Props {
   semesterId: number;
 }
 
-const STATUS_OPTIONS = ["", "PENDING", "REGISTERED", "CANCELLED"];
+const STATUS_OPTIONS = ["", "PENDING", "REGISTERED", "CANCELED"];
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Chờ xử lý",
   REGISTERED: "Đã xác nhận",
-  CANCELLED: "Đã hủy",
+  CANCELED: "Đã hủy",
 };
 
 export function EnrollmentsTab({ semesterId }: Props) {
@@ -202,6 +202,6 @@ function EnrollmentStatusBadge({ status }: { status: string }) {
     return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Đã xác nhận</Badge>;
   if (status === "PENDING")
     return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Chờ xử lý</Badge>;
-  if (status === "CANCELLED") return <Badge variant="secondary">Đã hủy</Badge>;
+  if (status === "CANCELED") return <Badge variant="secondary">Đã hủy</Badge>;
   return <Badge variant="outline">{status}</Badge>;
 }

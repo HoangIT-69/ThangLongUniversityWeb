@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,6 +37,7 @@ public class UserController {
 
     @Operation(summary = "Xem hồ sơ của chính mình")
     @GetMapping("/me")
+    @Transactional(readOnly = true)
     public ResponseEntity<UserProfileResponse> getMyProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
@@ -45,6 +47,7 @@ public class UserController {
 
     @Operation(summary = "Xem hồ sơ của người khác (Tìm theo username, mã SV hoặc mã GV)")
     @GetMapping("/{identifier}")
+    @Transactional(readOnly = true)
     public ResponseEntity<UserProfileResponse> getUserProfile(@PathVariable String identifier) {
         // identifier lúc này có thể là "sv001" (username) hoặc "SV001" (studentCode)
         return ResponseEntity.ok(buildUserProfile(identifier));

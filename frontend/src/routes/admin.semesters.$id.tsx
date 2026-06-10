@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { adminApi } from "@/lib/api/admin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -13,17 +14,38 @@ import {
   Layers,
   GraduationCap,
 } from "lucide-react";
-import { OverviewTab } from "@/features/semester-hub/OverviewTab";
-import { ClassSectionsTab } from "@/features/semester-hub/ClassSectionsTab";
-import { EnrollmentsTab } from "@/features/semester-hub/EnrollmentsTab";
-import { RetakeRegistrationsTab } from "@/features/semester-hub/RetakeRegistrationsTab";
-import { ExamSchedulesTab } from "@/features/semester-hub/ExamSchedulesTab";
+const OverviewTab = lazy(() =>
+  import("@/features/semester-hub/OverviewTab").then((module) => ({
+    default: module.OverviewTab,
+  })),
+);
+const ClassSectionsTab = lazy(() =>
+  import("@/features/semester-hub/ClassSectionsTab").then((module) => ({
+    default: module.ClassSectionsTab,
+  })),
+);
+const EnrollmentsTab = lazy(() =>
+  import("@/features/semester-hub/EnrollmentsTab").then((module) => ({
+    default: module.EnrollmentsTab,
+  })),
+);
+const RetakeRegistrationsTab = lazy(() =>
+  import("@/features/semester-hub/RetakeRegistrationsTab").then((module) => ({
+    default: module.RetakeRegistrationsTab,
+  })),
+);
+const ExamSchedulesTab = lazy(() =>
+  import("@/features/semester-hub/ExamSchedulesTab").then((module) => ({
+    default: module.ExamSchedulesTab,
+  })),
+);
 
 export const Route = createFileRoute("/admin/semesters/$id")({ component: SemesterHubPage });
 
 function SemesterHubPage() {
   const { id } = Route.useParams();
   const semesterId = Number(id);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const semestersQuery = useQuery({
     queryKey: ["admin", "semesters"],
@@ -89,7 +111,7 @@ function SemesterHubPage() {
       </div>
 
       {/* Hub tabs */}
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-5 h-11 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger
             value="overview"
@@ -124,21 +146,41 @@ function SemesterHubPage() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab semesterId={semesterId} />
+          <LazyTabPanel>
+            {activeTab === "overview" && <OverviewTab semesterId={semesterId} />}
+          </LazyTabPanel>
         </TabsContent>
         <TabsContent value="class-sections" className="mt-6">
-          <ClassSectionsTab semesterId={semesterId} />
+          <LazyTabPanel>
+            {activeTab === "class-sections" && <ClassSectionsTab semesterId={semesterId} />}
+          </LazyTabPanel>
         </TabsContent>
         <TabsContent value="enrollments" className="mt-6">
-          <EnrollmentsTab semesterId={semesterId} />
+          <LazyTabPanel>
+            {activeTab === "enrollments" && <EnrollmentsTab semesterId={semesterId} />}
+          </LazyTabPanel>
         </TabsContent>
         <TabsContent value="retake-registrations" className="mt-6">
-          <RetakeRegistrationsTab semesterId={semesterId} />
+          <LazyTabPanel>
+            {activeTab === "retake-registrations" && (
+              <RetakeRegistrationsTab semesterId={semesterId} />
+            )}
+          </LazyTabPanel>
         </TabsContent>
         <TabsContent value="exam-schedules" className="mt-6">
-          <ExamSchedulesTab semesterId={semesterId} />
+          <LazyTabPanel>
+            {activeTab === "exam-schedules" && <ExamSchedulesTab semesterId={semesterId} />}
+          </LazyTabPanel>
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function LazyTabPanel({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<Skeleton className="h-80 w-full" />}>
+      {children}
+    </Suspense>
   );
 }

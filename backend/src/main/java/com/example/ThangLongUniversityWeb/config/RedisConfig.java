@@ -14,6 +14,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * Cấu hình Redis cho:
@@ -61,8 +62,19 @@ public class RedisConfig {
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
 
+        Map<String, RedisCacheConfiguration> cacheConfigurations = Map.of(
+                "adminDashboard", config.entryTtl(Duration.ofSeconds(60)),
+                "teacherDashboard", config.entryTtl(Duration.ofSeconds(60)),
+                "classSectionOptions", config.entryTtl(Duration.ofMinutes(5)),
+                "semesters", config.entryTtl(Duration.ofMinutes(5)),
+                "courses", config.entryTtl(Duration.ofMinutes(60)),
+                "rooms", config.entryTtl(Duration.ofMinutes(60)),
+                "periods", config.entryTtl(Duration.ofMinutes(60))
+        );
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
+                .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
     }
 }

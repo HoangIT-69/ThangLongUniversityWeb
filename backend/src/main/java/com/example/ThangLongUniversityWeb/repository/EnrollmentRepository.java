@@ -5,6 +5,7 @@ import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,6 +34,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findByClassSectionRegistrationRoundIdAndStatus(Long registrationRoundId, EnrollmentStatus status);
 
     long countByClassSectionIdAndStatusIn(Long classSectionId, List<EnrollmentStatus> statuses);
+
+    long countByStatusIn(List<EnrollmentStatus> statuses);
 
     List<Enrollment> findByStudentId(Long studentId);
 
@@ -70,6 +73,15 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
               AND (:classSectionId IS NULL OR e.classSection.id = :classSectionId)
               AND (:status IS NULL OR e.status = :status)
             """)
+    @EntityGraph(attributePaths = {
+            "student",
+            "student.homeroom",
+            "student.major",
+            "classSection",
+            "classSection.course",
+            "classSection.semester",
+            "classSection.registrationRound"
+    })
     Page<Enrollment> searchAdmin(
             @Param("semesterId") Long semesterId,
             @Param("classSectionId") Long classSectionId,

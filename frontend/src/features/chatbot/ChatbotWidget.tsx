@@ -1,8 +1,11 @@
-import { useState, useMemo } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatbotPanel } from "./ChatbotPanel";
 import { cn } from "@/lib/utils";
+
+const ChatbotPanel = lazy(() =>
+  import("./ChatbotPanel").then((module) => ({ default: module.ChatbotPanel })),
+);
 
 function generateSessionId() {
   return crypto.randomUUID();
@@ -14,7 +17,11 @@ export function ChatbotWidget() {
 
   return (
     <>
-      {open && <ChatbotPanel sessionId={sessionId} onClose={() => setOpen(false)} />}
+      {open && (
+        <Suspense fallback={null}>
+          <ChatbotPanel sessionId={sessionId} onClose={() => setOpen(false)} />
+        </Suspense>
+      )}
       <Button
         size="icon"
         className={cn(

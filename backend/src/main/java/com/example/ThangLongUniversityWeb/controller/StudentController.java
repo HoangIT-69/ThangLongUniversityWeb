@@ -1,6 +1,7 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.response.StudentSemesterResponse;
+import com.example.ThangLongUniversityWeb.dto.response.StudentCourseRegistrationOverviewResponse;
 import com.example.ThangLongUniversityWeb.dto.response.StudentDashboardResponse;
 import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
@@ -136,6 +137,32 @@ public class StudentController {
                 .build());
     }
 
+    @Operation(summary = "Tong hop du lieu dang ky hoc phan")
+    @GetMapping("/course-registration/overview")
+    public ResponseEntity<?> getCourseRegistrationOverview(@RequestParam(required = false) Long semesterId) {
+        List<StudentSemesterResponse> semesters = getStudentSemesters();
+        StudentSemesterResponse currentSemester = resolveDashboardSemester(semesters, semesterId);
+        if (currentSemester == null) {
+            return ResponseEntity.ok(StudentCourseRegistrationOverviewResponse.builder()
+                    .semesters(semesters)
+                    .availableClasses(List.of())
+                    .selectedEnrollments(List.of())
+                    .readonly(true)
+                    .registrationStatus("Khong co hoc ky")
+                    .build());
+        }
+
+        boolean readonly = !currentSemester.isRegistrationOpen() || currentSemester.isLocked();
+        return ResponseEntity.ok(StudentCourseRegistrationOverviewResponse.builder()
+                .semesters(semesters)
+                .currentSemester(currentSemester)
+                .availableClasses(studentEnrollmentService.getAvailableClasses(currentSemester.getId()))
+                .selectedEnrollments(studentEnrollmentService.getSelectedEnrollments(currentSemester.getId()))
+                .readonly(readonly)
+                .registrationStatus(readonly ? "Da dong" : "Dang mo")
+                .build());
+    }
+
     private Float resolveDashboardSemesterGpa(LearningResultsResponse learningResults) {
         if (learningResults.getSemesterCredits() != null
                 && learningResults.getSemesterCredits() > 0
@@ -178,25 +205,16 @@ public class StudentController {
 
     private Long resolveActiveRoundId(Long semesterId) {
         var round = registrationRoundService.getOpenRound(semesterId);
-        if (round == null) {
-            round = registrationRoundService.ensureDefaultRound(semesterId);
-        }
         return round != null ? round.getId() : null;
     }
 
     private String resolveActiveRoundName(Long semesterId) {
         var round = registrationRoundService.getOpenRound(semesterId);
-        if (round == null) {
-            round = registrationRoundService.ensureDefaultRound(semesterId);
-        }
         return round != null ? round.getName() : null;
     }
 
     private Integer resolveActiveRoundNumber(Long semesterId) {
         var round = registrationRoundService.getOpenRound(semesterId);
-        if (round == null) {
-            round = registrationRoundService.ensureDefaultRound(semesterId);
-        }
         return round != null ? round.getRoundNumber() : null;
     }
 

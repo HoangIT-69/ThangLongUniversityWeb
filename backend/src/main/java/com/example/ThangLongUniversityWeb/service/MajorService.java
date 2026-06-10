@@ -9,6 +9,7 @@ import com.example.ThangLongUniversityWeb.repository.DepartmentRepository;
 import com.example.ThangLongUniversityWeb.repository.MajorRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,13 +25,15 @@ public class MajorService {
     private final CourseRepository courseRepository;
     private final DepartmentRepository departmentRepository;
 
+    @Transactional(readOnly = true)
     public List<MajorResponse> getAllMajors() {
-        return majorRepository.findAll().stream()
+        return majorRepository.findAllWithDepartment().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions", "courses"}, allEntries = true)
     public MajorResponse createMajor(MajorRequest request) {
         validateMajorRequest(request);
         if (majorRepository.existsByMajorCode(request.getMajorCode().trim())) {
@@ -50,6 +53,7 @@ public class MajorService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions", "courses"}, allEntries = true)
     public MajorResponse updateMajor(Long id, MajorRequest request) {
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy ngành học!"));
@@ -79,6 +83,7 @@ public class MajorService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions", "courses"}, allEntries = true)
     public void deleteMajor(Long id) {
         majorRepository.deleteById(id);
     }

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -25,9 +26,8 @@ import type { ClassSectionResponse } from "@/lib/api/types";
 
 export const Route = createFileRoute("/admin/dashboard")({ component: AdminDashboard });
 
-function percent(value: number, total: number) {
-  if (total <= 0) return 0;
-  return Math.min(100, Math.round((value / total) * 100));
+function percentValue(value?: number | null) {
+  return Math.min(100, Math.max(0, Math.round(value ?? 0)));
 }
 
 function formatDate(value?: string | null) {
@@ -42,109 +42,49 @@ function formatDate(value?: string | null) {
 function occupancy(section: ClassSectionResponse) {
   const current = section.currentSlots ?? 0;
   const max = section.maxSlots ?? section.roomCapacity ?? 0;
-  return { current, max, rate: percent(current, max) };
+  const rate = max > 0 ? Math.min(100, Math.round((current / max) * 100)) : 0;
+  return { current, max, rate };
 }
 
 function AdminDashboard() {
-  const studentsQuery = useQuery({
-    queryKey: ["admin", "students"],
-    queryFn: adminApi.listStudents,
+  const dashboardQuery = useQuery({
+    queryKey: ["admin", "dashboard"],
+    queryFn: adminApi.getDashboard,
+    staleTime: 60 * 1000,
   });
-  const teachersQuery = useQuery({
-    queryKey: ["admin", "teachers"],
-    queryFn: adminApi.listTeachers,
-  });
-  const coursesQuery = useQuery({ queryKey: ["admin", "courses"], queryFn: adminApi.listCourses });
-  const classSectionsQuery = useQuery({
-    queryKey: ["admin", "class-sections"],
-    queryFn: adminApi.listClassSections,
-  });
-  const semestersQuery = useQuery({
-    queryKey: ["admin", "semesters"],
-    queryFn: adminApi.listSemesters,
-  });
-  const departmentsQuery = useQuery({
-    queryKey: ["admin", "departments"],
-    queryFn: adminApi.listDepartments,
-  });
-  const roomsQuery = useQuery({ queryKey: ["admin", "rooms"], queryFn: adminApi.listRooms });
 
-  const queries = [
-    studentsQuery,
-    teachersQuery,
-    coursesQuery,
-    classSectionsQuery,
-    semestersQuery,
-    departmentsQuery,
-    roomsQuery,
-  ];
-  const isLoading = queries.some((query) => query.isPending);
-  const hasError = queries.some((query) => query.isError);
-  const refreshAll = () => queries.forEach((query) => void query.refetch());
-
-  const students = studentsQuery.data ?? [];
-  const teachers = teachersQuery.data ?? [];
-  const courses = coursesQuery.data ?? [];
-  const classSections = classSectionsQuery.data ?? [];
-  const semesters = semestersQuery.data ?? [];
-  const departments = departmentsQuery.data ?? [];
-  const rooms = roomsQuery.data ?? [];
-
-  const currentSemester =
-    semesters.find((semester) => semester.registrationOpen || semester.retakeOpen) ?? semesters[0];
-  const assignedClasses = classSections.filter(
-    (section) => section.teacherId || section.teacherName,
-  );
-  const scheduledClasses = classSections.filter((section) => section.schedules?.length);
-  const totalRegisteredSlots = classSections.reduce(
-    (sum, section) => sum + (section.currentSlots ?? 0),
-    0,
-  );
-  const totalCapacity = classSections.reduce(
-    (sum, section) => sum + (section.maxSlots ?? section.roomCapacity ?? 0),
-    0,
-  );
-  const averageOccupancy = percent(totalRegisteredSlots, totalCapacity);
-  const openClasses = classSections.filter(
-    (section) => !(section.closed ?? section.isClosed),
-  ).length;
-  const roomCapacity = rooms.reduce((sum, room) => sum + (room.capacity ?? 0), 0);
-
-  const studentsByMajor = Object.entries(
-    students.reduce<Record<string, number>>((acc, student) => {
-      const key = student.majorName ?? "Chưa phân ngành";
-      acc[key] = (acc[key] ?? 0) + 1;
-      return acc;
-    }, {}),
-  )
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  const attentionClasses = classSections
-    .filter((section) => {
-      const load = occupancy(section);
-      return !section.teacherName || load.rate >= 90 || !section.schedules?.length;
-    })
-    .sort((a, b) => occupancy(b).rate - occupancy(a).rate)
-    .slice(0, 5);
-
-  const recentClasses = [...classSections].sort((a, b) => b.id - a.id).slice(0, 5);
-
-  if (isLoading) {
+  if (dashboardQuery.isPending) {
     return <DashboardSkeleton />;
   }
+
+  const dashboard = dashboardQuery.data;
+  const currentSemester = dashboard?.currentSemester;
+  const attentionClasses = dashboard?.attentionClasses ?? [];
+  const recentClasses = dashboard?.recentClasses ?? [];
+  const studentsByMajor = dashboard?.studentsByMajor ?? [];
 
   return (
     <div className="space-y-5">
       <PageHeader
         title="Tổng quan hệ thống"
         description="Bảng điều hành nhanh cho dữ liệu đào tạo, học kỳ và lớp học phần"
-        
+        actions={
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => void dashboardQuery.refetch()}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Làm mới
+          </Button>
+        }
       />
 
-      {hasError && (
+      {dashboardQuery.isError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          Một số dữ liệu chưa tải được. Các khối còn lại vẫn hiển thị theo dữ liệu có sẵn.
+          {dashboardQuery.error instanceof Error
+            ? dashboardQuery.error.message
+            : "Khong tai duoc dashboard"}
         </div>
       )}
 
@@ -154,52 +94,55 @@ function AdminDashboard() {
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="gap-1.5">
                 <CalendarDays className="h-3.5 w-3.5" />
-                {currentSemester?.name ?? "Chưa có học kỳ"}
+                {currentSemester?.name ?? "Chua co hoc ky"}
               </Badge>
               <Badge variant={currentSemester?.registrationOpen ? "default" : "outline"}>
-                Đăng ký {currentSemester?.registrationOpen ? "đang mở" : "đã đóng"}
+                Dang ky {currentSemester?.registrationOpen ? "dang mo" : "da dong"}
               </Badge>
               <Badge variant={currentSemester?.examPublished ? "default" : "outline"}>
-                Lịch thi {currentSemester?.examPublished ? "đã công bố" : "chưa công bố"}
+                Lich thi {currentSemester?.examPublished ? "da cong bo" : "chua cong bo"}
               </Badge>
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
               <SystemMetric
-                label="Lớp đang mở"
-                value={openClasses}
-                helper={`${classSections.length} lớp tổng`}
+                label="Lop dang mo"
+                value={dashboard?.openClassCount ?? 0}
+                helper={`${dashboard?.classSectionCount ?? 0} lop tong`}
               />
               <SystemMetric
-                label="Tỷ lệ có giảng viên"
-                value={`${percent(assignedClasses.length, classSections.length)}%`}
-                helper={`${assignedClasses.length}/${classSections.length} lớp`}
+                label="Co giang vien"
+                value={`${percentValue(dashboard?.assignedTeacherRate)}%`}
+                helper={`${dashboard?.assignedClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lop`}
               />
               <SystemMetric
-                label="Đã xếp lịch"
-                value={`${percent(scheduledClasses.length, classSections.length)}%`}
-                helper={`${scheduledClasses.length}/${classSections.length} lớp`}
+                label="Da xep lich"
+                value={`${percentValue(dashboard?.scheduledClassRate)}%`}
+                helper={`${dashboard?.scheduledClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lop`}
               />
             </div>
           </div>
           <div className="p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold">Sức chứa lớp học phần</h2>
+                <h2 className="text-sm font-semibold">Suc chua lop hoc phan</h2>
                 <p className="text-xs text-muted-foreground">
-                  {totalRegisteredSlots} đăng ký trên {totalCapacity || 0} chỗ
+                  {dashboard?.totalRegisteredSlots ?? 0} dang ky tren{" "}
+                  {dashboard?.totalCapacity ?? 0} cho
                 </p>
               </div>
               <School className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="mt-5">
               <div className="mb-2 flex items-end justify-between">
-                <span className="text-3xl font-semibold tabular-nums">{averageOccupancy}%</span>
-                <span className="text-xs text-muted-foreground">Mức lấp đầy trung bình</span>
+                <span className="text-3xl font-semibold tabular-nums">
+                  {percentValue(dashboard?.averageOccupancy)}%
+                </span>
+                <span className="text-xs text-muted-foreground">Muc lap day trung binh</span>
               </div>
-              <Progress value={averageOccupancy} className="h-2.5" />
+              <Progress value={percentValue(dashboard?.averageOccupancy)} className="h-2.5" />
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <InfoLine label="Bắt đầu" value={formatDate(currentSemester?.startDate)} />
-                <InfoLine label="Kết thúc" value={formatDate(currentSemester?.endDate)} />
+                <InfoLine label="Bat dau" value={formatDate(currentSemester?.startDate)} />
+                <InfoLine label="Ket thuc" value={formatDate(currentSemester?.endDate)} />
               </div>
             </div>
           </div>
@@ -208,30 +151,30 @@ function AdminDashboard() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
-          label="Sinh viên"
-          value={students.length}
-          hint={`${studentsByMajor.length} nhóm ngành có dữ liệu`}
+          label="Sinh vien"
+          value={dashboard?.studentCount ?? 0}
+          hint={`${studentsByMajor.length} nganh co du lieu`}
           icon={GraduationCap}
           tone="primary"
         />
         <StatCard
-          label="Giảng viên"
-          value={teachers.length}
-          hint={`${departments.length} khoa / bộ môn`}
+          label="Giang vien"
+          value={dashboard?.teacherCount ?? 0}
+          hint={`${dashboard?.departmentCount ?? 0} khoa / bo mon`}
           icon={Users}
           tone="info"
         />
         <StatCard
-          label="Môn học"
-          value={courses.length}
-          hint={`${courses.reduce((sum, course) => sum + (course.credits ?? 0), 0)} tín chỉ`}
+          label="Mon hoc"
+          value={dashboard?.courseCount ?? 0}
+          hint={`${dashboard?.totalCourseCredits ?? 0} tin chi`}
           icon={BookOpen}
           tone="success"
         />
         <StatCard
-          label="Phòng học"
-          value={rooms.length}
-          hint={`${roomCapacity} chỗ ngồi`}
+          label="Phong hoc"
+          value={dashboard?.roomCount ?? 0}
+          hint={`${dashboard?.roomCapacity ?? 0} cho ngoi`}
           icon={MapPin}
           tone="warning"
         />
@@ -241,16 +184,16 @@ function AdminDashboard() {
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Lớp học phần cần chú ý</h2>
+              <h2 className="text-sm font-semibold">Lop hoc phan can chu y</h2>
               <p className="text-xs text-muted-foreground">
-                Ưu tiên lớp thiếu giảng viên, chưa xếp lịch hoặc gần đầy
+                Uu tien lop thieu giang vien, chua xep lich hoac gan day
               </p>
             </div>
             <AlertTriangle className="h-5 w-5 text-warning-foreground" />
           </div>
 
           {attentionClasses.length === 0 ? (
-            <EmptyState text="Không có lớp nào cần chú ý ngay." />
+            <EmptyState text="Khong co lop nao can chu y ngay." />
           ) : (
             <div className="mt-4 divide-y">
               {attentionClasses.map((section) => {
@@ -269,9 +212,9 @@ function AdminDashboard() {
                       </Badge>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                      {!section.teacherName && <Badge variant="outline">Chưa phân công GV</Badge>}
-                      {!section.schedules?.length && <Badge variant="outline">Chưa xếp lịch</Badge>}
-                      {load.rate >= 90 && <Badge variant="outline">Gần đầy lớp</Badge>}
+                      {!section.teacherId && <Badge variant="outline">Chua co GV</Badge>}
+                      {!section.schedules?.length && <Badge variant="outline">Chua xep lich</Badge>}
+                      {load.rate >= 90 && <Badge variant="outline">Gan day lop</Badge>}
                     </div>
                   </div>
                 );
@@ -283,25 +226,31 @@ function AdminDashboard() {
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Phân bổ sinh viên theo ngành</h2>
-              <p className="text-xs text-muted-foreground">
-                Top ngành có số lượng sinh viên cao nhất
-              </p>
+              <h2 className="text-sm font-semibold">Sinh vien theo nganh</h2>
+              <p className="text-xs text-muted-foreground">Top nganh co so luong cao nhat</p>
             </div>
             <LibraryBig className="h-5 w-5 text-muted-foreground" />
           </div>
 
           {studentsByMajor.length === 0 ? (
-            <EmptyState text="Chưa có dữ liệu ngành học." />
+            <EmptyState text="Chua co du lieu nganh hoc." />
           ) : (
             <div className="mt-4 space-y-4">
-              {studentsByMajor.map(([major, count]) => (
-                <div key={major}>
+              {studentsByMajor.map((major) => (
+                <div key={major.majorId ?? major.majorName}>
                   <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate font-medium">{major}</span>
-                    <span className="tabular-nums text-muted-foreground">{count} SV</span>
+                    <span className="truncate font-medium">{major.majorName ?? "Chua phan nganh"}</span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {major.studentCount} SV
+                    </span>
                   </div>
-                  <Progress value={percent(count, students.length)} />
+                  <Progress
+                    value={
+                      (dashboard?.studentCount ?? 0) > 0
+                        ? Math.round((major.studentCount / (dashboard?.studentCount ?? 1)) * 100)
+                        : 0
+                    }
+                  />
                 </div>
               ))}
             </div>
@@ -312,31 +261,29 @@ function AdminDashboard() {
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold">Thao tác nhanh</h2>
+            <h2 className="text-sm font-semibold">Thao tac nhanh</h2>
             <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <QuickAction to="/admin/semesters" icon={CalendarDays} label="Quản lý học kỳ" />
-            <QuickAction to="/admin/class-sections" icon={Layers} label="Mở lớp học phần" />
-            <QuickAction to="/admin/students" icon={GraduationCap} label="Danh sách sinh viên" />
-            <QuickAction to="/admin/teachers" icon={Users} label="Phân công giảng viên" />
-            <QuickAction to="/admin/courses" icon={BookOpen} label="Danh mục học phần" />
-            <QuickAction to="/admin/departments" icon={Building2} label="Khoa / Bộ môn" />
+            <QuickAction to="/admin/semesters" icon={CalendarDays} label="Quan ly hoc ky" />
+            <QuickAction to="/admin/class-sections" icon={Layers} label="Mo lop hoc phan" />
+            <QuickAction to="/admin/students" icon={GraduationCap} label="Danh sach sinh vien" />
+            <QuickAction to="/admin/teachers" icon={Users} label="Phan cong giang vien" />
+            <QuickAction to="/admin/courses" icon={BookOpen} label="Danh muc hoc phan" />
+            <QuickAction to="/admin/departments" icon={Building2} label="Khoa / Bo mon" />
           </div>
         </section>
 
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Lớp học phần mới cập nhật</h2>
-              <p className="text-xs text-muted-foreground">
-                Theo mã bản ghi mới nhất trong hệ thống
-              </p>
+              <h2 className="text-sm font-semibold">Lop hoc phan moi cap nhat</h2>
+              <p className="text-xs text-muted-foreground">Theo ban ghi moi nhat trong he thong</p>
             </div>
             <Layers className="h-5 w-5 text-muted-foreground" />
           </div>
           {recentClasses.length === 0 ? (
-            <EmptyState text="Chưa có lớp học phần nào." />
+            <EmptyState text="Chua co lop hoc phan nao." />
           ) : (
             <div className="mt-4 divide-y">
               {recentClasses.map((section) => {
@@ -349,7 +296,7 @@ function AdminDashboard() {
                     <div className="min-w-0">
                       <div className="truncate font-medium">{section.classCode}</div>
                       <div className="truncate text-xs text-muted-foreground">
-                        {section.courseName} - {section.teacherName ?? "Chưa có GV"}
+                        {section.courseName} - {section.teacherName ?? "Chua co GV"}
                       </div>
                     </div>
                     <div className="w-28 shrink-0">
@@ -396,15 +343,7 @@ function InfoLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function QuickAction({
-  to,
-  icon: Icon,
-  label,
-}: {
-  to: string;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}) {
+function QuickAction({ to, icon: Icon, label }: { to: string; icon: LucideIcon; label: string }) {
   return (
     <Button asChild variant="outline" className="h-12 justify-between gap-3 px-3">
       <Link to={to}>
@@ -429,7 +368,7 @@ function EmptyState({ text }: { text: string }) {
 function DashboardSkeleton() {
   return (
     <div className="space-y-5">
-      <PageHeader title="Tổng quan hệ thống" description="Đang tải dữ liệu tổng quan" />
+      <PageHeader title="Tong quan he thong" description="Dang tai du lieu tong quan" />
       <Skeleton className="h-56 rounded-xl" />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[0, 1, 2, 3].map((item) => (

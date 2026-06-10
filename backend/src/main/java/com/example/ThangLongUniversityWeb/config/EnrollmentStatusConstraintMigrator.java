@@ -22,7 +22,46 @@ public class EnrollmentStatusConstraintMigrator implements CommandLineRunner {
         migrateClassSectionClassCodeConstraint();
         migrateRegistrationRoundConstraint();
         migrateSemesterEndedColumn();
+        migrateClassSectionStatusColumn();
         migrateExamRegistrationCourseSemesterColumns();
+    }
+
+    private void migrateClassSectionStatusColumn() {
+        jdbcTemplate.execute("ALTER TABLE class_sections ADD COLUMN IF NOT EXISTS status VARCHAR(20)");
+        jdbcTemplate.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'class_sections' AND column_name = 'is_closed'
+                    ) THEN
+                        UPDATE class_sections cs
+                        SET status = CASE
+                            WHEN cs.is_closed = true THEN 'CLOSED'
+                            WHEN rr.registration_open = true AND rr.locked = false THEN 'OPEN'
+                            WHEN rr.locked = true THEN 'CLOSED'
+                            ELSE 'DRAFT'
+                        END
+                        FROM registration_rounds rr
+                        WHERE cs.registration_round_id = rr.id
+                          AND cs.status IS NULL;
+
+                        UPDATE class_sections
+                        SET status = CASE WHEN is_closed = true THEN 'CLOSED' ELSE 'DRAFT' END
+                        WHERE status IS NULL;
+                    ELSE
+                        UPDATE class_sections SET status = 'DRAFT' WHERE status IS NULL;
+                    END IF;
+                END $$;
+                """);
+        jdbcTemplate.execute("ALTER TABLE class_sections ALTER COLUMN status SET DEFAULT 'DRAFT'");
+        jdbcTemplate.execute("ALTER TABLE class_sections ALTER COLUMN status SET NOT NULL");
+        jdbcTemplate.execute("ALTER TABLE class_sections DROP CONSTRAINT IF EXISTS class_sections_status_check");
+        jdbcTemplate.execute("""
+                ALTER TABLE class_sections
+                ADD CONSTRAINT class_sections_status_check
+                CHECK (status IN ('DRAFT', 'OPEN', 'CLOSED', 'CANCELLED'))
+                """);
     }
 
     private void migrateSemesterEndedColumn() {

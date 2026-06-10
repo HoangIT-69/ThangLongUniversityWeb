@@ -31,14 +31,22 @@ public class SemesterService {
     private final RegistrationRoundService registrationRoundService;
 
     @Cacheable(cacheNames = "semesters")
+    @Transactional(readOnly = true)
     public List<StudentSemesterResponse> getAllSemesters() {
         return semesterRepository.findAll().stream()
                 .map(this::toStudentResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<StudentSemesterResponse> getAllSemestersReadOnly() {
+        return semesterRepository.findAll().stream()
+                .map(this::toStudentResponse)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public StudentSemesterResponse createSemester(SemesterRequest request) {
         if (semesterRepository.findByName(request.getName()).isPresent()) {
             throw new RuntimeException("Tên học kỳ đã tồn tại.");
@@ -55,7 +63,7 @@ public class SemesterService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public StudentSemesterResponse updateSemester(Long id, SemesterRequest request) {
         Semester semester = getSemesterOrThrow(id);
 
@@ -67,7 +75,7 @@ public class SemesterService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public void deleteSemester(Long id) {
         long classSectionCount = classSectionRepository.countBySemesterId(id);
         if (classSectionCount > 0) {
@@ -82,7 +90,7 @@ public class SemesterService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public StudentSemesterResponse toggleRegistration(Long id, boolean open) {
         RegistrationRound round = registrationRoundService.ensureDefaultRound(id);
         if (open) {
@@ -94,7 +102,7 @@ public class SemesterService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public int lockEnrollments(Long id) {
         Semester semester = getSemesterOrThrow(id);
         
@@ -113,7 +121,7 @@ public class SemesterService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public StudentSemesterResponse publishExamSchedules(Long id) {
         Semester semester = getSemesterOrThrow(id);
         if (!semester.isLocked()) {
@@ -127,7 +135,7 @@ public class SemesterService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public StudentSemesterResponse unpublishExamSchedules(Long id) {
         Semester semester = getSemesterOrThrow(id);
         semester.setExamPublished(false);
@@ -135,7 +143,7 @@ public class SemesterService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public StudentSemesterResponse toggleRetakeRegistration(Long id, boolean open) {
         Semester semester = getSemesterOrThrow(id);
         if (open && !semester.isLocked()) {
@@ -161,7 +169,7 @@ public class SemesterService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public int lockRetakes(Long id) {
         Semester semester = getSemesterOrThrow(id);
         if (!semester.isLocked()) {
@@ -183,7 +191,7 @@ public class SemesterService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public StudentSemesterResponse endSemester(Long id) {
         Semester semester = getSemesterOrThrow(id);
         if (!semester.isLocked()) {
@@ -260,9 +268,6 @@ public class SemesterService {
 
     public StudentSemesterResponse toStudentResponse(Semester s) {
         RegistrationRound activeRound = registrationRoundService.getOpenRound(s.getId());
-        if (activeRound == null) {
-            activeRound = registrationRoundService.ensureDefaultRound(s.getId());
-        }
         return StudentSemesterResponse.builder()
                 .id(s.getId())
                 .name(s.getName())

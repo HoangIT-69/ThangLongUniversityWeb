@@ -1,7 +1,11 @@
 package com.example.ThangLongUniversityWeb.repository;
 
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
+import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -13,16 +17,81 @@ import java.util.Optional;
 
 @Repository
 public interface ClassSectionRepository extends JpaRepository<ClassSection, Long> {
+    @EntityGraph(attributePaths = {
+            "course",
+            "course.major",
+            "course.major.department",
+            "semester",
+            "registrationRound",
+            "teacher",
+            "teacher.user",
+            "schedules",
+            "schedules.room",
+            "schedules.startPeriod",
+            "schedules.endPeriod"
+    })
     List<ClassSection> findBySemesterId(Long semesterId);
 
     Optional<ClassSection> findBySemesterIdAndClassCode(Long semesterId, String classCode);
 
+    @EntityGraph(attributePaths = {
+            "course",
+            "course.major",
+            "course.major.department",
+            "semester",
+            "registrationRound",
+            "teacher",
+            "teacher.user",
+            "schedules",
+            "schedules.room",
+            "schedules.startPeriod",
+            "schedules.endPeriod"
+    })
     List<ClassSection> findByRegistrationRoundId(Long registrationRoundId);
 
+    @EntityGraph(attributePaths = {
+            "course",
+            "course.major",
+            "course.major.department",
+            "semester",
+            "registrationRound",
+            "teacher",
+            "teacher.user",
+            "schedules",
+            "schedules.room",
+            "schedules.startPeriod",
+            "schedules.endPeriod"
+    })
     List<ClassSection> findBySemesterIdAndCourseId(Long semesterId, Long courseId);
 
+    @EntityGraph(attributePaths = {
+            "course",
+            "course.major",
+            "course.major.department",
+            "semester",
+            "registrationRound",
+            "teacher",
+            "teacher.user",
+            "schedules",
+            "schedules.room",
+            "schedules.startPeriod",
+            "schedules.endPeriod"
+    })
     List<ClassSection> findByTeacherIdAndSemesterId(Long teacherId, Long semesterId);
 
+    @EntityGraph(attributePaths = {
+            "course",
+            "course.major",
+            "course.major.department",
+            "semester",
+            "registrationRound",
+            "teacher",
+            "teacher.user",
+            "schedules",
+            "schedules.room",
+            "schedules.startPeriod",
+            "schedules.endPeriod"
+    })
     List<ClassSection> findByTeacherId(Long teacherId);
 
     @Query("select count(cs) from ClassSection cs " +
@@ -62,4 +131,23 @@ public interface ClassSectionRepository extends JpaRepository<ClassSection, Long
     long countBySemesterId(Long semesterId);
 
     long countByRegistrationRoundId(Long registrationRoundId);
+
+    @Query("""
+            SELECT cs FROM ClassSection cs
+            LEFT JOIN cs.course c
+            LEFT JOIN cs.teacher t
+            WHERE (:semesterId IS NULL OR cs.semester.id = :semesterId)
+              AND (:keyword IS NULL OR :keyword = ''
+                OR LOWER(cs.classCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(c.code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(t.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')))
+              AND (:status IS NULL OR cs.status = :status)
+            """)
+    Page<ClassSection> searchAdmin(
+            @Param("semesterId") Long semesterId,
+            @Param("keyword") String keyword,
+            @Param("status") ClassSectionStatus status,
+            Pageable pageable
+    );
 }

@@ -1,4 +1,4 @@
-﻿import { Pencil, RotateCcw, Trash2, Users } from "lucide-react";
+import { Ban, Pencil, Trash2, Users } from "lucide-react";
 import { DataTable } from "@/components/data-table/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ interface ClassSectionsTableProps {
   title?: string;
   onEdit: (row: ClassSectionRow) => void;
   onDelete: (row: ClassSectionRow) => void;
-  onStatusChange: (row: ClassSectionRow) => void;
   onViewStudents: (row: ClassSectionRow) => void;
 }
 
@@ -20,7 +19,6 @@ export function ClassSectionsTable({
   title,
   onEdit,
   onDelete,
-  onStatusChange,
   onViewStudents,
 }: ClassSectionsTableProps) {
   return (
@@ -76,26 +74,26 @@ export function ClassSectionsTable({
           },
           {
             key: "roomName",
-            header: "Phong",
+            header: "Phòng",
             render: (section) => <span className="text-sm">{section.roomName}</span>,
           },
           {
             key: "schedule",
-            header: "Lich hoc",
+            header: "Lịch học",
             accessor: (section) =>
               `${formatClassDay(section.dayOfWeek)} T${section.startPeriod}-${section.endPeriod}`,
             render: (section) => (
               <div className="text-xs text-muted-foreground">
                 <div>{formatClassDay(section.dayOfWeek)}</div>
                 <div>
-                  Tiet {section.startPeriod}-{section.endPeriod}
+                  Tiết {section.startPeriod}-{section.endPeriod}
                 </div>
               </div>
             ),
           },
           {
             key: "size",
-            header: "Si so",
+            header: "Sĩ số",
             accessor: (section) => `${section.currentSlots}/${section.maxSlots}`,
             render: (section) => (
               <span className="tabular-nums">
@@ -111,7 +109,7 @@ export function ClassSectionsTable({
           {
             key: "actions",
             header: "",
-            className: "w-40 text-right",
+            className: "w-36 text-right",
             searchable: false,
             render: (section) => (
               <div className="flex justify-end gap-1">
@@ -119,7 +117,7 @@ export function ClassSectionsTable({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  aria-label={`Xem sinh vien ${section.classCode}`}
+                  aria-label={`Xem sinh viên ${section.classCode}`}
                   onClick={() => onViewStudents(section)}
                 >
                   <Users className="h-4 w-4" />
@@ -128,29 +126,30 @@ export function ClassSectionsTable({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  aria-label={`Doi trang thai ${section.classCode}`}
-                  onClick={() => onStatusChange(section)}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  aria-label={`Sua ${section.classCode}`}
+                  aria-label={`Sửa ${section.classCode}`}
                   onClick={() => onEdit(section)}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive"
-                  aria-label={`Xoa ${section.classCode}`}
-                  onClick={() => onDelete(section)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {section.status !== "CANCELLED" && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                    aria-label={
+                      section.currentSlots > 0
+                        ? `Hủy ${section.classCode}`
+                        : `Xóa ${section.classCode}`
+                    }
+                    onClick={() => onDelete(section)}
+                  >
+                    {section.currentSlots > 0 ? (
+                      <Ban className="h-4 w-4" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
               </div>
             ),
           },

@@ -6,6 +6,8 @@ import com.example.ThangLongUniversityWeb.entity.Room;
 import com.example.ThangLongUniversityWeb.exception.ConflictException;
 import com.example.ThangLongUniversityWeb.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
 
+    @Cacheable(cacheNames = "rooms")
     public List<RoomResponse> getAllRooms() {
         return roomRepository.findAll().stream()
                 .map(this::toResponse)
@@ -29,6 +32,7 @@ public class RoomService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"rooms", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public RoomResponse createRoom(RoomRequest request) {
         if (request.getName() == null || request.getName().isBlank()) {
             throw new RuntimeException("Tên phòng không được để trống");
@@ -50,6 +54,7 @@ public class RoomService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"rooms", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public RoomResponse updateRoom(Long id, RoomRequest request) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng học!"));
@@ -82,6 +87,7 @@ public class RoomService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"rooms", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public void deleteRoom(Long id) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay phong hoc!"));

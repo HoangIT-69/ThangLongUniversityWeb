@@ -125,7 +125,7 @@ function mapApiClassSection(section: ClassSectionResponse): TeacherClassRow {
     scheduleRoomItems,
     currentSlots: section.currentSlots ?? null,
     maxSlots: section.maxSlots ?? null,
-    status: isClosed ? "CLOSED" : "OPEN",
+    status: section.status ?? (isClosed ? "CLOSED" : "OPEN"),
     gradeStatus: section.gradeLocked ? "LOCKED" : "OPEN",
   };
 }

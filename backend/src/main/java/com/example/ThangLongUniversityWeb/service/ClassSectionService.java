@@ -18,6 +18,7 @@ import com.example.ThangLongUniversityWeb.entity.Room;
 import com.example.ThangLongUniversityWeb.entity.Semester;
 import com.example.ThangLongUniversityWeb.entity.Teacher;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
+import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionScheduleRepository;
 import com.example.ThangLongUniversityWeb.repository.CourseRepository;
@@ -33,6 +34,7 @@ import com.example.ThangLongUniversityWeb.enums.CourseStudyStatus;
 import com.example.ThangLongUniversityWeb.enums.AttendanceStatus;
 import com.example.ThangLongUniversityWeb.entity.Grade;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -202,6 +204,7 @@ public class ClassSectionService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions"}, allEntries = true)
     public ClassSectionResponse createClassSection(ClassSectionRequest request) {
         if (classSectionRepository.findBySemesterIdAndClassCode(request.getSemesterId(), request.getClassCode().trim()).isPresent()) {
             throw new RuntimeException("Ma lop hoc phan da ton tai trong hoc ky nay.");
@@ -225,7 +228,9 @@ public class ClassSectionService {
         section.setTeacher(teacher);
         section.setMaxSlots(request.getMaxSlots());
         section.setCurrentSlots(0);
-        section.setClosed(false);
+        section.setStatus(registrationRound != null && registrationRound.isRegistrationOpen()
+                ? ClassSectionStatus.OPEN
+                : ClassSectionStatus.DRAFT);
 
         ClassSection saved = classSectionRepository.save(section);
         replaceSchedules(saved, request.getSchedules());
@@ -234,6 +239,7 @@ public class ClassSectionService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions"}, allEntries = true)
     public ClassSectionResponse updateClassSection(Long id, ClassSectionRequest request) {
         ClassSection section = classSectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
@@ -266,6 +272,7 @@ public class ClassSectionService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions"}, allEntries = true)
     public void deleteClassSection(Long id) {
         ClassSection section = classSectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
@@ -277,6 +284,31 @@ public class ClassSectionService {
         }
     }
 
+    @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions"}, allEntries = true)
+    public ClassSectionResponse cancelClassSection(Long id) {
+        ClassSection section = classSectionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
+        if (section.getStatus() == ClassSectionStatus.CANCELLED) {
+            return mapToResponse(section);
+        }
+
+        var activeEnrollments = enrollmentRepository.findByClassSectionId(section.getId()).stream()
+                .filter(enrollment -> enrollment.getStatus() == EnrollmentStatus.PENDING
+                        || enrollment.getStatus() == EnrollmentStatus.REGISTERED)
+                .toList();
+        for (var enrollment : activeEnrollments) {
+            enrollment.setStatus(EnrollmentStatus.CANCELED);
+            enrollmentRepository.save(enrollment);
+        }
+
+        section.setStatus(ClassSectionStatus.CANCELLED);
+        section.setCurrentSlots((int) enrollmentRepository.countByClassSectionIdAndStatusIn(
+                section.getId(), List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED)));
+        return mapToResponse(classSectionRepository.save(section));
+    }
+
+    @Transactional(readOnly = true)
     public List<AdminClassSectionStudentResponse> getClassSectionStudents(Long classSectionId) {
         ClassSection section = classSectionRepository.findById(classSectionId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
@@ -288,26 +320,40 @@ public class ClassSectionService {
                     var user = student.getUser();
                     
                     String displayStatus = "Đang học";
-                    Grade grade = enrollment.getGrade();
-                    if (grade != null && grade.getParticipationScore() != null && grade.getMidtermScore() != null) {
-                        float preFinalAvg = grade.getParticipationScore() * 0.25f + grade.getMidtermScore() * 0.75f;
+                    CourseStudyStatus courseStatus = enrollment.getCourseStatus();
+                    
+                    if (courseStatus == CourseStudyStatus.BANNED_FROM_EXAM) {
+                        displayStatus = "Cấm thi";
+                    } else if (courseStatus == CourseStudyStatus.REPEAT_COURSE) {
+                        displayStatus = "Học lại";
+                    } else if (courseStatus == CourseStudyStatus.RETAKE_EXAM) {
+                        displayStatus = "Thi lại";
+                    } else if (courseStatus == CourseStudyStatus.PASSED) {
+                        displayStatus = "Qua môn";
+                    } else {
                         long absences = attendanceRecordRepository.countByEnrollmentIdAndStatus(
                                 enrollment.getId(), AttendanceStatus.ABSENT);
-                        
-                        if (preFinalAvg < 4.0f || absences > 3) {
-                            displayStatus = "Học lại";
+                        if (absences > 3) {
+                            displayStatus = "Cấm thi";
                         } else {
-                            displayStatus = "Đủ điều kiện thi";
-                        }
-                    } else {
-                        // Check if they are already repeating due to historical grades
-                        long courseId = section.getCourse().getId();
-                        List<Grade> prevGrades = gradeRepository.findByStudentId(student.getId()).stream()
-                            .filter(g -> g.getEnrollment().getClassSection().getCourse().getId().equals(courseId))
-                            .filter(g -> !g.getEnrollment().getId().equals(enrollment.getId()))
-                            .toList();
-                        if (!prevGrades.isEmpty()) {
-                            displayStatus = "Học lại";
+                            Grade grade = enrollment.getGrade();
+                            if (grade != null && grade.getParticipationScore() != null && grade.getMidtermScore() != null) {
+                                float preFinalAvg = grade.getParticipationScore() * 0.25f + grade.getMidtermScore() * 0.75f;
+                                if (preFinalAvg < 4.0f) {
+                                    displayStatus = "Học lại";
+                                } else {
+                                    displayStatus = "Đủ điều kiện thi";
+                                }
+                            } else {
+                                long courseId = section.getCourse().getId();
+                                List<Grade> prevGrades = gradeRepository.findByStudentId(student.getId()).stream()
+                                    .filter(g -> g.getEnrollment().getClassSection().getCourse().getId().equals(courseId))
+                                    .filter(g -> !g.getEnrollment().getId().equals(enrollment.getId()))
+                                    .toList();
+                                if (!prevGrades.isEmpty()) {
+                                    displayStatus = "Học lại";
+                                }
+                            }
                         }
                     }
 
@@ -358,6 +404,7 @@ public class ClassSectionService {
                 .courseId(section.getCourse().getId())
                 .courseCode(section.getCourse().getCode())
                 .courseName(section.getCourse().getName())
+                .majorName(section.getCourse().getMajor() != null ? section.getCourse().getMajor().getName() : "Dai cuong")
                 .courseType(section.getCourse().getCourseType())
                 .courseTypeLabel(section.getCourse().getCourseType() != null
                         && section.getCourse().getCourseType().name().equals("ELECTIVE") ? "Tu do" : "Bat buoc")
@@ -375,6 +422,7 @@ public class ClassSectionService {
                 .schedules(schedules)
                 .maxSlots(section.getMaxSlots())
                 .currentSlots(activeSlots)
+                .status(section.getStatus().name())
                 .isClosed(section.isClosed())
                 .gradeLocked(section.isGradeLocked())
                 .examAt(section.getExamAt())
@@ -401,6 +449,7 @@ public class ClassSectionService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard"}, allEntries = true)
     public ExamScheduleResponse updateExamSchedule(Long classSectionId, ExamScheduleRequest request) {
         ClassSection section = classSectionRepository.findById(classSectionId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
@@ -414,6 +463,7 @@ public class ClassSectionService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard"}, allEntries = true)
     public List<ExamScheduleResponse> batchUpdateExamSchedules(Long semesterId, List<ExamScheduleRequest> requests) {
         return requests.stream().map(req -> {
             ClassSection section = classSectionRepository.findById(req.getClassSectionId())
@@ -431,6 +481,7 @@ public class ClassSectionService {
         }).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ExamScheduleResponse> getExamSchedulesBySemester(Long semesterId) {
         return classSectionRepository.findBySemesterId(semesterId).stream()
                 .map(this::toExamScheduleResponse)

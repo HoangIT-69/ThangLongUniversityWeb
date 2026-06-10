@@ -8,6 +8,7 @@ import com.example.ThangLongUniversityWeb.entity.Grade;
 import com.example.ThangLongUniversityWeb.entity.RegistrationRound;
 import com.example.ThangLongUniversityWeb.entity.RegistrationTimeSlot;
 import com.example.ThangLongUniversityWeb.entity.Semester;
+import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
@@ -236,6 +237,15 @@ public class RegistrationRoundService {
         round.setLockedAt(LocalDateTime.now());
         registrationRoundRepository.save(round);
 
+        if ("COURSE".equals(round.getRoundType())) {
+            classSectionRepository.findByRegistrationRoundId(roundId).stream()
+                    .filter(section -> section.getStatus() == ClassSectionStatus.OPEN)
+                    .forEach(section -> {
+                        section.setStatus(ClassSectionStatus.CLOSED);
+                        classSectionRepository.save(section);
+                    });
+        }
+
         // Do not globally lock the entire semester here (Khóa tổng is done separately).
         boolean anyOpen = registrationRoundRepository.existsBySemesterIdAndRoundTypeAndRegistrationOpenTrue(semesterId, round.getRoundType());
         if (!anyOpen) {
@@ -308,6 +318,12 @@ public class RegistrationRoundService {
         if ("COURSE".equals(round.getRoundType())) {
             semester.setRegistrationOpen(true);
             semester.setLocked(false);
+            classSectionRepository.findByRegistrationRoundId(saved.getId()).stream()
+                    .filter(section -> section.getStatus() == ClassSectionStatus.DRAFT)
+                    .forEach(section -> {
+                        section.setStatus(ClassSectionStatus.OPEN);
+                        classSectionRepository.save(section);
+                    });
         } else {
             semester.setRetakeOpen(true);
             semester.setRetakeLocked(false);

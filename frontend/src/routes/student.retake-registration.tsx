@@ -7,7 +7,6 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { toast } from "sonner";
 import { Loader2, Lock, X } from "lucide-react";
 import { studentApi } from "@/lib/api/student";
-import { pickCurrentSemester } from "@/lib/semester";
 
 export const Route = createFileRoute("/student/retake-registration")({ component: RetakePage });
 
@@ -19,42 +18,36 @@ function formatVND(value: number) {
 
 function RetakePage() {
   const queryClient = useQueryClient();
-  const semestersQuery = useQuery({
-    queryKey: ["student", "semesters"],
-    queryFn: studentApi.listSemesters,
-  });
-  const semesterOptions = useMemo<SemesterOption[]>(
-    () => (semestersQuery.data ?? []).map((s) => ({ id: s.id, name: s.name })),
-    [semestersQuery.data],
-  );
-  const defaultSemester = pickCurrentSemester(semestersQuery.data ?? []);
   const [semesterId, setSemesterId] = useState<number | null>(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState<Set<number>>(new Set());
 
+  const overviewQuery = useQuery({
+    queryKey: ["student", "retakes", "overview", semesterId],
+    queryFn: () => studentApi.getRetakeOverview(semesterId),
+  });
+
+  const semesterOptions = useMemo<SemesterOption[]>(
+    () => (overviewQuery.data?.semesters ?? []).map((s) => ({ id: s.id, name: s.name })),
+    [overviewQuery.data?.semesters],
+  );
+
   useEffect(() => {
-    if (semesterId == null && defaultSemester) setSemesterId(defaultSemester.id);
-  }, [defaultSemester, semesterId]);
+    if (semesterId == null && overviewQuery.data?.currentSemester?.id != null) {
+      setSemesterId(overviewQuery.data.currentSemester.id);
+    }
+  }, [overviewQuery.data?.currentSemester?.id, semesterId]);
 
-  const eligibleQuery = useQuery({
-    queryKey: ["student", "retakes", "eligible", semesterId],
-    queryFn: () => studentApi.listRetakeEligibleCourses(semesterId),
-    enabled: semesterId != null,
-  });
-
-  const requestsQuery = useQuery({
-    queryKey: ["student", "retakes", "requests", semesterId],
-    queryFn: () => studentApi.listRetakeRequests(semesterId),
-    enabled: semesterId != null,
-  });
-
-  const currentSemester = semestersQuery.data?.find((s) => s.id === semesterId);
-  const readonly = Boolean(currentSemester?.retakeLocked || !currentSemester?.retakeOpen);
+  const currentSemester = overviewQuery.data?.currentSemester;
+  const readonly =
+    overviewQuery.data?.readonly ??
+    Boolean(currentSemester?.retakeLocked || !currentSemester?.retakeOpen);
 
   const registerMutation = useMutation({
     mutationFn: (courseIds: number[]) => studentApi.registerRetakes({ semesterId, courseIds }),
     onSuccess: (response) => {
       setSelectedCourseIds(new Set());
       queryClient.invalidateQueries({ queryKey: ["student", "retakes"] });
+      queryClient.invalidateQueries({ queryKey: ["student", "dashboard"] });
       toast.success(
         `Đã thêm ${response.registeredCount} môn vào danh sách chờ. Phí sẽ tính sau khi admin chốt.`,
       );
@@ -66,13 +59,14 @@ function RetakePage() {
     mutationFn: (examRegistrationId: number) => studentApi.cancelRetake(examRegistrationId),
     onSuccess: (message) => {
       queryClient.invalidateQueries({ queryKey: ["student", "retakes"] });
+      queryClient.invalidateQueries({ queryKey: ["student", "dashboard"] });
       toast.success(message || "Đã bỏ chọn thi lại / nâng điểm");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Bỏ chọn thất bại"),
   });
 
-  const rows = eligibleQuery.data ?? [];
-  const requests = requestsQuery.data ?? [];
+  const rows = overviewQuery.data?.eligibleCourses ?? [];
+  const requests = overviewQuery.data?.requests ?? [];
   const requestedCourseIds = new Set(requests.map((r) => r.courseId));
   const pendingRequests = requests.filter((r) => r.status === "PENDING");
   const selectedRows = rows.filter((row) => selectedCourseIds.has(row.courseId));
@@ -152,7 +146,7 @@ function RetakePage() {
           </span>
         </div>
         <div className="mt-3 divide-y">
-          {requestsQuery.isLoading ? (
+          {overviewQuery.isLoading ? (
             <div className="py-4 text-sm text-muted-foreground">Đang tải danh sách...</div>
           ) : pendingRequests.length === 0 ? (
             <div className="py-4 text-sm text-muted-foreground">
@@ -191,10 +185,10 @@ function RetakePage() {
         </div>
       </div>
 
-      {eligibleQuery.isError && (
+      {overviewQuery.isError && (
         <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          {eligibleQuery.error instanceof Error
-            ? eligibleQuery.error.message
+          {overviewQuery.error instanceof Error
+            ? overviewQuery.error.message
             : "Không tải được danh sách môn đủ điều kiện"}
         </div>
       )}
@@ -205,7 +199,7 @@ function RetakePage() {
           <span className="text-xs text-muted-foreground">Phí sẽ được xác nhận khi đăng ký</span>
         </div>
         <div className="divide-y">
-          {eligibleQuery.isLoading ? (
+          {overviewQuery.isLoading ? (
             <div className="py-10 text-center text-sm text-muted-foreground">
               Đang tải dữ liệu...
             </div>
