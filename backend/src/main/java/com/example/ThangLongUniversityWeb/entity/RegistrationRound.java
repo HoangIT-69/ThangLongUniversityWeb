@@ -11,8 +11,8 @@ import java.util.List;
 @Table(
         name = "registration_rounds",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_registration_round_semester_number",
-                columnNames = {"semester_id", "round_number"}
+                name = "uk_registration_round_semester_number_type",
+                columnNames = {"semester_id", "round_number", "round_type"}
         )
 )
 @Getter

@@ -11,4 +11,6 @@ public class EnrollmentMessage {
     private String requestId;
     private Long studentId;
     private Long classSectionId;
+    /** Student username used for WebSocket status notifications after consumer processing. */
+    private String username;
 }

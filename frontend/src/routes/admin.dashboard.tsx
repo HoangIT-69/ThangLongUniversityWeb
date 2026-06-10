@@ -66,8 +66,8 @@ function AdminDashboard() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Tong quan he thong"
-        description="Bang dieu khien nhanh cho dao tao, hoc ky va lop hoc phan"
+        title="Tổng quan hệ thống"
+        description="Bảng điều hành nhanh cho dữ liệu đào tạo, học kỳ và lớp học phần"
         actions={
           <Button
             variant="outline"
@@ -75,7 +75,7 @@ function AdminDashboard() {
             onClick={() => void dashboardQuery.refetch()}
           >
             <RefreshCw className="h-4 w-4" />
-            Lam moi
+            Làm mới
           </Button>
         }
       />

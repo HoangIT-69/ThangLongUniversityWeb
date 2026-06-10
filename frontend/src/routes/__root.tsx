@@ -5,20 +5,28 @@ import { Toaster } from "@/components/ui/sonner";
 import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
 
+const siteUrl = "https://thanglonguniversity.online/";
+const siteTitle = "Đại học Thăng Long - Cổng thông tin";
+const siteDescription =
+  "Hệ thống quản lý và cổng thông tin trực tuyến của Đại học Thăng Long.";
+const socialImage = `${siteUrl}images/LogoThangLongUniversity.png`;
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
+    title: siteTitle,
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Đại học Thăng Long — Cổng thông tin" },
-      { name: "description", content: "Hệ thống quản lý Trường Đại học Thăng Long." },
-      { property: "og:title", content: "Đại học Thăng Long — Cổng thông tin" },
-      { name: "twitter:title", content: "Đại học Thăng Long — Cổng thông tin" },
-      { property: "og:description", content: "Hệ thống quản lý Trường Đại học Thăng Long." },
-      { name: "twitter:description", content: "Hệ thống quản lý Trường Đại học Thăng Long." },
-      { property: "og:image", content: "/images/LogoThangLongUniversity.png" },
+      { name: "description", content: siteDescription },
+      { property: "og:title", content: siteTitle },
+      { name: "twitter:title", content: siteTitle },
+      { property: "og:description", content: siteDescription },
+      { name: "twitter:description", content: siteDescription },
+      { property: "og:image", content: socialImage },
+      { property: "og:image:alt", content: "Logo Đại học Thăng Long" },
       { property: "og:site_name", content: "Đại học Thăng Long" },
-      { name: "twitter:image", content: "/images/LogoThangLongUniversity.png" },
+      { property: "og:url", content: siteUrl },
+      { name: "twitter:image", content: socialImage },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#C8102E" },
       { property: "og:type", content: "website" },
@@ -27,9 +35,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", sizes: "48x48", href: "/favicon-48.png" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/favicon-192.png" },
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon-512.png" },
-      { rel: "shortcut icon", type: "image/png", href: "/favicon.png" },
+      { rel: "shortcut icon", href: "/favicon.ico" },
       { rel: "apple-touch-icon", sizes: "192x192", href: "/favicon-192.png" },
       { rel: "manifest", href: "/site.webmanifest" },
+      { rel: "canonical", href: siteUrl },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://images.unsplash.com" },

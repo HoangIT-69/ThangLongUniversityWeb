@@ -3,12 +3,14 @@ package com.example.ThangLongUniversityWeb.service;
 import com.example.ThangLongUniversityWeb.dto.request.LoginRequest;
 import com.example.ThangLongUniversityWeb.dto.response.AuthResponse;
 import com.example.ThangLongUniversityWeb.entity.User;
+import com.example.ThangLongUniversityWeb.exception.UnauthorizedException;
 import com.example.ThangLongUniversityWeb.repository.UserRepository;
 import com.example.ThangLongUniversityWeb.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -27,9 +29,14 @@ public class AuthService {
 
     // ... (Giữ nguyên các hàm bên dưới của bạn) ...
     public AuthResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
+        } catch (AuthenticationException ex) {
+            throw new UnauthorizedException("Invalid username or password");
+        }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
