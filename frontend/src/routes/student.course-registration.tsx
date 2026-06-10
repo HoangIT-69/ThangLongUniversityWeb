@@ -224,7 +224,7 @@ function CourseRegistrationPage() {
       ]);
 
       // Add an optimistic PENDING entry immediately so the UI responds in 1 click
-      const section = classesQuery.data?.find((s) => s.id === classSectionId);
+      const section = overviewQuery.data?.availableClasses?.find((s) => s.id === classSectionId);
       if (section) {
         const firstSchedule = section.schedules?.[0];
         const optimisticEntry: EnrollmentResponse = {

@@ -58,7 +58,8 @@ public class SemesterService {
         semester.setEndDate(request.getEndDate());
         semester.setRegistrationOpen(request.isRegistrationOpen());
         Semester saved = semesterRepository.save(semester);
-        registrationRoundService.ensureDefaultRound(saved.getId());
+        registrationRoundService.ensureDefaultRound(saved.getId(), "COURSE");
+        registrationRoundService.ensureDefaultRound(saved.getId(), "RETAKE");
         return toStudentResponse(saved);
     }
 

@@ -19,8 +19,16 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Switch } from "@/components/ui/switch";
 import { adminApi } from "@/lib/api/admin";
 import type { AdminUserResponse, Role } from "@/lib/api/types";
-import { GraduationCap, Pencil, Plus, User, UserRound, Users, Trash2 } from "lucide-react";
+import { GraduationCap, Pencil, Plus, User, UserRound, Users, Trash2, KeyRound, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/admin/users")({ component: UsersPage });
 
@@ -50,6 +58,9 @@ function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
   const [editingUser, setEditingUser] = useState<AdminUserRow | null>(null);
   const [toDelete, setToDelete] = useState<AdminUserRow | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<AdminUserRow | null>(null);
+  const [resetPasswordVal, setResetPasswordVal] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -205,6 +216,24 @@ function UsersPage() {
       toast.error(error instanceof Error ? error.message : "Không xóa được tài khoản"),
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async () => {
+      if (!resetPasswordUser || !resetPasswordUser.numericId) return;
+      if (resetPasswordVal.length < 6) {
+        throw new Error("Mật khẩu mới phải từ 6 ký tự trở lên");
+      }
+      return adminApi.resetUserPassword(resetPasswordUser.numericId, resetPasswordVal);
+    },
+    onSuccess: () => {
+      toast.success(`Đã reset mật khẩu cho tài khoản ${resetPasswordUser?.username} thành công!`);
+      setResetPasswordUser(null);
+      setResetPasswordVal("");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Không thể reset mật khẩu");
+    },
+  });
+
   const submit = async () => {
     await createMutation.mutateAsync();
   };
@@ -352,6 +381,16 @@ function UsersPage() {
             searchable: false,
             render: (user) => (
               <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={!user.numericId}
+                  onClick={() => setResetPasswordUser(user)}
+                  title="Reset mật khẩu"
+                >
+                  <KeyRound className="h-4 w-4 text-primary" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -553,6 +592,84 @@ function UsersPage() {
           if (toDelete) deleteMutation.mutate(toDelete);
         }}
       />
+
+      <Dialog
+        open={!!resetPasswordUser}
+        onOpenChange={(value) => {
+          if (!value) {
+            setResetPasswordUser(null);
+            setResetPasswordVal("");
+            setShowResetPassword(false);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              resetPasswordMutation.mutate();
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+                <KeyRound className="h-5 w-5 text-primary" />
+                Reset mật khẩu
+              </DialogTitle>
+              <DialogDescription>
+                Nhập mật khẩu mới cho tài khoản{" "}
+                <span className="font-semibold">{resetPasswordUser?.username}</span>.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="adminResetPassword">Mật khẩu mới</Label>
+                <div className="relative">
+                  <Input
+                    id="adminResetPassword"
+                    type={showResetPassword ? "text" : "password"}
+                    value={resetPasswordVal}
+                    onChange={(e) => setResetPasswordVal(e.target.value)}
+                    placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                    disabled={resetPasswordMutation.isPending}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    disabled={resetPasswordMutation.isPending}
+                  >
+                    {showResetPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={resetPasswordMutation.isPending}
+                onClick={() => {
+                  setResetPasswordUser(null);
+                  setResetPasswordVal("");
+                  setShowResetPassword(false);
+                }}
+              >
+                Hủy
+              </Button>
+              <Button type="submit" disabled={resetPasswordMutation.isPending}>
+                {resetPasswordMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Xác nhận Reset
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -37,6 +37,7 @@ import com.example.ThangLongUniversityWeb.repository.UserRepository;
 import com.example.ThangLongUniversityWeb.service.CourseOutcomeService;
 import com.example.ThangLongUniversityWeb.service.StudentRetakeService;
 import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
+import com.example.ThangLongUniversityWeb.service.RegistrationRoundService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -75,6 +76,7 @@ public class DataInitializer implements CommandLineRunner {
     private final SystemSettingsRepository systemSettingsRepository;
     private final PasswordEncoder passwordEncoder;
     private final CourseOutcomeService courseOutcomeService;
+    private final RegistrationRoundService registrationRoundService;
 
     @Override
     @Transactional
@@ -109,7 +111,13 @@ public class DataInitializer implements CommandLineRunner {
 
         // Seed Semesters (Tên học kỳ có dấu)
         Semester hk1 = semester("Học kỳ 1 năm học 2025-2026", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 15), false, true);
-        Semester hk2 = semester("Học kỳ 2 năm học 2025-2026", LocalDate.of(2026, 2, 2), LocalDate.of(2026, 6, 15), true, false);
+        Semester hk2 = semester("Học kỳ 2 năm học 2025-2026", LocalDate.of(2026, 2, 2), LocalDate.of(2026, 6, 15), false, false);
+
+        // Seed Default Registration Rounds to prevent race conditions during concurrent API requests
+        registrationRoundService.ensureDefaultRound(hk1.getId(), "COURSE");
+        registrationRoundService.ensureDefaultRound(hk1.getId(), "RETAKE");
+        registrationRoundService.ensureDefaultRound(hk2.getId(), "COURSE");
+        registrationRoundService.ensureDefaultRound(hk2.getId(), "RETAKE");
 
         // Seed Rooms
         Room a101 = room("Phòng A101", 60, "LECTURE", "AVAILABLE");

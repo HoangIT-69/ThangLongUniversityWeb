@@ -2,6 +2,7 @@ package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.LoginRequest;
 import com.example.ThangLongUniversityWeb.dto.request.RefreshTokenRequest;
+import com.example.ThangLongUniversityWeb.dto.request.ChangePasswordRequest;
 import com.example.ThangLongUniversityWeb.dto.response.AuthResponse;
 import com.example.ThangLongUniversityWeb.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -141,5 +142,16 @@ public class AuthController {
         authService.logout(refreshToken);
 
         return ResponseEntity.ok("Logout successful");
+    }
+
+    @Operation(summary = "Đổi mật khẩu", description = "Đổi mật khẩu cho người dùng hiện tại")
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestBody @jakarta.validation.Valid ChangePasswordRequest request) {
+        org.springframework.security.core.Authentication authentication = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        authService.changePassword(username, request);
+        return ResponseEntity.ok(java.util.Map.of("message", "Đổi mật khẩu thành công. Vui lòng đăng nhập lại."));
     }
 }

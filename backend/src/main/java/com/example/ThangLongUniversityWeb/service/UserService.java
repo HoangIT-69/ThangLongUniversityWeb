@@ -140,4 +140,16 @@ public class UserService {
             user.getTeacher().setFullName(fullName);
         }
     }
+
+    @Transactional
+    public void resetUserPassword(Long userId, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy User!"));
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Revoke all refresh tokens
+        redisTokenService.revokeAllForUser(user.getUsername());
+    }
 }

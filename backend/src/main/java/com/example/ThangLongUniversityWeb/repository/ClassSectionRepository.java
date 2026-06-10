@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Modifying;
+import com.example.ThangLongUniversityWeb.entity.RegistrationRound;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -150,4 +152,12 @@ public interface ClassSectionRepository extends JpaRepository<ClassSection, Long
             @Param("status") ClassSectionStatus status,
             Pageable pageable
     );
+
+    @Modifying
+    @Query("UPDATE ClassSection cs SET cs.registrationRound = :round WHERE cs.semester.id = :semesterId AND cs.status = 'DRAFT' AND cs.registrationRound IS NULL")
+    int assignUnassignedDraftSectionsToRound(@Param("semesterId") Long semesterId, @Param("round") RegistrationRound round);
+
+    @Modifying
+    @Query("UPDATE ClassSection cs SET cs.status = :targetStatus WHERE cs.registrationRound.id = :roundId AND cs.status IN :sourceStatuses")
+    int updateStatusForRoundSections(@Param("roundId") Long roundId, @Param("targetStatus") ClassSectionStatus targetStatus, @Param("sourceStatuses") List<ClassSectionStatus> sourceStatuses);
 }

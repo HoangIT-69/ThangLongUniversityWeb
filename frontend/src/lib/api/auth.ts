@@ -19,3 +19,10 @@ export function logout() {
     body: jsonBody({ refreshToken: auth?.refreshToken }),
   });
 }
+
+export function changePassword(currentPassword: string, newPassword: string, confirmPassword: string) {
+  return apiRequest<{ message: string }>("/api/auth/change-password", {
+    method: "PUT",
+    body: jsonBody({ currentPassword, newPassword, confirmPassword }),
+  });
+}

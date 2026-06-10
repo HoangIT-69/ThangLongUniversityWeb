@@ -17,6 +17,7 @@ import {
   Layers,
   LayoutDashboard,
   Library,
+  KeyRound,
   LogOut,
   Menu,
   MessageSquare,
@@ -30,6 +31,7 @@ import {
   UserCog,
   Users,
 } from "lucide-react";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { lazy, Suspense, useState, type ReactNode } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -278,6 +280,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const initials = (name ?? "?")
     .split(" ")
@@ -461,7 +464,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{name}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem
+                  onClick={() => setChangePasswordOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Đổi mật khẩu
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   Đăng xuất
                 </DropdownMenuItem>
@@ -477,6 +487,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <ChatbotWidget />
         </Suspense>
       )}
+      <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
     </div>
   );
 }

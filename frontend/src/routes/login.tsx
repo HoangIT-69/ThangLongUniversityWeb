@@ -1,4 +1,4 @@
-﻿import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
@@ -78,6 +78,15 @@ function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("checking");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setCooldownSeconds((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownSeconds]);
 
   useEffect(() => {
     let alive = true;
@@ -93,6 +102,7 @@ function LoginPage() {
   }, []);
 
   const submitLogin = async (credentials: Credentials) => {
+    if (cooldownSeconds > 0) return;
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -100,10 +110,18 @@ function LoginPage() {
       const role = await login(credentials.username, credentials.password);
       toast.success(`Đăng nhập thành công với vai trò ${role.toLowerCase()}`);
       navigate({ to: resolveDashboard(role) });
-    } catch (error) {
-      const message = getLoginErrorMessage(error);
-      setErrorMessage(message);
-      toast.error(message);
+    } catch (error: any) {
+      if (error && error.status === 429) {
+        const retry = error.retryAfter || 10;
+        setCooldownSeconds(retry);
+        const limitMessage = `Bạn đã gửi yêu cầu quá nhanh. Vui lòng thử lại sau ${retry} giây.`;
+        setErrorMessage(limitMessage);
+        toast.error(limitMessage);
+      } else {
+        const message = getLoginErrorMessage(error);
+        setErrorMessage(message);
+        toast.error(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -274,10 +292,10 @@ function LoginPage() {
               <Button
                 type="submit"
                 className="h-12 w-full text-sm font-semibold lg:h-11"
-                disabled={isSubmitting}
+                disabled={isSubmitting || cooldownSeconds > 0}
               >
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Đăng nhập
+                {cooldownSeconds > 0 ? `Thử lại sau ${cooldownSeconds}s` : "Đăng nhập"}
               </Button>
             </form>
 
