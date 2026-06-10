@@ -35,6 +35,7 @@ public class AdminEnrollmentService {
     private final ExamRegistrationRepository examRegistrationRepository;
     private final RegistrationRoundService registrationRoundService;
 
+    @Transactional(readOnly = true)
     public Page<AdminEnrollmentResponse> search(Long semesterId, Long classSectionId, EnrollmentStatus status, Pageable pageable) {
         return enrollmentRepository.searchAdmin(semesterId, classSectionId, status, pageable)
                 .map(this::toAdminResponse);

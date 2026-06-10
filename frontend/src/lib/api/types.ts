@@ -342,6 +342,7 @@ export interface ClassSectionResponse {
   schedules: ClassSectionScheduleResponse[];
   maxSlots?: number | null;
   currentSlots?: number | null;
+  status?: AdminClassSectionStatus | string | null;
   closed?: boolean;
   isClosed?: boolean;
   gradeLocked?: boolean | null;
@@ -389,6 +390,7 @@ export interface StudentSemesterResponse {
   examPublished: boolean;
   retakeOpen: boolean;
   retakeLocked: boolean;
+  ended?: boolean;
   activeRegistrationRoundId?: number | null;
   activeRegistrationRoundName?: string | null;
   activeRegistrationRoundNumber?: number | null;
@@ -553,6 +555,73 @@ export interface StudentDashboardResponse {
   tuitionRemaining: number;
   tuitionStatus: string;
   registrationStatus: string;
+}
+
+export interface AdminDashboardMajorCount {
+  majorId?: number | null;
+  majorCode?: string | null;
+  majorName?: string | null;
+  studentCount: number;
+}
+
+export interface AdminDashboardResponse {
+  currentSemester?: StudentSemesterResponse | null;
+  studentCount: number;
+  teacherCount: number;
+  courseCount: number;
+  departmentCount: number;
+  roomCount: number;
+  roomCapacity: number;
+  classSectionCount: number;
+  openClassCount: number;
+  assignedClassCount: number;
+  scheduledClassCount: number;
+  totalRegisteredSlots: number;
+  totalCapacity: number;
+  totalCourseCredits: number;
+  averageOccupancy: number;
+  assignedTeacherRate: number;
+  scheduledClassRate: number;
+  studentsByMajor: AdminDashboardMajorCount[];
+  attentionClasses: ClassSectionResponse[];
+  recentClasses: ClassSectionResponse[];
+}
+
+export interface TeacherDashboardResponse {
+  profile: UserProfile;
+  currentSemester?: StudentSemesterResponse | null;
+  classes: ClassSectionResponse[];
+  todaySchedule: ClassSectionResponse[];
+  classCount: number;
+  totalStudents: number;
+  ungradedClassCount: number;
+  todayScheduleCount: number;
+}
+
+export interface StudentCourseRegistrationOverviewResponse {
+  semesters: StudentSemesterResponse[];
+  currentSemester?: StudentSemesterResponse | null;
+  availableClasses: ClassSectionResponse[];
+  selectedEnrollments: EnrollmentResponse[];
+  readonly: boolean;
+  registrationStatus: string;
+}
+
+export interface StudentRetakeOverviewResponse {
+  semesters: StudentSemesterResponse[];
+  currentSemester?: StudentSemesterResponse | null;
+  eligibleCourses: RetakeEligibleCourseResponse[];
+  requests: RetakeRequestResponse[];
+  readonly: boolean;
+  registrationStatus: string;
+}
+
+export interface AdminClassSectionOptionsResponse {
+  courses: CourseResponse[];
+  semesters: AdminSemesterResponse[];
+  teachers: AdminTeacherResponse[];
+  rooms: RoomResponse[];
+  periods: PeriodResponse[];
 }
 
 export interface AcademicResultStudentRef {

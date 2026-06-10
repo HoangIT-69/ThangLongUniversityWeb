@@ -1,6 +1,7 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.GradeRequest;
+import com.example.ThangLongUniversityWeb.service.DashboardService;
 import com.example.ThangLongUniversityWeb.service.TeacherService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -17,6 +18,13 @@ import org.springframework.web.bind.annotation.*;
 public class TeacherController {
 
     private final TeacherService teacherService;
+    private final DashboardService dashboardService;
+
+    @Operation(summary = "Du lieu tong hop cho teacher dashboard")
+    @GetMapping("/dashboard")
+    public ResponseEntity<?> getDashboard(org.springframework.security.core.Authentication authentication) {
+        return ResponseEntity.ok(dashboardService.getTeacherDashboard(authentication.getName()));
+    }
 
     @Operation(summary = "Lay danh sach hoc ky cho giang vien")
     @GetMapping("/semesters")

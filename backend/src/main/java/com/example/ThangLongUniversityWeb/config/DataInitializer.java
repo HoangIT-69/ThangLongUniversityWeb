@@ -35,6 +35,7 @@ import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
 import com.example.ThangLongUniversityWeb.repository.TuitionBillRepository;
 import com.example.ThangLongUniversityWeb.repository.UserRepository;
 import com.example.ThangLongUniversityWeb.service.StudentRetakeService;
+import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -532,7 +533,7 @@ public class DataInitializer implements CommandLineRunner {
             existing.setEndPeriod(endPeriod);
             existing.setMaxSlots(maxSlots);
             if (existing.getCurrentSlots() == null) existing.setCurrentSlots(0);
-            existing.setClosed(false);
+            existing.setStatus(classSectionStatusForSemester(semester));
             existing.setGradeLocked(false);
             existing.setExamAt(examAt);
             existing.setExamRoom(examRoom);
@@ -564,7 +565,7 @@ public class DataInitializer implements CommandLineRunner {
             section.setEndPeriod(endPeriod);
             section.setMaxSlots(maxSlots);
             section.setCurrentSlots(0);
-            section.setClosed(false);
+            section.setStatus(classSectionStatusForSemester(semester));
             section.setGradeLocked(false);
             section.setExamAt(examAt);
             section.setExamRoom(examRoom);
@@ -596,6 +597,16 @@ public class DataInitializer implements CommandLineRunner {
 
             return enrollmentRepository.save(enrollment);
         });
+    }
+
+    private ClassSectionStatus classSectionStatusForSemester(Semester semester) {
+        if (semester.isLocked()) {
+            return ClassSectionStatus.CLOSED;
+        }
+        if (semester.isRegistrationOpen()) {
+            return ClassSectionStatus.OPEN;
+        }
+        return ClassSectionStatus.DRAFT;
     }
 
     private Grade grade(Enrollment enrollment, Float participation, Float midterm, Float finalScore) {

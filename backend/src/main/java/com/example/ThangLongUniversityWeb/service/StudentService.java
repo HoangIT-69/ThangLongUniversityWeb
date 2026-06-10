@@ -20,6 +20,7 @@ import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.repository.TuitionBillRepository;
 import com.example.ThangLongUniversityWeb.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +46,7 @@ public class StudentService {
 
     // 1. THÊM MỚI (Tạo User -> Tạo Student)
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard"}, allEntries = true)
     public StudentResponse createStudent(StudentRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Tên đăng nhập đã tồn tại!");
@@ -82,6 +84,7 @@ public class StudentService {
 
     // 2. CẬP NHẬT (dùng StudentUpdateRequest, không đổi password)
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard"}, allEntries = true)
     public StudentResponse updateStudent(Long id, StudentUpdateRequest request) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên!"));
@@ -190,6 +193,7 @@ public class StudentService {
                 .orElseGet(() -> academicResultService.computeCumulativeCreditsLive(studentId));
     }
 
+    @Transactional(readOnly = true)
     public UserProfileResponse getProfileByUsername(String username) {
         Student student = studentRepository.findByUser_Username(username)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay thong tin sinh vien cua tai khoan nay!"));
@@ -252,6 +256,7 @@ public class StudentService {
 
     // 3. XÓA (Xóa Enrollment -> Student -> User)
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard"}, allEntries = true)
     public void deleteStudent(Long id) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên!"));

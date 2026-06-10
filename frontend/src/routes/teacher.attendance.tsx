@@ -73,6 +73,17 @@ const statusMeta: Record<AttendanceStatus, { label: string; short: string; class
   },
 };
 
+const checkIsBanned = (row: TeacherRosterRow, studentSessions: Record<number, AttendanceStatus>) => {
+  const absentCount = Object.values(studentSessions).filter((s) => s === "ABSENT").length;
+  const backendStatus = row.courseStatus;
+  const localBanned = absentCount > ABSENT_LIMIT;
+  return (
+    backendStatus === "BANNED_FROM_EXAM" ||
+    backendStatus === "REPEAT_COURSE" ||
+    localBanned
+  );
+};
+
 function TeacherAttendancePage() {
   const { semesterId, setSemesterId, semesterOptions } = useTeacherSemester();
   const [classSectionId, setClassSectionId] = useState("");
@@ -228,8 +239,8 @@ function TeacherAttendancePage() {
   }, [rosterRows, search]);
 
   const nextAllowedSession = useMemo(
-    () => getNextAllowedSession(attendance, rosterRows, sessionNumbers),
-    [attendance, rosterRows, sessionNumbers],
+    () => getNextAllowedSession(lockedSessions, totalSessions),
+    [lockedSessions, totalSessions],
   );
   const currentCounts = useMemo(
     () => countSession(attendance, rosterRows, selectedSession),
@@ -237,7 +248,7 @@ function TeacherAttendancePage() {
   );
   const activeStudentCount = useMemo(
     () =>
-      rosterRows.filter((row) => countAbsences(attendance[row.enrollmentId] ?? {}) <= ABSENT_LIMIT)
+      rosterRows.filter((row) => !checkIsBanned(row, attendance[row.enrollmentId] ?? {}))
         .length,
     [attendance, rosterRows],
   );
@@ -568,11 +579,7 @@ function TeacherAttendancePage() {
                     const status = studentSessions[selectedSession] ?? "UNMARKED";
                     const absentCount = countAbsences(studentSessions);
                     const backendStatus = row.courseStatus;
-                    const localBanned = absentCount > ABSENT_LIMIT;
-                    const isBanned =
-                      backendStatus === "BANNED_FROM_EXAM" ||
-                      backendStatus === "REPEAT_COURSE" ||
-                      localBanned;
+                    const isBanned = checkIsBanned(row, studentSessions);
 
                     const courseStatusLabel: Record<string, string> = {
                       IN_PROGRESS: "Đang học",
@@ -629,7 +636,7 @@ function TeacherAttendancePage() {
                             onChange={(nextStatus) =>
                               setStudentStatus(row.enrollmentId, nextStatus)
                             }
-                            disabled={isSessionLocked}
+                            disabled={isSessionLocked || isBanned}
                           />
                         </TableCell>
                       </TableRow>
@@ -788,7 +795,10 @@ function countSession(attendance: AttendanceBook, rows: TeacherRosterRow[], sess
   };
 
   rows.forEach((row) => {
-    const status = attendance[row.enrollmentId]?.[session] ?? "UNMARKED";
+    const studentSessions = attendance[row.enrollmentId] ?? {};
+    if (checkIsBanned(row, studentSessions)) return;
+
+    const status = studentSessions[session] ?? "UNMARKED";
     counts[status] += 1;
   });
 
@@ -807,13 +817,13 @@ function getSessionState(attendance: AttendanceBook, rows: TeacherRosterRow[], s
 }
 
 function getNextAllowedSession(
-  attendance: AttendanceBook,
-  rows: TeacherRosterRow[],
-  sessions: number[],
+  lockedSessions: Set<number>,
+  totalSessions: number,
 ) {
-  if (rows.length === 0) return 1;
-  const firstIncomplete = sessions.find(
-    (session) => countSession(attendance, rows, session).UNMARKED > 0,
-  );
-  return firstIncomplete ?? sessions[sessions.length - 1] ?? 1;
+  for (let i = 1; i <= totalSessions; i++) {
+    if (!lockedSessions.has(i)) {
+      return i;
+    }
+  }
+  return totalSessions;
 }

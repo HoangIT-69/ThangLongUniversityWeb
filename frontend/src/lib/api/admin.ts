@@ -1,6 +1,7 @@
 import { apiRequest, downloadApiFile, jsonBody } from "./client";
 import type {
   AdminUserUpdateRequest,
+  AdminClassSectionOptionsResponse,
   AdminClassSectionRequest,
   AdminClassSectionStudentResponse,
   ClassSectionValidationResponse,
@@ -12,6 +13,7 @@ import type {
   AdminTeacherResponse,
   AdminUserResponse,
   AdminEnrollmentResponse,
+  AdminDashboardResponse,
   AdminOverrideEnrollmentRequest,
   AdminExamRegistrationResponse,
   AdminExamRegistrationSummary,
@@ -49,6 +51,8 @@ export interface CreateAdminRequest {
 }
 
 export const adminApi = {
+  getDashboard: () => apiRequest<AdminDashboardResponse>("/api/admin/dashboard"),
+
   listUsers: () => apiRequest<AdminUserResponse[]>("/api/admin/users"),
   createAdmin: (request: CreateAdminRequest) => {
     const params = new URLSearchParams({
@@ -69,6 +73,24 @@ export const adminApi = {
     apiRequest<string>(`/api/admin/users/admin/${id}`, { method: "DELETE" }),
 
   listStudents: () => apiRequest<AdminStudentResponse[]>("/api/admin/students"),
+  searchStudents: (params?: {
+    page?: number;
+    size?: number;
+    keyword?: string;
+    majorId?: number | string | null;
+    status?: string | null;
+  }) => {
+    const search = new URLSearchParams();
+    if (params?.page != null) search.set("page", String(params.page));
+    if (params?.size != null) search.set("size", String(params.size));
+    if (params?.keyword) search.set("keyword", params.keyword);
+    if (params?.majorId != null && params.majorId !== "") search.set("majorId", String(params.majorId));
+    if (params?.status) search.set("status", params.status);
+    const qs = search.toString();
+    return apiRequest<PageResponse<AdminStudentResponse>>(
+      `/api/admin/students/search${qs ? `?${qs}` : ""}`,
+    );
+  },
   createStudent: (request: AdminStudentRequest) =>
     apiRequest<AdminStudentResponse>("/api/admin/students", {
       method: "POST",
@@ -102,6 +124,26 @@ export const adminApi = {
     apiRequest<string>(`/api/admin/students/${id}`, { method: "DELETE" }),
 
   listTeachers: () => apiRequest<AdminTeacherResponse[]>("/api/admin/teachers"),
+  searchTeachers: (params?: {
+    page?: number;
+    size?: number;
+    keyword?: string;
+    departmentId?: number | string | null;
+    status?: string | null;
+  }) => {
+    const search = new URLSearchParams();
+    if (params?.page != null) search.set("page", String(params.page));
+    if (params?.size != null) search.set("size", String(params.size));
+    if (params?.keyword) search.set("keyword", params.keyword);
+    if (params?.departmentId != null && params.departmentId !== "") {
+      search.set("departmentId", String(params.departmentId));
+    }
+    if (params?.status) search.set("status", params.status);
+    const qs = search.toString();
+    return apiRequest<PageResponse<AdminTeacherResponse>>(
+      `/api/admin/teachers/search${qs ? `?${qs}` : ""}`,
+    );
+  },
   createTeacher: (request: AdminTeacherRequest) =>
     apiRequest<AdminTeacherResponse>("/api/admin/teachers", {
       method: "POST",
@@ -334,6 +376,28 @@ export const adminApi = {
     ),
 
   listClassSections: () => apiRequest<ClassSectionResponse[]>("/api/admin/class-sections"),
+  searchClassSections: (params?: {
+    page?: number;
+    size?: number;
+    semesterId?: number | string | null;
+    keyword?: string;
+    status?: string | null;
+  }) => {
+    const search = new URLSearchParams();
+    if (params?.page != null) search.set("page", String(params.page));
+    if (params?.size != null) search.set("size", String(params.size));
+    if (params?.semesterId != null && params.semesterId !== "") {
+      search.set("semesterId", String(params.semesterId));
+    }
+    if (params?.keyword) search.set("keyword", params.keyword);
+    if (params?.status) search.set("status", params.status);
+    const qs = search.toString();
+    return apiRequest<PageResponse<ClassSectionResponse>>(
+      `/api/admin/class-sections/search${qs ? `?${qs}` : ""}`,
+    );
+  },
+  getClassSectionOptions: () =>
+    apiRequest<AdminClassSectionOptionsResponse>("/api/admin/class-sections/options"),
   createClassSection: (request: AdminClassSectionRequest) =>
     apiRequest<ClassSectionResponse>("/api/admin/class-sections", {
       method: "POST",
@@ -354,6 +418,11 @@ export const adminApi = {
     }),
   deleteClassSection: (id: number | string) =>
     apiRequest<string>(`/api/admin/class-sections/${id}`, { method: "DELETE" }),
+  cancelClassSection: (id: number | string) =>
+    apiRequest<{ message: string; classSection: ClassSectionResponse }>(
+      `/api/admin/class-sections/${id}/cancel`,
+      { method: "POST" },
+    ),
   listClassSectionStudents: (id: number | string) =>
     apiRequest<AdminClassSectionStudentResponse[]>(`/api/admin/class-sections/${id}/students`),
 

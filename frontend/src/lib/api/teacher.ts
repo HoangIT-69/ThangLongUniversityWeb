@@ -6,12 +6,15 @@ import type {
   GradeResponse,
   NotificationResponse,
   StudentSemesterResponse,
+  TeacherDashboardResponse,
   TeacherGradeRequest,
   TeacherStudentGradeResponse,
   UserProfile,
 } from "./types";
 
 export const teacherApi = {
+  getDashboard: () => apiRequest<TeacherDashboardResponse>("/api/teacher/dashboard"),
+
   getProfile: () => apiRequest<UserProfile>("/api/users/me"),
 
   listSemesters: () => apiRequest<StudentSemesterResponse[]>("/api/teacher/semesters"),

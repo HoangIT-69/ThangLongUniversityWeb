@@ -12,7 +12,6 @@ import type {
   EnrollmentResponse,
   StudentSemesterResponse,
 } from "@/lib/api/types";
-import { pickCurrentSemester } from "@/lib/semester";
 
 export const Route = createFileRoute("/student/course-registration")({
   component: CourseRegistrationPage,
@@ -163,38 +162,31 @@ function groupByCourse(sections: ClassSectionResponse[]): CourseGroup[] {
 
 function CourseRegistrationPage() {
   const queryClient = useQueryClient();
-  const semestersQuery = useQuery({
-    queryKey: ["student", "semesters"],
-    queryFn: studentApi.listSemesters,
-  });
-  const semesters = semestersQuery.data ?? emptySemesters;
   const [semesterId, setSemesterId] = useState<number | null>(null);
   const [activeType, setActiveType] = useState<"REQUIRED" | "ELECTIVE">("REQUIRED");
 
+  const overviewQuery = useQuery({
+    queryKey: ["student", "course-registration-overview", semesterId],
+    queryFn: () => studentApi.getCourseRegistrationOverview(semesterId),
+  });
+
+  const semesters = overviewQuery.data?.semesters ?? emptySemesters;
+
   useEffect(() => {
-    if (!semesterId && semesters.length) {
-      setSemesterId(pickCurrentSemester(semesters)?.id ?? null);
+    if (semesterId == null && overviewQuery.data?.currentSemester?.id != null) {
+      setSemesterId(overviewQuery.data.currentSemester.id);
     }
-  }, [semesterId, semesters]);
+  }, [overviewQuery.data?.currentSemester?.id, semesterId]);
 
-  const currentSemester = semesters.find((s) => s.id === semesterId);
-  const readonly = Boolean(currentSemester?.locked || !currentSemester?.registrationOpen);
-
-  const classesQuery = useQuery({
-    queryKey: ["student", "available-classes", semesterId],
-    queryFn: () => studentApi.listAvailableClasses(semesterId as number),
-    enabled: semesterId != null,
-  });
-
-  const selectedQuery = useQuery({
-    queryKey: ["student", "selected-enrollments", semesterId],
-    queryFn: () => studentApi.listSelectedEnrollments(semesterId as number),
-    enabled: semesterId != null,
-  });
+  const currentSemester =
+    overviewQuery.data?.currentSemester ?? semesters.find((s) => s.id === semesterId);
+  const readonly =
+    overviewQuery.data?.readonly ??
+    Boolean(currentSemester?.locked || !currentSemester?.registrationOpen);
 
   const invalidateRegistration = () => {
-    queryClient.invalidateQueries({ queryKey: ["student", "available-classes", semesterId] });
-    queryClient.invalidateQueries({ queryKey: ["student", "selected-enrollments", semesterId] });
+    queryClient.invalidateQueries({ queryKey: ["student", "course-registration-overview"] });
+    queryClient.invalidateQueries({ queryKey: ["student", "dashboard"] });
     queryClient.invalidateQueries({ queryKey: ["student", "schedule", semesterId] });
     queryClient.invalidateQueries({ queryKey: ["student", "tuition", semesterId] });
   };
@@ -217,7 +209,7 @@ function CourseRegistrationPage() {
     onError: (error) => toast.error(error instanceof Error ? error.message : "Bỏ chọn thất bại"),
   });
 
-  const selected = selectedQuery.data ?? emptyEnrollments;
+  const selected = overviewQuery.data?.selectedEnrollments ?? emptyEnrollments;
   const selectedByClassId = useMemo(() => {
     const map = new Map<number, EnrollmentResponse>();
     selected.forEach((item) => {
@@ -233,7 +225,10 @@ function CourseRegistrationPage() {
   const selectedCredits = selected.reduce((sum, item) => sum + (item.credits ?? 0), 0);
   const selectedScheduleCells = useMemo(() => buildSelectedScheduleCells(selected), [selected]);
 
-  const groups = useMemo(() => groupByCourse(classesQuery.data ?? []), [classesQuery.data]);
+  const groups = useMemo(
+    () => groupByCourse(overviewQuery.data?.availableClasses ?? []),
+    [overviewQuery.data?.availableClasses],
+  );
   const visibleGroups = groups.filter((group) => group.courseType === activeType);
 
   return (
@@ -263,7 +258,7 @@ function CourseRegistrationPage() {
         </div>
       )}
 
-      {(classesQuery.isError || selectedQuery.isError) && (
+      {overviewQuery.isError && (
         <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           Không tải được dữ liệu đăng ký học phần.
         </div>
@@ -289,7 +284,7 @@ function CourseRegistrationPage() {
           </div>
 
           <div className="space-y-3">
-            {classesQuery.isLoading ? (
+            {overviewQuery.isLoading ? (
               <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
                 Đang tải dữ liệu...
               </div>
@@ -430,7 +425,7 @@ function CourseRegistrationPage() {
             </span>
           </div>
           <div className="mt-4 space-y-3">
-            {selectedQuery.isLoading ? (
+            {overviewQuery.isLoading ? (
               <div className="text-sm text-muted-foreground">Đang tải danh sách...</div>
             ) : selected.length === 0 ? (
               <div className="text-sm text-muted-foreground">
@@ -497,7 +492,7 @@ function CourseRegistrationPage() {
           </p>
         </div>
 
-        {selectedQuery.isLoading ? (
+        {overviewQuery.isLoading ? (
           <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
             Đang tải lịch học đã chọn...
           </div>

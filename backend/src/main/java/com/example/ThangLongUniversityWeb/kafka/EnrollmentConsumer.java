@@ -5,6 +5,7 @@ import com.example.ThangLongUniversityWeb.entity.ClassSection;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.entity.Student;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
+import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
 import com.example.ThangLongUniversityWeb.entity.Grade;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
@@ -25,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(value = "spring.kafka.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "spring.kafka.enabled", havingValue = "true")
 public class EnrollmentConsumer {
     private static final Logger log = LoggerFactory.getLogger(EnrollmentConsumer.class);
 
@@ -68,7 +69,8 @@ public class EnrollmentConsumer {
 
             // 3. CHECK LẠI SĨ SỐ (Rất quan trọng)
             // Vì lúc sinh viên bấm nút có thể còn chỗ, nhưng lúc Kafka xử lý tới thì đã bị người khác giành mất.
-            if (targetClass.getCurrentSlots() >= targetClass.getMaxSlots() || targetClass.isClosed()) {
+            if (targetClass.getCurrentSlots() >= targetClass.getMaxSlots()
+                    || targetClass.getStatus() != ClassSectionStatus.OPEN) {
                 log.warn("❌ Đăng ký thất bại: Lớp {} đã đầy sĩ số! (Sinh viên: {})", targetClass.getClassCode(), student.getStudentCode());
                 if (message.getRequestId() != null) {
                     enrollmentRequestStatusService.markFailed(message.getRequestId(), "Lớp đã đầy sĩ số hoặc bị khóa.");

@@ -2,7 +2,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { Pencil, Plus, Search, SlidersHorizontal, Trash2, Users } from "lucide-react";
+import { Ban, Pencil, Plus, Search, SlidersHorizontal, Trash2, Users } from "lucide-react";
 import { adminApi } from "@/lib/api/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,17 @@ export function ClassSectionsTab({ semesterId }: Props) {
       toast.error(error instanceof Error ? error.message : "Không xóa được lớp học phần"),
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => adminApi.cancelClassSection(id),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã hủy lớp học phần");
+      setDeleteTarget(null);
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Không hủy được lớp học phần"),
+  });
+
   if (classSectionsQuery.isLoading) return <Skeleton className="h-64 w-full" />;
   if (classSectionsQuery.isError) {
     return <div className="text-sm text-destructive">{String(classSectionsQuery.error)}</div>;
@@ -253,8 +264,10 @@ export function ClassSectionsTab({ semesterId }: Props) {
                   ))}
                 </FilterSelect>
                 <FilterSelect value={statusFilter} onValueChange={setStatusFilter} placeholder="Trạng thái">
+                  <SelectItem value="DRAFT">Nháp</SelectItem>
                   <SelectItem value="OPEN">Đang mở</SelectItem>
                   <SelectItem value="CLOSED">Đã đóng</SelectItem>
+                  <SelectItem value="CANCELLED">Đã hủy</SelectItem>
                 </FilterSelect>
                 <FilterSelect value={capacityFilter} onValueChange={setCapacityFilter} placeholder="Tình trạng sĩ số">
                   <SelectItem value="empty">Chưa có sinh viên</SelectItem>
@@ -337,14 +350,20 @@ export function ClassSectionsTab({ semesterId }: Props) {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => setDeleteTarget(row)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {row.status !== "CANCELLED" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => setDeleteTarget(row)}
+                        >
+                          {row.currentSlots > 0 ? (
+                            <Ban className="h-4 w-4" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -387,12 +406,18 @@ export function ClassSectionsTab({ semesterId }: Props) {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Xóa lớp học phần?"
-        description={`${deleteTarget?.classCode ?? ""} chỉ xóa được nếu chưa có tham chiếu bởi đăng ký, điểm, lịch học hoặc bảng liên quan.`}
-        confirmText="Xóa"
+        title={deleteTarget && deleteTarget.currentSlots > 0 ? "Hủy lớp học phần?" : "Xóa lớp học phần?"}
+        description={
+          deleteTarget && deleteTarget.currentSlots > 0
+            ? `${deleteTarget.classCode} đã có ${deleteTarget.currentSlots} sinh viên, hệ thống sẽ hủy lớp và chuyển enrollment active sang CANCELED.`
+            : `${deleteTarget?.classCode ?? ""} chỉ xóa được nếu chưa có tham chiếu bởi đăng ký, điểm, lịch học hoặc bảng liên quan.`
+        }
+        confirmText={deleteTarget && deleteTarget.currentSlots > 0 ? "Hủy lớp" : "Xóa"}
         destructive
         onConfirm={() => {
-          if (deleteTarget?.numericId) deleteMutation.mutate(deleteTarget.numericId);
+          if (!deleteTarget?.numericId) return;
+          if (deleteTarget.currentSlots > 0) cancelMutation.mutate(deleteTarget.numericId);
+          else deleteMutation.mutate(deleteTarget.numericId);
         }}
       />
     </div>

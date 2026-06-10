@@ -1,11 +1,15 @@
 package com.example.ThangLongUniversityWeb.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "Thông tin hồ sơ người dùng")
 public class UserProfileResponse {
     @Schema(description = "Tên đăng nhập", example = "student001")

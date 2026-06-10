@@ -22,6 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Select,
   SelectContent,
@@ -29,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { AdminClassSectionStatus } from "@/lib/api/types";
 import { ClassSectionSelectField } from "./ClassSectionSelectField";
 import type {
   ClassSectionFormValues,
@@ -37,8 +37,6 @@ import type {
   ClassSectionRow,
   ClassSectionScheduleFormValue,
 } from "./types";
-
-const statuses: AdminClassSectionStatus[] = ["DRAFT", "OPEN", "CLOSED", "CANCELLED"];
 
 const dayOptions = [
   { value: 2, label: "Thứ 2" },
@@ -184,12 +182,14 @@ export function ClassSectionFormDialog({
                   </FormItem>
                 )}
               />
-              <ClassSectionSelectField
-                control={form.control}
-                name="status"
-                label="Trạng thái"
-                options={statuses.map((status) => ({ value: status, label: status }))}
-              />
+              {editing && (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Trạng thái</div>
+                  <div className="flex h-10 items-center">
+                    <StatusBadge value={editing.status} />
+                  </div>
+                </div>
+              )}
               <ClassSectionSelectField
                 control={form.control}
                 name="courseId"

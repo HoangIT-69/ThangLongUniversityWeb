@@ -5,7 +5,6 @@ interface ClassSectionsByMajorProps {
   rows: ClassSectionRow[];
   onEdit: (row: ClassSectionRow) => void;
   onDelete: (row: ClassSectionRow) => void;
-  onStatusChange: (row: ClassSectionRow) => void;
   onViewStudents: (row: ClassSectionRow) => void;
 }
 
@@ -13,7 +12,6 @@ export function ClassSectionsByMajor({
   rows,
   onEdit,
   onDelete,
-  onStatusChange,
   onViewStudents,
 }: ClassSectionsByMajorProps) {
   const groups = groupByMajor(rows);
@@ -27,7 +25,6 @@ export function ClassSectionsByMajor({
           rows={group.rows}
           onEdit={onEdit}
           onDelete={onDelete}
-          onStatusChange={onStatusChange}
           onViewStudents={onViewStudents}
         />
       ))}

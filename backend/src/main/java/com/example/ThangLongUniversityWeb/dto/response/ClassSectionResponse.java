@@ -32,6 +32,9 @@ public class ClassSectionResponse {
     @Schema(description = "Tên môn học", example = "Java Core")
     private String courseName;
 
+    @Schema(description = "Ten nganh cua mon hoc", example = "Cong nghe thong tin")
+    private String majorName;
+
     @Schema(description = "Loai mon hoc", example = "REQUIRED")
     private CourseType courseType;
 
@@ -79,6 +82,9 @@ public class ClassSectionResponse {
     
     @Schema(description = "Số sinh viên hiện tại", example = "50")
     private Integer currentSlots;
+
+    @Schema(description = "Trang thai lop hoc phan", example = "OPEN", allowableValues = {"DRAFT", "OPEN", "CLOSED", "CANCELLED"})
+    private String status;
     
     @Schema(description = "Trạng thái đóng ghi danh", example = "false")
     private boolean isClosed;

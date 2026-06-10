@@ -44,6 +44,12 @@ const map: Record<string, Variant> = {
   "ĐỦ ĐIỀU KIỆN THI": "success",
   "HỌC LẠI": "warning",
   "REPEAT_COURSE": "warning",
+  "CẤM THI": "destructive",
+  "BANNED_FROM_EXAM": "destructive",
+  "THI LẠI": "warning",
+  "RETAKE_EXAM": "warning",
+  "QUA MÔN": "success",
+  "PASSED": "success",
 };
 
 export function StatusBadge({ value, variant }: { value: string; variant?: Variant }) {

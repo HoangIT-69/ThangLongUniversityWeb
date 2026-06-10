@@ -62,6 +62,7 @@ function StudentDashboardPage() {
   const dashboardQuery = useQuery({
     queryKey: ["student", "dashboard"],
     queryFn: () => studentApi.getDashboard(),
+    staleTime: 2 * 60 * 1000,
   });
 
   if (dashboardQuery.isPending) {

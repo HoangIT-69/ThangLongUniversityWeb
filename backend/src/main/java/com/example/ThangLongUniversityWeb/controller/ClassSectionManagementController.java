@@ -3,8 +3,10 @@ package com.example.ThangLongUniversityWeb.controller;
 import com.example.ThangLongUniversityWeb.dto.request.ClassSectionRequest;
 import com.example.ThangLongUniversityWeb.dto.request.ExamScheduleRequest;
 import com.example.ThangLongUniversityWeb.dto.request.ExamSessionRequest;
+import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.service.ClassSectionService;
+import com.example.ThangLongUniversityWeb.service.DashboardService;
 import com.example.ThangLongUniversityWeb.service.ExamSessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -12,12 +14,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.CacheControl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,21 +34,46 @@ public class ClassSectionManagementController {
     private final ClassSectionService classSectionService;
     private final ClassSectionRepository classSectionRepository;
     private final ExamSessionService examSessionService;
+    private final DashboardService dashboardService;
 
     @Operation(summary = "Lấy danh sách TOÀN BỘ lớp học phần (Đã làm phẳng dữ liệu)")
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getAllClassSections() {
         var responseList = classSectionRepository.findAll()
                 .stream()
                 .map(classSectionService::mapToResponse) // Dùng hàm mapToResponse để chuyển Entity -> DTO phẳng
                 .collect(Collectors.toList());
-        return ResponseEntity.ok()
-            .cacheControl(CacheControl.maxAge(60, TimeUnit.MINUTES).cachePublic()) // Thiết lập header
-            .body(responseList);
+        return ResponseEntity.ok(responseList);
+    }
+
+    @Operation(summary = "Tim kiem lop hoc phan co phan trang")
+    @GetMapping("/search")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> searchClassSections(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Long semesterId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) ClassSectionStatus status
+    ) {
+        var pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), 100),
+                Sort.by(Sort.Direction.DESC, "id"));
+        return ResponseEntity.ok(classSectionRepository.searchAdmin(semesterId, keyword, status, pageable)
+                .map(classSectionService::mapToResponse));
+    }
+
+    @Operation(summary = "Lay option cho form mo lop hoc phan")
+    @GetMapping("/options")
+    public ResponseEntity<?> getClassSectionOptions() {
+        return ResponseEntity.ok(dashboardService.getClassSectionOptions());
     }
 
     @Operation(summary = "Lấy danh sách Lớp học phần THEO HỌC KỲ")
     @GetMapping("/semester/{semesterId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getClassSectionsBySemester(@PathVariable Long semesterId) {
         var responseList = classSectionRepository.findBySemesterId(semesterId)
                 .stream()
@@ -79,6 +108,16 @@ public class ClassSectionManagementController {
     public ResponseEntity<?> deleteClassSection(@PathVariable Long id) {
         classSectionService.deleteClassSection(id);
         return ResponseEntity.ok("Xóa lớp học phần thành công!");
+    }
+
+    @Operation(summary = "Hủy lớp học phần")
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelClassSection(@PathVariable Long id) {
+        var section = classSectionService.cancelClassSection(id);
+        return ResponseEntity.ok(Map.of(
+                "message", "Đã hủy lớp học phần thành công",
+                "classSection", section
+        ));
     }
 
     @Operation(summary = "Lấy danh sách sinh viên đăng ký một lớp học phần")

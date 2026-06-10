@@ -8,7 +8,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,10 +26,29 @@ public class StudentManagementController {
 
     @Operation(summary = "Lấy danh sách tất cả sinh viên")
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getAllStudents() {
         return ResponseEntity.ok(studentRepository.findAll().stream()
                 .map(studentService::mapToResponse)
                 .toList());
+    }
+
+    @Operation(summary = "Tim kiem sinh vien co phan trang")
+    @GetMapping("/search")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> searchStudents(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long majorId,
+            @RequestParam(required = false) String status
+    ) {
+        var pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), 100),
+                Sort.by(Sort.Direction.ASC, "studentCode"));
+        return ResponseEntity.ok(studentRepository.searchAdmin(keyword, majorId, status, pageable)
+                .map(studentService::mapToResponse));
     }
 
     @Operation(summary = "Thêm mới một sinh viên")

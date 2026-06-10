@@ -1,6 +1,6 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,18 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/lib/api/admin";
-import type { AdminClassSectionStatus } from "@/lib/api/types";
 import { buildOptionSets, mapApiClassSection, toClassSectionRequest } from "./classSectionMappers";
 import { ClassSectionFormDialog } from "./ClassSectionFormDialog";
-import { ClassSectionStudentsDialog } from "./ClassSectionStudentsDialog";
 import { ClassSectionsByMajor } from "./ClassSectionsByMajor";
 import type { ClassSectionFormValues, ClassSectionRow } from "./types";
 import { validateClassSectionPlan } from "./validation";
 
 const classSectionsKey = ["admin", "class-sections"] as const;
+const ClassSectionStudentsDialog = lazy(() =>
+  import("./ClassSectionStudentsDialog").then((module) => ({
+    default: module.ClassSectionStudentsDialog,
+  })),
+);
 
 export function AdminClassSectionsContent() {
   const queryClient = useQueryClient();
@@ -24,89 +27,49 @@ export function AdminClassSectionsContent() {
   const [editing, setEditing] = useState<ClassSectionRow | null>(null);
   const [toDelete, setToDelete] = useState<ClassSectionRow | null>(null);
   const [studentsSection, setStudentsSection] = useState<ClassSectionRow | null>(null);
-  const [statusOverrides, setStatusOverrides] = useState<Record<string, AdminClassSectionStatus>>(
-    {},
-  );
 
   const classSectionsQuery = useQuery({
     queryKey: classSectionsKey,
     queryFn: adminApi.listClassSections,
     staleTime: 60 * 1000,
   });
-  const coursesQuery = useQuery({
-    queryKey: ["admin", "courses"],
-    queryFn: adminApi.listCourses,
+  const optionsQuery = useQuery({
+    queryKey: ["admin", "class-section-options"],
+    queryFn: adminApi.getClassSectionOptions,
+    enabled: open || editing != null,
     retry: false,
     staleTime: 5 * 60 * 1000,
-  });
-  const semestersQuery = useQuery({
-    queryKey: ["admin", "semesters"],
-    queryFn: adminApi.listSemesters,
-    retry: false,
-    staleTime: 5 * 60 * 1000,
-  });
-  const teachersQuery = useQuery({
-    queryKey: ["admin", "teachers"],
-    queryFn: adminApi.listTeachers,
-    staleTime: 5 * 60 * 1000,
-  });
-  const roomsQuery = useQuery({
-    queryKey: ["admin", "rooms"],
-    queryFn: adminApi.listRooms,
-    staleTime: 60 * 60 * 1000,
-  });
-  const periodsQuery = useQuery({
-    queryKey: ["admin", "periods"],
-    queryFn: adminApi.listPeriods,
-    staleTime: 60 * 60 * 1000,
   });
 
   const rows = useMemo(() => {
-    return (classSectionsQuery.data ?? []).map((section) =>
-      mapApiClassSection(section, statusOverrides[String(section.id)]),
-    );
-  }, [classSectionsQuery.data, statusOverrides]);
+    return (classSectionsQuery.data ?? []).map((section) => mapApiClassSection(section));
+  }, [classSectionsQuery.data]);
 
-  const rowsWithMajors = useMemo(() => {
-    const courseMajorMap = new Map(
-      (coursesQuery.data ?? []).map((course) => [course.id, course.majorName ?? "-"]),
-    );
-    return rows.map((row) => ({
-      ...row,
-      majorName: courseMajorMap.get(row.courseId) ?? row.majorName,
-    }));
-  }, [coursesQuery.data, rows]);
+  const rowsWithMajors = rows;
+  const optionData = optionsQuery.data;
 
   const options = useMemo(
     () =>
       buildOptionSets(
         {
-          courses: coursesQuery.data,
-          semesters: semestersQuery.data,
-          teachers: teachersQuery.data,
-          rooms: roomsQuery.data,
-          periods: periodsQuery.data,
+          courses: optionData?.courses,
+          semesters: optionData?.semesters,
+          teachers: optionData?.teachers,
+          rooms: optionData?.rooms,
+          periods: optionData?.periods,
           classSections: classSectionsQuery.data,
         },
         rowsWithMajors,
       ),
-    [
-      classSectionsQuery.data,
-      coursesQuery.data,
-      periodsQuery.data,
-      roomsQuery.data,
-      rowsWithMajors,
-      semestersQuery.data,
-      teachersQuery.data,
-    ],
+    [classSectionsQuery.data, optionData, rowsWithMajors],
   );
 
   const createMutation = useMutation({
     mutationFn: (values: ClassSectionFormValues) =>
       adminApi.createClassSection(toClassSectionRequest(values)),
-    onSuccess: (section, values) => {
-      setStatusOverrides((current) => ({ ...current, [String(section.id)]: values.status }));
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: classSectionsKey });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
       toast.success("Đã mở lớp học phần");
       closeForm();
     },
@@ -116,12 +79,9 @@ export function AdminClassSectionsContent() {
   const updateMutation = useMutation({
     mutationFn: ({ id, values }: { id: number; values: ClassSectionFormValues }) =>
       adminApi.updateClassSection(id, toClassSectionRequest(values)),
-    onSuccess: (section, variables) => {
-      setStatusOverrides((current) => ({
-        ...current,
-        [String(section.id)]: variables.values.status,
-      }));
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: classSectionsKey });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
       toast.success("Đã cập nhật lớp học phần");
       closeForm();
     },
@@ -132,7 +92,19 @@ export function AdminClassSectionsContent() {
     mutationFn: (id: number) => adminApi.deleteClassSection(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: classSectionsKey });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
       toast.success("Đã xóa lớp học phần");
+      setToDelete(null);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => adminApi.cancelClassSection(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: classSectionsKey });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+      toast.success("Đã hủy lớp học phần");
       setToDelete(null);
     },
     onError: (error) => toast.error(error.message),
@@ -157,21 +129,11 @@ export function AdminClassSectionsContent() {
   const confirmDelete = () => {
     if (!toDelete) return;
     if (toDelete.currentSlots > 0) {
-      setStatusOverrides((current) => ({ ...current, [toDelete.id]: "CANCELLED" }));
-      queryClient.invalidateQueries({ queryKey: classSectionsKey });
-      toast.success("Lớp đã có sinh viên, đã chuyển sang CANCELLED");
-      setToDelete(null);
+      if (toDelete.numericId) cancelMutation.mutate(toDelete.numericId);
       return;
     }
     if (toDelete.numericId) deleteMutation.mutate(toDelete.numericId);
     else setToDelete(null);
-  };
-
-  const toggleStatus = (row: ClassSectionRow) => {
-    const nextStatus = getNextStatus(row.status);
-    setStatusOverrides((current) => ({ ...current, [row.id]: nextStatus }));
-    queryClient.invalidateQueries({ queryKey: classSectionsKey });
-    toast.success(`Đã chuyển ${row.classCode} sang ${nextStatus}`);
   };
 
   if (classSectionsQuery.isPending) return <ClassSectionsSkeleton />;
@@ -202,7 +164,7 @@ export function AdminClassSectionsContent() {
           <AlertDescription>{classSectionsQuery.error.message}</AlertDescription>
         </Alert>
       )}
-      {(coursesQuery.isError || semestersQuery.isError) && (
+      {optionsQuery.isError && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Không tải được một số danh mục</AlertTitle>
@@ -219,7 +181,6 @@ export function AdminClassSectionsContent() {
           setOpen(true);
         }}
         onDelete={setToDelete}
-        onStatusChange={toggleStatus}
         onViewStudents={setStudentsSection}
       />
 
@@ -227,7 +188,7 @@ export function AdminClassSectionsContent() {
         open={open}
         editing={editing}
         options={options}
-        isPending={createMutation.isPending || updateMutation.isPending}
+        isPending={createMutation.isPending || updateMutation.isPending || optionsQuery.isPending}
         onOpenChange={(value) => {
           if (!value) closeForm();
           else setOpen(true);
@@ -235,13 +196,17 @@ export function AdminClassSectionsContent() {
         onSubmit={submit}
       />
 
-      <ClassSectionStudentsDialog
-        open={!!studentsSection}
-        section={studentsSection}
-        onOpenChange={(value) => {
-          if (!value) setStudentsSection(null);
-        }}
-      />
+      {studentsSection && (
+        <Suspense fallback={null}>
+          <ClassSectionStudentsDialog
+            open={!!studentsSection}
+            section={studentsSection}
+            onOpenChange={(value) => {
+              if (!value) setStudentsSection(null);
+            }}
+          />
+        </Suspense>
+      )}
 
       <ConfirmDialog
         open={!!toDelete}
@@ -249,7 +214,7 @@ export function AdminClassSectionsContent() {
         title={toDelete && toDelete.currentSlots > 0 ? "Hủy lớp học phần?" : "Xóa lớp học phần?"}
         description={
           toDelete && toDelete.currentSlots > 0
-            ? `${toDelete.classCode} đã có ${toDelete.currentSlots} sinh viên, FE sẽ chuyển trạng thái sang CANCELLED.`
+            ? `${toDelete.classCode} đã có ${toDelete.currentSlots} sinh viên, hệ thống sẽ hủy lớp và chuyển enrollment active sang CANCELED.`
             : `${toDelete?.classCode ?? ""} sẽ bị xóa khỏi hệ thống.`
         }
         destructive
@@ -272,11 +237,4 @@ function ClassSectionsSkeleton() {
       <Skeleton className="h-96 w-full" />
     </div>
   );
-}
-
-function getNextStatus(status: AdminClassSectionStatus): AdminClassSectionStatus {
-  if (status === "DRAFT") return "OPEN";
-  if (status === "OPEN") return "CLOSED";
-  if (status === "CLOSED") return "OPEN";
-  return "OPEN";
 }

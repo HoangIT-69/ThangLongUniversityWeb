@@ -28,6 +28,7 @@ import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
 import com.example.ThangLongUniversityWeb.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -54,6 +55,7 @@ public class TeacherService {
 
     // ── Admin: danh sách + mapping ────────────────────────────────────────
 
+    @Transactional(readOnly = true)
     public List<TeacherResponse> getAllTeachers() {
         return teacherRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -88,6 +90,7 @@ public class TeacherService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions", "teacherDashboard"}, allEntries = true)
     public TeacherResponse updateTeacherPartial(Long id, TeacherUpdateRequest request) {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy giảng viên!"));
@@ -121,6 +124,7 @@ public class TeacherService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions", "teacherDashboard"}, allEntries = true)
     public Teacher createTeacher(TeacherRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Tên đăng nhập đã tồn tại!");
@@ -151,6 +155,7 @@ public class TeacherService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions", "teacherDashboard"}, allEntries = true)
     public Teacher updateTeacher(Long id, TeacherRequest request) {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy giảng viên!"));
@@ -173,6 +178,7 @@ public class TeacherService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions", "teacherDashboard"}, allEntries = true)
     public void deleteTeacher(Long id) {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy giảng viên!"));
@@ -195,6 +201,7 @@ public class TeacherService {
     }
 
     // 1. Xem danh sách lớp được phân công dạy trong kỳ
+    @Transactional(readOnly = true)
     public List<ClassSectionResponse> getMyClasses(Long semesterId) {
         Teacher teacher = getCurrentTeacher();
         return classSectionRepository.findByTeacherIdAndSemesterId(teacher.getId(), semesterId)
@@ -203,6 +210,7 @@ public class TeacherService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<StudentSemesterResponse> getSemesters() {
         return semesterRepository.findAll().stream()
                 .sorted(Comparator.comparing(semester -> semester.getStartDate() == null ? LocalDate.MIN : semester.getStartDate()))
@@ -220,6 +228,7 @@ public class TeacherService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<StudentGradeResponse> getStudentsInClass(Long classSectionId) {
         Teacher teacher = getCurrentTeacher();
         ClassSection classSection = classSectionRepository.findById(classSectionId)

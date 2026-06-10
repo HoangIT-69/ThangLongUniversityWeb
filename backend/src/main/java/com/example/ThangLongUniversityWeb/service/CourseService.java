@@ -11,6 +11,7 @@ import com.example.ThangLongUniversityWeb.repository.MajorRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class CourseService {
     private final StudentRepository studentRepository;
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "courses")
     public List<CourseResponse> getAllCourses() {
         return courseRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -47,7 +49,7 @@ public class CourseService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "courses", allEntries = true)
+    @CacheEvict(cacheNames = {"courses", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public CourseResponse createCourse(CourseRequest request) {
         String code = normalizeCode(request.getCode());
         if (courseRepository.findByCode(code).isPresent()) {
@@ -62,7 +64,7 @@ public class CourseService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "courses", allEntries = true)
+    @CacheEvict(cacheNames = {"courses", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public CourseResponse updateCourse(Long id, CourseRequest request) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay mon hoc!"));
@@ -81,7 +83,7 @@ public class CourseService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "courses", allEntries = true)
+    @CacheEvict(cacheNames = {"courses", "classSectionOptions", "adminDashboard"}, allEntries = true)
     public void deleteCourse(Long id) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay mon hoc!"));

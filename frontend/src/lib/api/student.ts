@@ -14,8 +14,10 @@ import type {
   RetakeRegistrationResponse,
   RetakeRequestResponse,
   StudentExamResponse,
+  StudentCourseRegistrationOverviewResponse,
   StudentDashboardResponse,
   StudentGradesSummaryResponse,
+  StudentRetakeOverviewResponse,
   StudentSemesterResponse,
   TuitionResponse,
   UserProfile,
@@ -39,6 +41,11 @@ export const studentApi = {
 
   listAvailableClasses: (semesterId: number | string) =>
     apiRequest<ClassSectionResponse[]>(`/api/student/classes/semester/${semesterId}`),
+
+  getCourseRegistrationOverview: (semesterId?: number | string | null) =>
+    apiRequest<StudentCourseRegistrationOverviewResponse>(
+      `/api/student/course-registration/overview${optionalSemesterQuery(semesterId)}`,
+    ),
 
   enrollClass: (classSectionId: number | string) =>
     apiRequest<EnrollmentRequestResponse>(`/api/student/enroll/${classSectionId}`, {
@@ -101,6 +108,11 @@ export const studentApi = {
       `/api/student/retakes/eligible-courses${optionalSemesterQuery(semesterId)}`,
     );
   },
+
+  getRetakeOverview: (semesterId?: number | string | null) =>
+    apiRequest<StudentRetakeOverviewResponse>(
+      `/api/student/retakes/overview${optionalSemesterQuery(semesterId)}`,
+    ),
 
   registerRetakes: (request: RetakeRegistrationRequest) =>
     apiRequest<RetakeRegistrationResponse>("/api/student/retakes/register", {

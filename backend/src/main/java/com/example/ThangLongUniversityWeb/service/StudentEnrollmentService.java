@@ -15,11 +15,13 @@ import com.example.ThangLongUniversityWeb.entity.Grade;
 import com.example.ThangLongUniversityWeb.entity.Student;
 import com.example.ThangLongUniversityWeb.entity.RegistrationRound;
 import com.example.ThangLongUniversityWeb.enums.CourseType;
+import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +47,7 @@ public class StudentEnrollmentService {
                 .orElseThrow(() -> new RuntimeException("Khong tim thay thong tin sinh vien cua tai khoan nay!"));
     }
 
+    @Transactional(readOnly = true)
     public List<ClassSectionResponse> getAvailableClasses(Long semesterId) {
         Student student = getCurrentStudent();
         var openRound = registrationRoundService.getOpenRound(semesterId);
@@ -54,6 +57,7 @@ public class StudentEnrollmentService {
         List<ClassSection> allSectionsInSemester = classSectionRepository.findByRegistrationRoundId(openRound.getId());
 
         return allSectionsInSemester.stream()
+                .filter(section -> section.getStatus() == ClassSectionStatus.OPEN)
                 .filter(section -> isVisibleForStudentMajor(section, student))
                 .filter(section -> {
                     List<Enrollment> sameCourseEnrollments = enrollmentRepository.findByStudentIdAndCourseIdOrderByIdDesc(
@@ -66,6 +70,7 @@ public class StudentEnrollmentService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "teacherDashboard"}, allEntries = true)
     public EnrollmentRequestResponse registerClass(Long classSectionId) {
         Student student = getCurrentStudent();
         ClassSection targetClass = classSectionRepository.findById(classSectionId)
@@ -119,8 +124,8 @@ public class StudentEnrollmentService {
             throw new RuntimeException("Thời gian hiện tại không nằm trong phân luồng đăng ký dành cho ngành và khóa của bạn.");
         }
 
-        if (targetClass.isClosed()) {
-            throw new RuntimeException("Lớp học phần đã bị khóa!");
+        if (targetClass.getStatus() != ClassSectionStatus.OPEN) {
+            throw new RuntimeException("Lớp học phần không ở trạng thái mở đăng ký!");
         }
 
         Enrollment existingEnrollment = enrollmentRepository.findByStudentIdAndClassSectionId(student.getId(), classSectionId)
@@ -181,6 +186,7 @@ public class StudentEnrollmentService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"adminDashboard", "teacherDashboard"}, allEntries = true)
     public String cancelClass(Long classSectionId) {
         Student student = getCurrentStudent();
         Enrollment enrollment = enrollmentRepository.findByStudentIdAndClassSectionId(student.getId(), classSectionId)
@@ -199,6 +205,7 @@ public class StudentEnrollmentService {
         return "Da bo chon lop " + classCode + " thanh cong!";
     }
 
+    @Transactional(readOnly = true)
     public List<EnrollmentResponse> getMySchedule(Long semesterId) {
         Student student = getCurrentStudent();
         return enrollmentRepository.findByStudentIdAndClassSection_SemesterIdAndStatus(
@@ -208,6 +215,7 @@ public class StudentEnrollmentService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<EnrollmentResponse> getSelectedEnrollments(Long semesterId) {
         Student student = getCurrentStudent();
         return enrollmentRepository.findByStudentIdAndClassSection_SemesterIdAndStatus(
@@ -217,6 +225,7 @@ public class StudentEnrollmentService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<StudentExamResponse> getMyExams(Long semesterId) {
         Student student = getCurrentStudent();
         return enrollmentRepository.findByStudentIdAndClassSection_SemesterIdAndStatus(
@@ -232,6 +241,7 @@ public class StudentEnrollmentService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public StudentGradesSummaryResponse getMyGrades(Long semesterId) {
         Student student = getCurrentStudent();
         List<Enrollment> all = enrollmentRepository.findByStudentId(student.getId());
