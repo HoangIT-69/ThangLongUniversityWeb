@@ -71,6 +71,11 @@ export const adminApi = {
     }),
   deleteAdminUser: (id: number | string) =>
     apiRequest<string>(`/api/admin/users/admin/${id}`, { method: "DELETE" }),
+  resetUserPassword: (id: number | string, newPassword: string) =>
+    apiRequest<{ message: string }>(`/api/admin/users/${id}/reset-password`, {
+      method: "PUT",
+      body: jsonBody({ newPassword }),
+    }),
 
   listStudents: () => apiRequest<AdminStudentResponse[]>("/api/admin/students"),
   searchStudents: (params?: {

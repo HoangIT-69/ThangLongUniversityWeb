@@ -43,14 +43,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String key = key(request);
         Bucket bucket = buckets.computeIfAbsent(key, k -> newBucket(request));
 
-        if (bucket.tryConsume(1)) {
+        io.github.bucket4j.ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+        if (probe.isConsumed()) {
             filterChain.doFilter(request, response);
             return;
         }
 
+        long nanosToWait = probe.getNanosToWaitForRefill();
+        long secondsToWait = (nanosToWait / 1_000_000_000) + 1; // ceil
+
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        response.setHeader("Retry-After", String.valueOf(secondsToWait));
         response.setContentType("application/json");
-        response.getWriter().write("{\"message\":\"Too many requests\"}");
+        response.getWriter().write("{\"message\":\"Too many requests\",\"retryAfter\":" + secondsToWait + "}");
     }
 
     private Bucket newBucket(HttpServletRequest request) {
@@ -60,12 +65,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         Duration period = Duration.ofMinutes(1);
 
         if (path.equals("/api/auth/login")) {
-            capacity = 5; // 5 login attempts per minute per IP
+            capacity = 10; // 10 login attempts per minute per IP
         } else if (path.startsWith("/api/student/enroll")) {
             capacity = 20; // 20 enroll actions per minute per IP
         }
 
-        Refill refill = Refill.intervally(capacity, period);
+        Refill refill = Refill.greedy(capacity, period);
         Bandwidth limit = Bandwidth.classic(capacity, refill);
         return Bucket.builder().addLimit(limit).build();
     }

@@ -1,6 +1,7 @@
 package com.example.ThangLongUniversityWeb.service;
 
 import com.example.ThangLongUniversityWeb.dto.request.LoginRequest;
+import com.example.ThangLongUniversityWeb.dto.request.ChangePasswordRequest;
 import com.example.ThangLongUniversityWeb.dto.response.AuthResponse;
 import com.example.ThangLongUniversityWeb.entity.User;
 import com.example.ThangLongUniversityWeb.exception.UnauthorizedException;
@@ -13,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,7 +27,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final JwtUtils jwtUtils;
-    private final RedisTokenService redisTokenService; // <-- Nó sẽ hết đỏ ở đâyt
+    private final RedisTokenService redisTokenService;
+    private final PasswordEncoder passwordEncoder;
 
     // ... (Giữ nguyên các hàm bên dưới của bạn) ...
     public AuthResponse login(LoginRequest request) {
@@ -116,4 +119,27 @@ public class AuthService {
         }
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public void changePassword(String username, ChangePasswordRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Mật khẩu hiện tại không chính xác");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Mật khẩu mới không được trùng với mật khẩu cũ");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Xác nhận mật khẩu mới không khớp");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Revoke all refresh tokens to force user to login again
+        redisTokenService.revokeAllForUser(username);
+    }
 }

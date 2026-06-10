@@ -52,9 +52,6 @@ public class RegistrationRoundService {
                     created.setLocked(false);
                     return registrationRoundRepository.save(created);
                 });
-        if ("COURSE".equals(type)) {
-            registrationRoundRepository.attachMissingClassSections(semesterId, round);
-        }
         return round;
     }
 
@@ -161,6 +158,14 @@ public class RegistrationRoundService {
         round.setRegistrationOpen(false);
         registrationRoundRepository.save(round);
         
+        if ("COURSE".equals(round.getRoundType())) {
+            classSectionRepository.updateStatusForRoundSections(
+                round.getId(),
+                ClassSectionStatus.CLOSED,
+                List.of(ClassSectionStatus.OPEN)
+            );
+        }
+        
         // Disable general semester open only if no other round is open
         boolean anyOpen = registrationRoundRepository.existsBySemesterIdAndRoundTypeAndRegistrationOpenTrue(semesterId, round.getRoundType());
         if (!anyOpen) {
@@ -238,12 +243,11 @@ public class RegistrationRoundService {
         registrationRoundRepository.save(round);
 
         if ("COURSE".equals(round.getRoundType())) {
-            classSectionRepository.findByRegistrationRoundId(roundId).stream()
-                    .filter(section -> section.getStatus() == ClassSectionStatus.OPEN)
-                    .forEach(section -> {
-                        section.setStatus(ClassSectionStatus.CLOSED);
-                        classSectionRepository.save(section);
-                    });
+            classSectionRepository.updateStatusForRoundSections(
+                roundId,
+                ClassSectionStatus.CLOSED,
+                List.of(ClassSectionStatus.OPEN, ClassSectionStatus.DRAFT)
+            );
         }
 
         // Do not globally lock the entire semester here (Khóa tổng is done separately).
@@ -318,12 +322,16 @@ public class RegistrationRoundService {
         if ("COURSE".equals(round.getRoundType())) {
             semester.setRegistrationOpen(true);
             semester.setLocked(false);
-            classSectionRepository.findByRegistrationRoundId(saved.getId()).stream()
-                    .filter(section -> section.getStatus() == ClassSectionStatus.DRAFT)
-                    .forEach(section -> {
-                        section.setStatus(ClassSectionStatus.OPEN);
-                        classSectionRepository.save(section);
-                    });
+            
+            // 1. Assign all DRAFT sections in the semester without a round to this round
+            classSectionRepository.assignUnassignedDraftSectionsToRound(semester.getId(), saved);
+            
+            // 2. Transition all DRAFT and CLOSED sections of this round to OPEN
+            classSectionRepository.updateStatusForRoundSections(
+                saved.getId(), 
+                ClassSectionStatus.OPEN, 
+                List.of(ClassSectionStatus.DRAFT, ClassSectionStatus.CLOSED)
+            );
         } else {
             semester.setRetakeOpen(true);
             semester.setRetakeLocked(false);

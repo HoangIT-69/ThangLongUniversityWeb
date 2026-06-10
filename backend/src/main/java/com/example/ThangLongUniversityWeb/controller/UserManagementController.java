@@ -1,6 +1,7 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.AdminUserUpdateRequest;
+import com.example.ThangLongUniversityWeb.dto.request.AdminResetPasswordRequest;
 import com.example.ThangLongUniversityWeb.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -53,5 +54,14 @@ public class UserManagementController {
     public ResponseEntity<?> deleteAdminUser(@PathVariable Long id) {
         userService.deleteAdminUser(id);
         return ResponseEntity.ok("Đã xóa Admin thành công!");
+    }
+
+    @Operation(summary = "Admin reset mật khẩu cho người dùng")
+    @PutMapping("/{id}/reset-password")
+    public ResponseEntity<?> resetPassword(
+            @PathVariable Long id,
+            @RequestBody @Valid AdminResetPasswordRequest request) {
+        userService.resetUserPassword(id, request.getNewPassword());
+        return ResponseEntity.ok(java.util.Map.of("message", "Đã reset mật khẩu thành công!"));
     }
 }

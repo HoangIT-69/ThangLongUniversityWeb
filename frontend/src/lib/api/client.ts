@@ -40,6 +40,18 @@ function notifyAuthChanged() {
   window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
 }
 
+export class ApiError extends Error {
+  status: number;
+  retryAfter?: number;
+
+  constructor(message: string, status: number, retryAfter?: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.retryAfter = retryAfter;
+  }
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const text = await response.text();
   const body = text ? tryParseJson(text) : null;
@@ -49,7 +61,19 @@ async function parseResponse<T>(response: Response): Promise<T> {
       body && typeof body === "object" && "message" in body
         ? String((body as { message: unknown }).message)
         : response.statusText || "Request failed";
-    throw new Error(message);
+
+    let retryAfter: number | undefined = undefined;
+    const retryAfterHeader = response.headers.get("Retry-After");
+    if (retryAfterHeader) {
+      const parsed = parseInt(retryAfterHeader, 10);
+      if (!isNaN(parsed)) {
+        retryAfter = parsed;
+      }
+    } else if (body && typeof body === "object" && "retryAfter" in body) {
+      retryAfter = Number((body as { retryAfter: unknown }).retryAfter);
+    }
+
+    throw new ApiError(message, response.status, retryAfter);
   }
 
   return body as T;

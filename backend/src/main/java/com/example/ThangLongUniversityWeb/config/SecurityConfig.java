@@ -103,7 +103,9 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**",
                                 // Auth endpoints
-                                "/api/auth/**",
+                                "/api/auth/login",
+                                "/api/auth/refresh",
+                                "/api/auth/logout",
                                 // Public student endpoints
                                 "/api/student/tuition/vnpay-return",
                                 "/api/payments/vnpay/return",
