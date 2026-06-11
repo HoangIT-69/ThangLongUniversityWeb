@@ -44,19 +44,19 @@ function TeacherDashboardPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title={`Xin chao, ${displayName.split(" ").slice(-1)[0]}!`}
+        title={`Xin chào, ${displayName.split(" ").slice(-1)[0]}!`}
         description={
           dashboardQuery.isError
-            ? "Chua tai duoc du lieu bang dieu khien tu backend"
+            ? "Chưa tải được dữ liệu bảng điều khiển từ backend"
             : profile?.code
-              ? `Ma GV ${profile.code}`
+              ? `Mã GV ${profile.code}`
               : currentSemester?.name
         }
         actions={
           <Button asChild variant="outline" className="gap-2">
             <Link to="/teacher/grades">
               <NotebookPen className="h-4 w-4" />
-              Nhap diem
+              Nhập điểm
             </Link>
           </Button>
         }
@@ -64,25 +64,25 @@ function TeacherDashboardPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
-          label="Lop dang day"
+          label="Lớp đang dạy"
           value={dashboard?.classCount ?? classes.length}
           icon={Layers}
           tone="primary"
         />
         <StatCard
-          label="Tong sinh vien"
+          label="Tổng sinh viên"
           value={dashboard?.totalStudents ?? 0}
           icon={GraduationCap}
           tone="info"
         />
         <StatCard
-          label="Lop chua khoa diem"
+          label="Lớp chưa khóa điểm"
           value={dashboard?.ungradedClassCount ?? 0}
           icon={NotebookPen}
           tone={(dashboard?.ungradedClassCount ?? 0) > 0 ? "warning" : "success"}
         />
         <StatCard
-          label="Lich hom nay"
+          label="Lịch hôm nay"
           value={dashboard?.todayScheduleCount ?? todaySchedule.length}
           icon={CalendarClock}
           tone="success"
@@ -93,9 +93,9 @@ function TeacherDashboardPage() {
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Lich day hom nay - {dayLabels[today]}</h2>
+              <h2 className="text-sm font-semibold">Lịch dạy hôm nay - {dayLabels[today]}</h2>
               <p className="text-xs text-muted-foreground">
-                Hoc ky: {currentSemester?.name ?? "-"}
+                Học kỳ: {currentSemester?.name ?? "-"}
               </p>
             </div>
             <CalendarClock className="h-5 w-5 text-muted-foreground" />
@@ -103,7 +103,7 @@ function TeacherDashboardPage() {
 
           {todaySchedule.length === 0 ? (
             <p className="mt-5 rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Hom nay ban khong co lich day.
+              Hôm nay bạn không có lịch dạy.
             </p>
           ) : (
             <ul className="mt-3 divide-y">
@@ -115,11 +115,11 @@ function TeacherDashboardPage() {
                   <div>
                     <div className="font-medium">{x.cs.courseName}</div>
                     <div className="font-mono text-xs text-muted-foreground">
-                      {x.cs.classCode} - Phong {x.s.roomName ?? x.cs.room ?? "-"}
+                      {x.cs.classCode} - Phòng {x.s.roomName ?? x.cs.room ?? "-"}
                     </div>
                   </div>
                   <span className="tabular-nums text-muted-foreground">
-                    Tiet {x.s.startPeriod}-{x.s.endPeriod}
+                    Tiết {x.s.startPeriod}-{x.s.endPeriod}
                   </span>
                 </li>
               ))}
@@ -129,12 +129,12 @@ function TeacherDashboardPage() {
 
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold">Viec can lam</h2>
+            <h2 className="text-sm font-semibold">Việc cần làm</h2>
             <Users className="h-5 w-5 text-muted-foreground" />
           </div>
 
           {classes.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">Chua co lop nao trong hoc ky nay.</p>
+            <p className="mt-4 text-sm text-muted-foreground">Chưa có lớp nào trong học kỳ này.</p>
           ) : (
             <div className="mt-4 space-y-3">
               {classes.slice(0, 5).map((c) => (
@@ -152,7 +152,7 @@ function TeacherDashboardPage() {
                         to="/teacher/classes/$classSectionId/students"
                         params={{ classSectionId: String(c.id) }}
                       >
-                        Xem lop
+                        Xem lớp
                       </Link>
                     </Button>
                   </div>

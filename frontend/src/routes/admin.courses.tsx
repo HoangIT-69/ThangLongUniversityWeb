@@ -102,10 +102,10 @@ function CoursesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "courses"] });
       setCreateOpen(false);
-      toast.success("Da tao mon hoc");
+      toast.success("Đã tạo môn học");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Tao mon hoc that bai"),
+      toast.error(error instanceof Error ? error.message : "Tạo môn học thất bại"),
   });
 
   const updateMutation = useMutation({
@@ -114,43 +114,43 @@ function CoursesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "courses"] });
       setEditItem(null);
-      toast.success("Da cap nhat mon hoc");
+      toast.success("Đã cập nhật môn học");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Cap nhat mon hoc that bai"),
+      toast.error(error instanceof Error ? error.message : "Cập nhật môn học thất bại"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => adminApi.deleteCourse(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "courses"] });
-      toast.success("Da xoa mon hoc");
+      toast.success("Đã xóa môn học");
       setToDelete(null);
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Xoa mon hoc that bai"),
+      toast.error(error instanceof Error ? error.message : "Xóa môn học thất bại"),
   });
 
   return (
     <div>
-      <PageHeader title="Mon hoc" description={`${filteredRows.length} / ${rows.length} mon`} />
+      <PageHeader title="Môn học" description={`${filteredRows.length} / ${rows.length} môn`} />
 
       <DataTable
         data={filteredRows}
         rowKey={(course) => String(course.id)}
         pageSize={10}
-        searchPlaceholder="Tim theo ma, ten mon, nganh..."
+        searchPlaceholder="Tìm theo mã, tên môn, ngành..."
         searchSlot={
           <>
             <Select value={creditsFilter} onValueChange={setCreditsFilter}>
               <SelectTrigger className="h-10 w-full sm:w-32">
-                <SelectValue placeholder="Tin chi" />
+                <SelectValue placeholder="Tín chỉ" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={all}>Tat ca TC</SelectItem>
+                <SelectItem value={all}>Tất cả TC</SelectItem>
                 {creditOptions.map((credits) => (
                   <SelectItem key={credits} value={String(credits)}>
-                    {credits} tin chi
+                    {credits} tín chỉ
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -158,10 +158,10 @@ function CoursesPage() {
 
             <Select value={majorFilter} onValueChange={setMajorFilter}>
               <SelectTrigger className="h-10 w-full sm:w-44">
-                <SelectValue placeholder="Nganh" />
+                <SelectValue placeholder="Ngành" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={all}>Tat ca nganh</SelectItem>
+                <SelectItem value={all}>Tất cả ngành</SelectItem>
                 {majors.map((major) => (
                   <SelectItem key={major.id} value={String(major.id)}>
                     {major.name}
@@ -172,12 +172,12 @@ function CoursesPage() {
 
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="h-10 w-full sm:w-40">
-                <SelectValue placeholder="Tien quyet" />
+                <SelectValue placeholder="Tiên quyết" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={all}>Tat ca tien quyet</SelectItem>
-                <SelectItem value="REQUIRED">Bat buoc</SelectItem>
-                <SelectItem value="ELECTIVE">Tu do</SelectItem>
+                <SelectItem value={all}>Tất cả tiên quyết</SelectItem>
+                <SelectItem value="REQUIRED">Bắt buộc</SelectItem>
+                <SelectItem value="ELECTIVE">Tự do</SelectItem>
               </SelectContent>
             </Select>
           </>
@@ -185,18 +185,18 @@ function CoursesPage() {
         toolbar={
           <Button className="gap-2" onClick={() => setCreateOpen(true)} disabled={query.isError}>
             <Plus className="h-4 w-4" />
-            Them mon
+            Thêm môn học
           </Button>
         }
         columns={[
           {
             key: "code",
-            header: "Ma mon",
+            header: "Mã môn",
             render: (course) => <span className="font-mono text-xs">{course.code}</span>,
           },
           {
             key: "name",
-            header: "Ten mon",
+            header: "Tên môn",
             render: (course) => (
               <div className="min-w-56">
                 <div className="font-medium">{course.name}</div>
@@ -205,17 +205,17 @@ function CoursesPage() {
           },
           {
             key: "credits",
-            header: "Tin chi",
+            header: "Tín chỉ",
             render: (course) => <span className="tabular-nums">{course.credits}</span>,
           },
           {
             key: "majorName",
-            header: "Nganh",
+            header: "Ngành",
             render: (course) => <span className="text-sm">{course.majorName ?? "-"}</span>,
           },
           {
             key: "description",
-            header: "Mo ta",
+            header: "Mô tả",
             render: (course) => (
               <span className="line-clamp-2 max-w-64 text-xs text-muted-foreground">
                 {course.description || "-"}
@@ -224,7 +224,7 @@ function CoursesPage() {
           },
           {
             key: "courseType",
-            header: "Tien quyet",
+            header: "Tiên quyết",
             accessor: (course) => course.courseTypeLabel ?? course.courseType ?? "",
             render: (course) => (
               <span className="text-xs text-muted-foreground">
@@ -234,7 +234,7 @@ function CoursesPage() {
           },
           {
             key: "prerequisiteNames",
-            header: "Mon hoc truoc",
+            header: "Môn học trước",
             accessor: (course) => course.prerequisiteNames?.join(", ") ?? "",
             render: (course) => (
               <span className="text-xs text-muted-foreground">
@@ -274,7 +274,7 @@ function CoursesPage() {
       <CourseFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="Them mon hoc"
+        title="Thêm môn học"
         initial={emptyForm}
         courses={rows}
         submitting={createMutation.isPending}
@@ -284,7 +284,7 @@ function CoursesPage() {
       <CourseFormDialog
         open={!!editItem}
         onOpenChange={(value) => !value && setEditItem(null)}
-        title={`Sua mon ${editItem?.code ?? ""}`}
+        title={`Sửa môn ${editItem?.code ?? ""}`}
         initial={editItem ? toForm(editItem) : emptyForm}
         courses={rows}
         editingId={editItem?.id}
@@ -299,10 +299,10 @@ function CoursesPage() {
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(value) => !value && setToDelete(null)}
-        title="Xoa mon hoc?"
+        title="Xóa môn học?"
         description={toDelete?.name}
         destructive
-        confirmText="Xoa"
+        confirmText="Xóa"
         onConfirm={() => {
           if (toDelete && typeof toDelete.id === "number") deleteMutation.mutate(toDelete.id);
         }}
@@ -380,7 +380,7 @@ function CourseFormDialog({
 
         <div className="grid gap-3 py-2 sm:grid-cols-2">
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">Ma mon</Label>
+            <Label className="text-xs">Mã môn</Label>
             <Input
               className="h-8 text-xs"
               value={form.code}
@@ -390,7 +390,7 @@ function CourseFormDialog({
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">So tin chi</Label>
+            <Label className="text-xs">Số tín chỉ</Label>
             <Input
               className="h-8 text-xs"
               type="number"
@@ -402,26 +402,26 @@ function CourseFormDialog({
           </div>
 
           <div className="flex flex-col gap-1 sm:col-span-2">
-            <Label className="text-xs">Ten mon</Label>
+            <Label className="text-xs">Tên môn</Label>
             <Input
               className="h-8 text-xs"
               value={form.name}
-              placeholder="VD: Tieng Anh giao tiep"
+              placeholder="VD: Tiếng Anh giao tiếp"
               onChange={(event) => set("name", event.target.value)}
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">Nganh</Label>
+            <Label className="text-xs">Ngành</Label>
             <Select
               value={form.majorId || none}
               onValueChange={(value) => set("majorId", value === none ? "" : value)}
             >
               <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Chon nganh" />
+                <SelectValue placeholder="Chọn ngành" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={none}>Chua chon</SelectItem>
+                <SelectItem value={none}>Chưa chọn</SelectItem>
                 {(majorsQuery.data ?? []).map((major) => (
                   <SelectItem key={major.id} value={String(major.id)}>
                     {major.name}
@@ -432,43 +432,43 @@ function CourseFormDialog({
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">Tien quyet</Label>
+            <Label className="text-xs">Tiên quyết</Label>
             <Select
               value={form.courseType}
               onValueChange={(value) => set("courseType", value as CourseType)}
             >
               <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Chon loai mon" />
+                <SelectValue placeholder="Chọn loại môn" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="REQUIRED">Bat buoc</SelectItem>
-                <SelectItem value="ELECTIVE">Tu do</SelectItem>
+                <SelectItem value="REQUIRED">Bắt buộc</SelectItem>
+                <SelectItem value="ELECTIVE">Tự do</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex flex-col gap-1 sm:col-span-2">
-            <Label className="text-xs">Mo ta</Label>
+            <Label className="text-xs">Mô tả</Label>
             <Textarea
               className="min-h-20 text-xs"
               value={form.description}
-              placeholder="Mo ta ngan ve mon hoc"
+              placeholder="Mô tả ngắn về môn học"
               onChange={(event) => set("description", event.target.value)}
             />
           </div>
 
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label className="text-xs">Mon hoc truoc</Label>
+            <Label className="text-xs">Môn học trước</Label>
             <Input
               className="h-8 text-xs"
               value={prerequisiteSearch}
-              placeholder="Tim mon hoc truoc..."
+              placeholder="Tìm môn học trước..."
               onChange={(event) => setPrerequisiteSearch(event.target.value)}
             />
             <div className="max-h-40 overflow-y-auto rounded-md border">
               {prerequisiteOptions.length === 0 ? (
                 <p className="p-3 text-center text-xs text-muted-foreground">
-                  Khong co mon hoc phu hop
+                  Không có môn học phù hợp
                 </p>
               ) : (
                 <div className="divide-y">
@@ -501,7 +501,7 @@ function CourseFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Huy
+            Hủy
           </Button>
           <Button
             size="sm"
@@ -510,7 +510,7 @@ function CourseFormDialog({
             }
             onClick={() => onSubmit(form)}
           >
-            {submitting ? "Dang luu..." : "Luu"}
+            {submitting ? "Đang lưu..." : "Lưu"}
           </Button>
         </DialogFooter>
       </DialogContent>
