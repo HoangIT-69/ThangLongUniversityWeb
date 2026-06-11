@@ -87,31 +87,31 @@ function MajorFormDialog({
             <Label className="text-xs">Ten nganh</Label>
             <Input
               className="h-8 text-xs"
-              placeholder="VD: Cong nghe thong tin"
+              placeholder="VD: Công nghệ thông tin"
               value={form.name}
               onChange={(event) => set("name", event.target.value)}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">Mo ta</Label>
+            <Label className="text-xs">Mô tả</Label>
             <Input
               className="h-8 text-xs"
-              placeholder="Mo ta ngan"
+              placeholder="Mô tả ngắn"
               value={form.description}
               onChange={(event) => set("description", event.target.value)}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">Khoa / Bo mon</Label>
+            <Label className="text-xs">Khoa / Bộ môn</Label>
             <Select
               value={form.departmentId || "__none"}
               onValueChange={(value) => set("departmentId", value === "__none" ? "" : value)}
             >
               <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Chon khoa..." />
+                <SelectValue placeholder="Chọn khoa..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">Chua chon</SelectItem>
+                <SelectItem value="__none">Chưa chọn</SelectItem>
                 {departments.map((department) => (
                   <SelectItem key={department.id} value={String(department.id)}>
                     {department.name}
@@ -128,14 +128,14 @@ function MajorFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Huy
+            Hủy
           </Button>
           <Button
             size="sm"
             disabled={submitting || !form.majorCode.trim() || !form.name.trim()}
             onClick={() => onSubmit(form)}
           >
-            {submitting ? "Dang luu..." : "Luu"}
+            {submitting ? "Đang lưu..." : "Lưu"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -171,9 +171,9 @@ function MajorsPage() {
       queryClient.invalidateQueries({ queryKey: ["admin", "majors"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "departments"] });
       setCreateOpen(false);
-      toast.success("Da tao nganh");
+      toast.success("Đã tạo ngành");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Tao nganh that bai"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Tạo ngành thất bại"),
   });
 
   const updateMutation = useMutation({
@@ -188,10 +188,10 @@ function MajorsPage() {
       queryClient.invalidateQueries({ queryKey: ["admin", "majors"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "departments"] });
       setEditItem(null);
-      toast.success("Da cap nhat nganh");
+      toast.success("Đã cập nhật ngành");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Cap nhat nganh that bai"),
+      toast.error(error instanceof Error ? error.message : "Cập nhật ngành thất bại"),
   });
 
   const deleteMutation = useMutation({
@@ -199,9 +199,9 @@ function MajorsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "majors"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "departments"] });
-      toast.success("Da xoa nganh");
+      toast.success("Đã xóa ngành");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Xoa nganh that bai"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Xóa ngành thất bại"),
   });
 
   const data = useMemo<MajorRow[]>(() => {
@@ -225,18 +225,18 @@ function MajorsPage() {
 
   return (
     <div>
-      <PageHeader title="Nganh hoc" description={`${filteredData.length} / ${data.length} nganh`} />
+      <PageHeader title="Ngành học" description={`${filteredData.length} / ${data.length} ngành`} />
       <DataTable
         data={filteredData}
         rowKey={(m) => m.id}
-        searchPlaceholder="Tim theo ma, ten nganh..."
+        searchPlaceholder="Tìm theo mã, tên ngành..."
         searchSlot={
           <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
             <SelectTrigger className="h-10 w-full sm:w-44">
-              <SelectValue placeholder="Tat ca khoa" />
+              <SelectValue placeholder="Tất cả khoa" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tat ca khoa</SelectItem>
+              <SelectItem value="all">Tất cả khoa</SelectItem>
               {departments.map((department) => (
                 <SelectItem key={department.id} value={department.name}>
                   {department.name}
@@ -248,18 +248,18 @@ function MajorsPage() {
         toolbar={
           <Button className="gap-2" onClick={() => setCreateOpen(true)} disabled={query.isError}>
             <Plus className="h-4 w-4" />
-            Them nganh
+            Thêm ngành
           </Button>
         }
         columns={[
           {
             key: "code",
-            header: "Ma nganh",
+            header: "Mã ngành",
             render: (m) => <span className="font-mono text-xs">{m.code}</span>,
           },
           {
             key: "name",
-            header: "Ten nganh",
+            header: "Tên ngành",
             render: (m) => <span className="font-medium">{m.name}</span>,
           },
           {
@@ -269,19 +269,19 @@ function MajorsPage() {
           },
           {
             key: "description",
-            header: "Mo ta",
+            header: "Mô tả",
             render: (m) => (
               <span className="text-xs text-muted-foreground">{m.description || "-"}</span>
             ),
           },
           {
             key: "students",
-            header: "Sinh vien",
+            header: "Sinh viên",
             render: (m) => <span className="tabular-nums">{m.students.toLocaleString()}</span>,
           },
           {
             key: "courses",
-            header: "Mon hoc",
+            header: "Môn học",
             render: (m) => <span className="tabular-nums">{m.courses}</span>,
           },
           {
@@ -319,7 +319,7 @@ function MajorsPage() {
       <MajorFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="Them nganh moi"
+        title="Thêm ngành mới"
         initial={emptyForm}
         departments={departments}
         onSubmit={(form) => createMutation.mutate(form)}
@@ -328,7 +328,7 @@ function MajorsPage() {
       <MajorFormDialog
         open={!!editItem}
         onOpenChange={(v) => !v && setEditItem(null)}
-        title={`Sua nganh ${editItem?.name ?? ""}`}
+        title={`Sửa ngành ${editItem?.name ?? ""}`}
         initial={
           editItem
             ? {
@@ -346,10 +346,10 @@ function MajorsPage() {
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(v) => !v && setToDelete(null)}
-        title="Xoa nganh?"
+        title="Xóa ngành?"
         description={toDelete?.name}
         destructive
-        confirmText="Xoa"
+        confirmText="Xóa"
         onConfirm={() => {
           if (toDelete) deleteMutation.mutate(toDelete.id);
           setToDelete(null);

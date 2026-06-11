@@ -87,9 +87,9 @@ function RoomsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "rooms"] });
       setCreateOpen(false);
-      toast.success("Da them phong");
+      toast.success("Đã thêm phòng");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Them phong that bai"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Thêm phòng thất bại"),
   });
 
   const updateMutation = useMutation({
@@ -98,52 +98,52 @@ function RoomsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "rooms"] });
       setEditItem(null);
-      toast.success("Da cap nhat phong");
+      toast.success("Đã cập nhật phòng");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Cap nhat phong that bai"),
+      toast.error(error instanceof Error ? error.message : "Cập nhật phòng thất bại"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number | string) => adminApi.deleteRoom(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "rooms"] });
-      toast.success("Da xoa phong");
+      toast.success("Đã xóa phòng");
       setToDelete(null);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Xoa phong that bai"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Xóa phòng thất bại"),
   });
 
   return (
     <div>
-      <PageHeader title="Phong hoc" description={`${filteredData.length} / ${data.length} phong`} />
+      <PageHeader title="Phòng học" description={`${filteredData.length} / ${data.length} phòng`} />
 
       <DataTable
         data={filteredData}
         rowKey={(room) => String(room.id)}
-        searchPlaceholder="Tim theo ten phong, suc chua, loai..."
+        searchPlaceholder="Tìm theo tên phòng, sức chứa, loại..."
         searchSlot={
           <>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="h-10 w-full sm:w-40">
-                <SelectValue placeholder="Loai phong" />
+                <SelectValue placeholder="Loại phòng" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={all}>Tat ca loai</SelectItem>
-                <SelectItem value="LECTURE">Phong hoc</SelectItem>
-                <SelectItem value="LAB">Phong lab</SelectItem>
-                <SelectItem value="AUDITORIUM">Hoi truong</SelectItem>
+                <SelectItem value={all}>Tất cả loại</SelectItem>
+                <SelectItem value="LECTURE">Phòng học</SelectItem>
+                <SelectItem value="LAB">Phòng lab</SelectItem>
+                <SelectItem value="AUDITORIUM">Hội trường</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-10 w-full sm:w-44">
-                <SelectValue placeholder="Trang thai" />
+                <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={all}>Tat ca trang thai</SelectItem>
-                <SelectItem value="AVAILABLE">San sang</SelectItem>
-                <SelectItem value="MAINTENANCE">Bao tri</SelectItem>
+                <SelectItem value={all}>Tất cả trạng thái</SelectItem>
+                <SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
+                <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
               </SelectContent>
             </Select>
           </>
@@ -151,28 +151,28 @@ function RoomsPage() {
         toolbar={
           <Button className="gap-2" onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
-            Them phong
+            Thêm phòng
           </Button>
         }
         columns={[
           {
             key: "name",
-            header: "Ten phong",
+            header: "Tên phòng",
             render: (room) => <span className="font-mono font-medium">{room.name}</span>,
           },
           {
             key: "capacity",
-            header: "Suc chua",
+            header: "Sức chứa",
             render: (room) => <span className="tabular-nums">{room.capacity}</span>,
           },
           {
             key: "type",
-            header: "Loai",
+            header: "Loại phòng",
             render: (room) => <StatusBadge value={room.type} />,
           },
           {
             key: "status",
-            header: "Trang thai",
+            header: "Trạng thái",
             render: (room) => <StatusBadge value={room.status} />,
           },
           {
@@ -207,7 +207,7 @@ function RoomsPage() {
       <RoomFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="Them phong"
+        title="Thêm phòng"
         initial={emptyForm}
         submitting={createMutation.isPending}
         onSubmit={(form) => createMutation.mutate(form)}
@@ -216,7 +216,7 @@ function RoomsPage() {
       <RoomFormDialog
         open={!!editItem}
         onOpenChange={(value) => !value && setEditItem(null)}
-        title={`Sua phong ${editItem?.name ?? ""}`}
+        title={`Sửa phòng ${editItem?.name ?? ""}`}
         initial={editItem ? toForm(editItem) : emptyForm}
         submitting={updateMutation.isPending}
         onSubmit={(form) => editItem && updateMutation.mutate({ id: editItem.id, form })}
@@ -225,10 +225,10 @@ function RoomsPage() {
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(value) => !value && setToDelete(null)}
-        title="Xoa phong?"
+        title="Xóa phòng?"
         description={toDelete?.name}
         destructive
-        confirmText="Xoa"
+        confirmText="Xóa"
         onConfirm={() => {
           if (toDelete) deleteMutation.mutate(toDelete.id);
         }}
@@ -270,7 +270,7 @@ function RoomFormDialog({
 
         <div className="grid gap-3 py-2">
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">Ten phong</Label>
+            <Label className="text-xs">Tên phòng</Label>
             <Input
               className="h-9 text-sm"
               value={form.name}
@@ -280,7 +280,7 @@ function RoomFormDialog({
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">Suc chua</Label>
+            <Label className="text-xs">Sức chứa</Label>
             <Input
               className="h-9 text-sm"
               type="number"
@@ -293,7 +293,7 @@ function RoomFormDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Loai phong</Label>
+              <Label className="text-xs">Loại phòng</Label>
               <Select
                 value={form.type}
                 onValueChange={(value) => setForm((prev) => ({ ...prev, type: value as RoomType }))}
@@ -302,15 +302,15 @@ function RoomFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="LECTURE">Phong hoc</SelectItem>
-                  <SelectItem value="LAB">Phong lab</SelectItem>
-                  <SelectItem value="AUDITORIUM">Hoi truong</SelectItem>
+                  <SelectItem value="LECTURE">Phòng học</SelectItem>
+                  <SelectItem value="LAB">Phòng lab</SelectItem>
+                  <SelectItem value="AUDITORIUM">Hội trường</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Trang thai</Label>
+              <Label className="text-xs">Trạng thái</Label>
               <Select
                 value={form.status}
                 onValueChange={(value) =>
@@ -321,8 +321,8 @@ function RoomFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="AVAILABLE">San sang</SelectItem>
-                  <SelectItem value="MAINTENANCE">Bao tri</SelectItem>
+                  <SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
+                  <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -336,10 +336,10 @@ function RoomFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Huy
+            Hủy
           </Button>
           <Button size="sm" disabled={submitting || !canSubmit} onClick={() => onSubmit(form)}>
-            {submitting ? "Dang luu..." : "Luu"}
+            {submitting ? "Đang lưu..." : "Lưu"}
           </Button>
         </DialogFooter>
       </DialogContent>

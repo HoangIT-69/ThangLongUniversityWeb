@@ -119,7 +119,7 @@ function HomeroomFormDialog({
 
         <div className="space-y-3 py-2">
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">Ten lop</Label>
+            <Label className="text-xs">Tên lớp</Label>
             <Input
               className="h-8 text-xs"
               placeholder="VD: CNTT-K36A"
@@ -129,16 +129,16 @@ function HomeroomFormDialog({
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">Nganh</Label>
+            <Label className="text-xs">Ngành</Label>
             <Select
               value={form.majorId || none}
               onValueChange={(value) => set("majorId", value === none ? "" : value)}
             >
               <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Chon nganh" />
+                <SelectValue placeholder="Chọn ngành" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={none}>Chua chon</SelectItem>
+                <SelectItem value={none}>Chưa chọn</SelectItem>
                 {(majorsQuery.data ?? []).map((major) => (
                   <SelectItem key={major.id} value={String(major.id)}>
                     {major.name}
@@ -150,7 +150,7 @@ function HomeroomFormDialog({
 
           <div className="flex gap-2">
             <div className="flex flex-1 flex-col gap-1">
-              <Label className="text-xs">Nam bat dau</Label>
+              <Label className="text-xs">Năm bắt đầu</Label>
               <Input
                 className="h-8 text-xs"
                 type="number"
@@ -160,7 +160,7 @@ function HomeroomFormDialog({
               />
             </div>
             <div className="flex flex-1 flex-col gap-1">
-              <Label className="text-xs">Khoa</Label>
+              <Label className="text-xs">Khóa</Label>
               <Input
                 className="h-8 text-xs"
                 placeholder="VD: K36"
@@ -178,14 +178,14 @@ function HomeroomFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Huy
+            Hủy
           </Button>
           <Button
             size="sm"
             disabled={submitting || !form.className.trim() || !form.majorId}
             onClick={() => onSubmit(form)}
           >
-            {submitting ? "Dang luu..." : "Luu"}
+            {submitting ? "Đang lưu..." : "Lưu"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -245,9 +245,9 @@ function AddStudentsDialog({
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms", homeroom.id, "students"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms"] });
       setSelected(new Set());
-      toast.success("Da them sinh vien vao lop");
+      toast.success("Đã thêm sinh viên vào lớp");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Them sinh vien that bai"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Thêm sinh viên thất bại"),
   });
 
   const advisorMutation = useMutation({
@@ -261,9 +261,9 @@ function AddStudentsDialog({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms"] });
-      toast.success("Da cap nhat co van");
+      toast.success("Đã cập nhật cố vấn học tập");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Cap nhat co van that bai"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Cập nhật cố vấn thất bại"),
   });
 
   const available = useMemo(() => {
@@ -308,22 +308,22 @@ function AddStudentsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Them sinh vien</DialogTitle>
+          <DialogTitle>Thêm sinh viên</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <section className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Co van hoc tap</Label>
+              <Label className="text-xs">Cố vấn học tập</Label>
               <Select
                 value={advisorId || none}
                 onValueChange={(value) => setAdvisorId(value === none ? "" : value)}
               >
                 <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Chon co van" />
+                  <SelectValue placeholder="Chọn cố vấn" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={none}>Chua chon</SelectItem>
+                  <SelectItem value={none}>Chưa chọn</SelectItem>
                   {advisorOptions.map((teacher) => (
                     <SelectItem key={teacher.id} value={String(teacher.id)}>
                       {teacher.fullName} ({teacher.teacherCode})
@@ -338,7 +338,7 @@ function AddStudentsDialog({
               onClick={() => advisorMutation.mutate()}
               disabled={advisorMutation.isPending}
             >
-              Luu co van
+              Cập nhật cố vấn
             </Button>
           </section>
 
@@ -346,7 +346,7 @@ function AddStudentsDialog({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 className="h-8 text-xs"
-                placeholder="Tim theo ten, ma SV, email..."
+                placeholder="Tìm theo tên, mã SV, email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -357,16 +357,16 @@ function AddStudentsDialog({
                 onClick={toggleVisible}
                 disabled={visibleIds.length === 0}
               >
-                {allVisibleSelected ? "Bo chon tat ca" : "Chon tat ca"}
+                {allVisibleSelected ? "Bỏ chọn tất cả" : "Chọn tất cả"} ({visibleIds.length})
               </Button>
             </div>
 
             <div className="max-h-72 overflow-y-auto rounded-md border">
               {studentsQuery.isLoading ? (
-                <p className="p-3 text-center text-xs text-muted-foreground">Dang tai...</p>
+                <p className="p-3 text-center text-xs text-muted-foreground">Đang tải...</p>
               ) : visible.length === 0 ? (
                 <p className="p-3 text-center text-xs text-muted-foreground">
-                  Khong co sinh vien cung nganh de them
+                  Không có sinh viên cùng ngành để thêm
                 </p>
               ) : (
                 <div className="divide-y">
@@ -394,7 +394,7 @@ function AddStudentsDialog({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Da chon {selected.size} sinh vien. Danh sach chi hien sinh vien cung nganh voi lop.
+              Đã chọn {selected.size} sinh viên. Danh sách chỉ hiển thị sinh viên cùng ngành với lớp.
             </p>
           </section>
         </div>
@@ -406,14 +406,14 @@ function AddStudentsDialog({
             onClick={() => onOpenChange(false)}
             disabled={addMutation.isPending}
           >
-            Dong
+            Đóng
           </Button>
           <Button
             size="sm"
             disabled={addMutation.isPending || selected.size === 0}
             onClick={() => addMutation.mutate()}
           >
-            {addMutation.isPending ? "Dang them..." : `Them ${selected.size} SV`}
+            {addMutation.isPending ? "Đang thêm..." : `Thêm ${selected.size} SV`}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -448,9 +448,9 @@ function HomeroomDetailSheet({
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms", homeroom?.id, "students"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms"] });
       setToRemove(null);
-      toast.success("Da go sinh vien khoi lop");
+      toast.success("Đã gỡ sinh viên khỏi lớp");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Go sinh vien that bai"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Gỡ sinh viên thất bại"),
   });
 
   const students = studentsQuery.data ?? [];
@@ -473,21 +473,21 @@ function HomeroomDetailSheet({
           <div className="space-y-4">
             <section className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="text-muted-foreground">Co van: </span>
+                <span className="text-muted-foreground">Cố vấn: </span>
                 <span className="font-medium">{homeroom.advisorName ?? "-"}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">So SV: </span>
+                <span className="text-muted-foreground">Số SV: </span>
                 <span className="font-medium">{homeroom.studentCount ?? students.length}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Trang thai: </span>
+                <span className="text-muted-foreground">Trạng thái: </span>
                 <span
                   className={
                     homeroom.isActive ? "font-medium text-green-600" : "text-muted-foreground"
                   }
                 >
-                  {homeroom.isActive ? "Dang hoat dong" : "Het nien khoa"}
+                  {homeroom.isActive ? "Đang hoạt động" : "Kết niên khóa"}
                 </span>
               </div>
             </section>
@@ -495,7 +495,7 @@ function HomeroomDetailSheet({
             <section>
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Danh sach sinh vien ({students.length})
+                  Danh sách sinh viên ({students.length})
                 </h3>
                 <Button
                   size="sm"
@@ -504,15 +504,15 @@ function HomeroomDetailSheet({
                   onClick={() => setAddOpen(true)}
                 >
                   <UserPlus className="h-3.5 w-3.5" />
-                  Them SV / co van
+                  Thêm SV / cố vấn
                 </Button>
               </div>
 
               {studentsQuery.isLoading ? (
-                <p className="py-4 text-center text-xs text-muted-foreground">Dang tai...</p>
+                <p className="py-4 text-center text-xs text-muted-foreground">Đang tải...</p>
               ) : students.length === 0 ? (
                 <p className="py-4 text-center text-xs text-muted-foreground">
-                  Chua co sinh vien trong lop
+                  Chưa có sinh viên trong lớp
                 </p>
               ) : (
                 <div className="max-h-96 overflow-y-auto rounded-md border">
@@ -554,10 +554,10 @@ function HomeroomDetailSheet({
       <ConfirmDialog
         open={!!toRemove}
         onOpenChange={(value) => !value && setToRemove(null)}
-        title="Go sinh vien khoi lop?"
+        title="Gỡ sinh viên khỏi lớp?"
         description={toRemove?.fullName}
         destructive
-        confirmText="Go"
+        confirmText="Gỡ bỏ"
         onConfirm={() => {
           if (toRemove) removeMutation.mutate(toRemove.id);
         }}
@@ -609,9 +609,9 @@ function HomeroomsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms"] });
       setCreateOpen(false);
-      toast.success("Da tao lop");
+      toast.success("Đã tạo lớp");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Tao lop that bai"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Tạo lớp thất bại"),
   });
 
   const updateMutation = useMutation({
@@ -627,39 +627,39 @@ function HomeroomsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms"] });
       setEditItem(null);
-      toast.success("Da cap nhat lop");
+      toast.success("Đã cập nhật lớp");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Cap nhat lop that bai"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Cập nhật lớp thất bại"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => adminApi.deleteHomeroom(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "homerooms"] });
-      toast.success("Da xoa lop");
+      toast.success("Đã xóa lớp");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Xoa lop that bai"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Xóa lớp thất bại"),
   });
 
   return (
     <div>
       <PageHeader
-        title="Lop hanh chinh"
-        description={`${filteredData.length} / ${data.length} lop`}
+        title="Lớp hành chính"
+        description={`${filteredData.length} / ${data.length} lớp`}
       />
 
       <DataTable
         data={filteredData}
         rowKey={(homeroom) => String(homeroom.id)}
-        searchPlaceholder="Tim theo ten lop, co van, nganh..."
+        searchPlaceholder="Tìm theo tên lớp, cố vấn, ngành..."
         searchSlot={
           <>
             <Select value={majorFilter} onValueChange={setMajorFilter}>
               <SelectTrigger className="h-10 w-full sm:w-44">
-                <SelectValue placeholder="Tat ca nganh" />
+                <SelectValue placeholder="Tất cả ngành" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={all}>Tat ca nganh</SelectItem>
+                <SelectItem value={all}>Tất cả ngành</SelectItem>
                 {majors.map((major) => (
                   <SelectItem key={major.id} value={String(major.id)}>
                     {major.name}
@@ -670,10 +670,10 @@ function HomeroomsPage() {
 
             <Select value={cohortFilter} onValueChange={setCohortFilter}>
               <SelectTrigger className="h-10 w-full sm:w-36">
-                <SelectValue placeholder="Tat ca khoa" />
+                <SelectValue placeholder="Tất cả khóa" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={all}>Tat ca khoa</SelectItem>
+                <SelectItem value={all}>Tất cả khóa</SelectItem>
                 {cohorts.map((cohort) => (
                   <SelectItem key={cohort} value={cohort}>
                     {cohort}
@@ -684,12 +684,12 @@ function HomeroomsPage() {
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-10 w-full sm:w-40">
-                <SelectValue placeholder="Trang thai" />
+                <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={all}>Tat ca trang thai</SelectItem>
-                <SelectItem value="active">Dang hoat dong</SelectItem>
-                <SelectItem value="inactive">Het nien khoa</SelectItem>
+                <SelectItem value={all}>Tất cả trạng thái</SelectItem>
+                <SelectItem value="active">Đang hoạt động</SelectItem>
+                <SelectItem value="inactive">ết niên khóa</SelectItem>
               </SelectContent>
             </Select>
           </>
@@ -703,31 +703,31 @@ function HomeroomsPage() {
         columns={[
           {
             key: "className",
-            header: "Ten lop",
+            header: "Tên lớp",
             render: (homeroom) => <span className="font-medium">{homeroom.className}</span>,
           },
           {
             key: "advisorName",
-            header: "Co van",
+            header: "Cố vấn học tập",
             render: (homeroom) => <span className="text-sm">{homeroom.advisorName ?? "-"}</span>,
           },
           {
             key: "majorName",
-            header: "Nganh",
+            header: "Ngành",
             render: (homeroom) => (
               <span className="text-xs text-muted-foreground">{homeroom.majorName ?? "-"}</span>
             ),
           },
           {
             key: "cohort",
-            header: "Khoa",
+            header: "Khóa",
             render: (homeroom) => (
               <span className="text-xs tabular-nums">{homeroom.cohort ?? "-"}</span>
             ),
           },
           {
             key: "academicYear",
-            header: "Nien khoa",
+            header: "Niên khóa",
             accessor: (homeroom) => academicRange(homeroom.academicYear),
             render: (homeroom) => (
               <span className="text-xs tabular-nums">{academicRange(homeroom.academicYear)}</span>
@@ -735,16 +735,16 @@ function HomeroomsPage() {
           },
           {
             key: "studentCount",
-            header: "So SV",
+            header: "Số SV",
             render: (homeroom) => (
               <span className="text-xs tabular-nums">{homeroom.studentCount ?? "-"}</span>
             ),
           },
           {
             key: "isActive",
-            header: "Trang thai",
+            header: "Trạng thái",
             accessor: (homeroom) =>
-              homeroom.isActive === false ? "Het nien khoa" : "Dang hoat dong",
+              homeroom.isActive === false ? "Kết niên khóa" : "Đang hoạt động",
             render: (homeroom) =>
               homeroom.isActive === false ? (
                 <span className="text-xs text-muted-foreground">Het nien khoa</span>
@@ -792,7 +792,7 @@ function HomeroomsPage() {
       <HomeroomFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="Tao lop hanh chinh"
+        title="Tạo lớp hành chính mới"
         initial={emptyForm}
         onSubmit={(form) => createMutation.mutate(form)}
         submitting={createMutation.isPending}
@@ -801,7 +801,7 @@ function HomeroomsPage() {
       <HomeroomFormDialog
         open={!!editItem}
         onOpenChange={(value) => !value && setEditItem(null)}
-        title={`Sua lop ${editItem?.className ?? ""}`}
+        title={`Sửa lớp ${editItem?.className ?? ""}`}
         initial={editItem ? toForm(editItem) : emptyForm}
         onSubmit={(form) =>
           editItem &&
@@ -820,10 +820,10 @@ function HomeroomsPage() {
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(value) => !value && setToDelete(null)}
-        title="Xoa lop hanh chinh?"
+        title="Xóa lớp hành chính?"
         description={toDelete?.className}
         destructive
-        confirmText="Xoa"
+        confirmText="Xóa bỏ"
         onConfirm={() => {
           if (toDelete) deleteMutation.mutate(toDelete.id);
           setToDelete(null);

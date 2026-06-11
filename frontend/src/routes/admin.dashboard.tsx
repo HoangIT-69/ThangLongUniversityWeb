@@ -84,7 +84,7 @@ function AdminDashboard() {
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           {dashboardQuery.error instanceof Error
             ? dashboardQuery.error.message
-            : "Khong tai duoc dashboard"}
+            : "Không tải được dashboard"}
         </div>
       )}
 
@@ -94,40 +94,40 @@ function AdminDashboard() {
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="gap-1.5">
                 <CalendarDays className="h-3.5 w-3.5" />
-                {currentSemester?.name ?? "Chua co hoc ky"}
+                {currentSemester?.name ?? "Chưa có học kỳ hiện tại"}
               </Badge>
               <Badge variant={currentSemester?.registrationOpen ? "default" : "outline"}>
-                Dang ky {currentSemester?.registrationOpen ? "dang mo" : "da dong"}
+                Đăng ký {currentSemester?.registrationOpen ? "đang mở" : "đã đóng"}
               </Badge>
               <Badge variant={currentSemester?.examPublished ? "default" : "outline"}>
-                Lich thi {currentSemester?.examPublished ? "da cong bo" : "chua cong bo"}
+                Lịch thi {currentSemester?.examPublished ? "đã công bố" : "chưa công bố"}
               </Badge>
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
               <SystemMetric
-                label="Lop dang mo"
+                label="Lớp học phần đang mở"
                 value={dashboard?.openClassCount ?? 0}
-                helper={`${dashboard?.classSectionCount ?? 0} lop tong`}
+                helper={`${dashboard?.classSectionCount ?? 0} lớp tổng cộng`}
               />
               <SystemMetric
-                label="Co giang vien"
+                label="Có giảng viên phụ trách"
                 value={`${percentValue(dashboard?.assignedTeacherRate)}%`}
-                helper={`${dashboard?.assignedClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lop`}
+                helper={`${dashboard?.assignedClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lớp`}
               />
               <SystemMetric
-                label="Da xep lich"
+                label="Đã xếp lịch"
                 value={`${percentValue(dashboard?.scheduledClassRate)}%`}
-                helper={`${dashboard?.scheduledClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lop`}
+                helper={`${dashboard?.scheduledClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lớp`}
               />
             </div>
           </div>
           <div className="p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold">Suc chua lop hoc phan</h2>
+                <h2 className="text-sm font-semibold">Sức chứa lớp học phần</h2>
                 <p className="text-xs text-muted-foreground">
-                  {dashboard?.totalRegisteredSlots ?? 0} dang ky tren{" "}
-                  {dashboard?.totalCapacity ?? 0} cho
+                  {dashboard?.totalRegisteredSlots ?? 0} đăng ký trên{" "}
+                  {dashboard?.totalCapacity ?? 0} chỗ ngồi
                 </p>
               </div>
               <School className="h-5 w-5 text-muted-foreground" />
@@ -137,12 +137,12 @@ function AdminDashboard() {
                 <span className="text-3xl font-semibold tabular-nums">
                   {percentValue(dashboard?.averageOccupancy)}%
                 </span>
-                <span className="text-xs text-muted-foreground">Muc lap day trung binh</span>
+                <span className="text-xs text-muted-foreground">Mức lấp đầy trung bình</span>
               </div>
               <Progress value={percentValue(dashboard?.averageOccupancy)} className="h-2.5" />
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <InfoLine label="Bat dau" value={formatDate(currentSemester?.startDate)} />
-                <InfoLine label="Ket thuc" value={formatDate(currentSemester?.endDate)} />
+                <InfoLine label="Bắt đầu" value={formatDate(currentSemester?.startDate)} />
+                <InfoLine label="Kết thúc" value={formatDate(currentSemester?.endDate)} />
               </div>
             </div>
           </div>
@@ -151,30 +151,30 @@ function AdminDashboard() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
-          label="Sinh vien"
+          label="Sinh viên"
           value={dashboard?.studentCount ?? 0}
-          hint={`${studentsByMajor.length} nganh co du lieu`}
+          hint={`${studentsByMajor.length} ngành có dữ liệu`}
           icon={GraduationCap}
           tone="primary"
         />
         <StatCard
-          label="Giang vien"
+          label="Giảng viên"
           value={dashboard?.teacherCount ?? 0}
-          hint={`${dashboard?.departmentCount ?? 0} khoa / bo mon`}
+          hint={`${dashboard?.departmentCount ?? 0} khoa / bộ môn`}
           icon={Users}
           tone="info"
         />
         <StatCard
-          label="Mon hoc"
+          label="Môn học"
           value={dashboard?.courseCount ?? 0}
-          hint={`${dashboard?.totalCourseCredits ?? 0} tin chi`}
+          hint={`${dashboard?.totalCourseCredits ?? 0} tín chỉ`}
           icon={BookOpen}
           tone="success"
         />
         <StatCard
-          label="Phong hoc"
+          label="Phòng học"
           value={dashboard?.roomCount ?? 0}
-          hint={`${dashboard?.roomCapacity ?? 0} cho ngoi`}
+          hint={`${dashboard?.roomCapacity ?? 0} chỗ ngồi`}
           icon={MapPin}
           tone="warning"
         />
@@ -184,16 +184,16 @@ function AdminDashboard() {
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Lop hoc phan can chu y</h2>
+              <h2 className="text-sm font-semibold">Lớp học phần cần chú ý</h2>
               <p className="text-xs text-muted-foreground">
-                Uu tien lop thieu giang vien, chua xep lich hoac gan day
+                Ưu tiên lớp thiếu giảng viên, chưa xếp lịch hoặc gần đầy
               </p>
             </div>
             <AlertTriangle className="h-5 w-5 text-warning-foreground" />
           </div>
 
           {attentionClasses.length === 0 ? (
-            <EmptyState text="Khong co lop nao can chu y ngay." />
+            <EmptyState text="Không có lớp nào cần chú ý ngay." />
           ) : (
             <div className="mt-4 divide-y">
               {attentionClasses.map((section) => {
@@ -212,9 +212,9 @@ function AdminDashboard() {
                       </Badge>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                      {!section.teacherId && <Badge variant="outline">Chua co GV</Badge>}
-                      {!section.schedules?.length && <Badge variant="outline">Chua xep lich</Badge>}
-                      {load.rate >= 90 && <Badge variant="outline">Gan day lop</Badge>}
+                      {!section.teacherId && <Badge variant="outline">Chưa có giảng viên</Badge>}
+                      {!section.schedules?.length && <Badge variant="outline">Chưa xếp lịch</Badge>}
+                      {load.rate >= 90 && <Badge variant="outline">Gần đầy lớp</Badge>}
                     </div>
                   </div>
                 );
@@ -226,20 +226,20 @@ function AdminDashboard() {
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Sinh vien theo nganh</h2>
-              <p className="text-xs text-muted-foreground">Top nganh co so luong cao nhat</p>
+              <h2 className="text-sm font-semibold">Sinh viên theo ngành</h2>
+              <p className="text-xs text-muted-foreground">Top ngành có số lượng cao nhất</p>
             </div>
             <LibraryBig className="h-5 w-5 text-muted-foreground" />
           </div>
 
           {studentsByMajor.length === 0 ? (
-            <EmptyState text="Chua co du lieu nganh hoc." />
+            <EmptyState text="Chưa có dữ liệu ngành học." />
           ) : (
             <div className="mt-4 space-y-4">
               {studentsByMajor.map((major) => (
                 <div key={major.majorId ?? major.majorName}>
                   <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate font-medium">{major.majorName ?? "Chua phan nganh"}</span>
+                    <span className="truncate font-medium">{major.majorName ?? "Chưa phân ngành"}</span>
                     <span className="tabular-nums text-muted-foreground">
                       {major.studentCount} SV
                     </span>
@@ -261,29 +261,29 @@ function AdminDashboard() {
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold">Thao tac nhanh</h2>
+            <h2 className="text-sm font-semibold">Thao tác nhanh</h2>
             <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <QuickAction to="/admin/semesters" icon={CalendarDays} label="Quan ly hoc ky" />
-            <QuickAction to="/admin/class-sections" icon={Layers} label="Mo lop hoc phan" />
-            <QuickAction to="/admin/students" icon={GraduationCap} label="Danh sach sinh vien" />
-            <QuickAction to="/admin/teachers" icon={Users} label="Phan cong giang vien" />
-            <QuickAction to="/admin/courses" icon={BookOpen} label="Danh muc hoc phan" />
-            <QuickAction to="/admin/departments" icon={Building2} label="Khoa / Bo mon" />
+            <QuickAction to="/admin/semesters" icon={CalendarDays} label="Quản lý học kỳ" />
+            <QuickAction to="/admin/class-sections" icon={Layers} label="Mở lớp học phần" />
+            <QuickAction to="/admin/students" icon={GraduationCap} label="Danh sách sinh viên" />
+            <QuickAction to="/admin/teachers" icon={Users} label="Phân công giảng viên" />
+            <QuickAction to="/admin/courses" icon={BookOpen} label="Danh mục học phần" />
+            <QuickAction to="/admin/departments" icon={Building2} label="Khoa / Bộ môn" />
           </div>
         </section>
 
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Lop hoc phan moi cap nhat</h2>
-              <p className="text-xs text-muted-foreground">Theo ban ghi moi nhat trong he thong</p>
+              <h2 className="text-sm font-semibold">Lớp học phần mới cập nhật</h2>
+              <p className="text-xs text-muted-foreground">Theo bản ghi mới nhất trong hệ thống</p>
             </div>
             <Layers className="h-5 w-5 text-muted-foreground" />
           </div>
           {recentClasses.length === 0 ? (
-            <EmptyState text="Chua co lop hoc phan nao." />
+            <EmptyState text="Chưa có lớp học phần nào." />
           ) : (
             <div className="mt-4 divide-y">
               {recentClasses.map((section) => {
@@ -296,7 +296,7 @@ function AdminDashboard() {
                     <div className="min-w-0">
                       <div className="truncate font-medium">{section.classCode}</div>
                       <div className="truncate text-xs text-muted-foreground">
-                        {section.courseName} - {section.teacherName ?? "Chua co GV"}
+                        {section.courseName} - {section.teacherName ?? "Chưa có GV"}
                       </div>
                     </div>
                     <div className="w-28 shrink-0">

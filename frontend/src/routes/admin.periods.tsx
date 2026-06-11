@@ -61,10 +61,10 @@ function PeriodsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "periods"] });
       setCreateOpen(false);
-      toast.success("Da them tiet hoc");
+      toast.success("Đã thêm tiết học");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Them tiet hoc that bai"),
+      toast.error(error instanceof Error ? error.message : "Thêm tiết học thất bại"),
   });
 
   const updateMutation = useMutation({
@@ -73,53 +73,53 @@ function PeriodsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "periods"] });
       setEditItem(null);
-      toast.success("Da cap nhat tiet hoc");
+      toast.success("Đã cập nhật tiết học");
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Cap nhat tiet hoc that bai"),
+      toast.error(error instanceof Error ? error.message : "Cập nhật tiết học thất bại"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number | string) => adminApi.deletePeriod(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "periods"] });
-      toast.success("Da xoa tiet hoc");
+      toast.success("Đã xóa tiết học");
       setToDelete(null);
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Xoa tiet hoc that bai"),
+      toast.error(error instanceof Error ? error.message : "Xóa tiết học thất bại"),
   });
 
   return (
     <div>
-      <PageHeader title="Tiet hoc" description={`${data.length} tiet`} />
+      <PageHeader title="Tiết học" description={`${data.length} tiết`} />
 
       <DataTable
         data={data}
         rowKey={(period) => String(period.id)}
-        searchPlaceholder="Tim theo tiet, gio bat dau, gio ket thuc..."
+        searchPlaceholder="Tìm theo tiết, giờ bắt đầu, giờ kết thúc..."
         toolbar={
           <Button className="gap-2" onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
-            Them tiet hoc
+            Thêm tiết học
           </Button>
         }
         columns={[
           {
             key: "periodNumber",
-            header: "Tiet",
+            header: "Tiết",
             render: (period) => (
-              <span className="font-mono font-semibold">Tiet {period.periodNumber}</span>
+              <span className="font-mono font-semibold">Tiết {period.periodNumber}</span>
             ),
           },
           {
             key: "startTime",
-            header: "Gio bat dau",
+            header: "Giờ bắt đầu",
             render: (period) => <span className="tabular-nums">{period.startTime}</span>,
           },
           {
             key: "endTime",
-            header: "Gio ket thuc",
+            header: "Giờ kết thúc",
             render: (period) => <span className="tabular-nums">{period.endTime}</span>,
           },
           {
@@ -154,7 +154,7 @@ function PeriodsPage() {
       <PeriodFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="Them tiet hoc"
+        title="Thêm tiết học"
         initial={emptyForm}
         submitting={createMutation.isPending}
         onSubmit={(form) => createMutation.mutate(form)}
@@ -163,7 +163,7 @@ function PeriodsPage() {
       <PeriodFormDialog
         open={!!editItem}
         onOpenChange={(value) => !value && setEditItem(null)}
-        title={`Sua tiet ${editItem?.periodNumber ?? ""}`}
+        title={`Sửa tiết ${editItem?.periodNumber ?? ""}`}
         initial={editItem ? toForm(editItem) : emptyForm}
         submitting={updateMutation.isPending}
         onSubmit={(form) => editItem && updateMutation.mutate({ id: editItem.id, form })}
@@ -172,10 +172,10 @@ function PeriodsPage() {
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(value) => !value && setToDelete(null)}
-        title="Xoa tiet hoc?"
-        description={toDelete ? `Tiet ${toDelete.periodNumber}` : undefined}
+        title="Xóa tiết học?"
+        description={toDelete ? `Tiết ${toDelete.periodNumber}` : undefined}
         destructive
-        confirmText="Xoa"
+        confirmText="Xóa"
         onConfirm={() => {
           if (toDelete) deleteMutation.mutate(toDelete.id);
         }}
@@ -223,7 +223,7 @@ function PeriodFormDialog({
 
         <div className="grid gap-3 py-2">
           <div className="flex flex-col gap-1">
-            <Label className="text-xs">So tiet</Label>
+            <Label className="text-xs">Số tiết</Label>
             <Input
               className="h-9 text-sm"
               type="number"
@@ -239,7 +239,7 @@ function PeriodFormDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Gio bat dau</Label>
+              <Label className="text-xs">Giờ bắt đầu</Label>
               <Input
                 className="h-9 text-sm"
                 type="time"
@@ -251,7 +251,7 @@ function PeriodFormDialog({
             </div>
 
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Gio ket thuc</Label>
+              <Label className="text-xs">Giờ kết thúc</Label>
               <Input
                 className="h-9 text-sm"
                 type="time"

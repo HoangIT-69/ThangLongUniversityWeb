@@ -117,6 +117,7 @@ public class HomeroomService {
         homeroomRepository.delete(homeroom);
     }
 
+    @Transactional(readOnly = true)
     public List<StudentResponse> getStudentsByHomeroom(Long homeroomId) {
         if (!homeroomRepository.existsById(homeroomId)) {
             throw new RuntimeException("Khong tim thay lop hanh chinh!");
