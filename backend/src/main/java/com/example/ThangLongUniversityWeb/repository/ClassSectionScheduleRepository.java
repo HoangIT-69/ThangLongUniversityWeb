@@ -15,6 +15,7 @@ public interface ClassSectionScheduleRepository extends JpaRepository<ClassSecti
 
     @Query("select count(s) from ClassSectionSchedule s " +
             "where s.classSection.semester.id = :semesterId " +
+            "and s.classSection.status <> com.example.ThangLongUniversityWeb.enums.ClassSectionStatus.CANCELLED " +
             "and s.room.id = :roomId " +
             "and s.dayOfWeek = :dayOfWeek " +
             "and s.classSection.id <> coalesce(:excludeClassSectionId, -1) " +
@@ -30,6 +31,7 @@ public interface ClassSectionScheduleRepository extends JpaRepository<ClassSecti
 
     @Query("select s.classSection from ClassSectionSchedule s " +
             "where s.classSection.semester.id = :semesterId " +
+            "and s.classSection.status <> com.example.ThangLongUniversityWeb.enums.ClassSectionStatus.CANCELLED " +
             "and s.classSection.teacher.id = :teacherId " +
             "and s.dayOfWeek = :dayOfWeek " +
             "and s.classSection.id <> coalesce(:excludeClassSectionId, -1) " +

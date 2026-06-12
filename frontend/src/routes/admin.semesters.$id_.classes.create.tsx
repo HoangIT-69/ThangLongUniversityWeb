@@ -10,11 +10,18 @@ import {
   Wand2,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -27,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/lib/api/admin";
 import type {
   AdminClassSectionRequest,
+  BulkClassSectionCourseSummaryResponse,
   ClassSectionValidationIssueResponse,
   ClassSectionValidationResponse,
 } from "@/lib/api/types";
@@ -50,7 +58,23 @@ type RowState = ClassSectionFormValues & {
   validating?: boolean;
 };
 
-type BulkSeed = { courseIds: number[]; count: number; maxSlots: number };
+type BulkCourseConfig = {
+  count: number;
+  maxSlots: number;
+  sessionsPerWeek: number;
+  periodsPerSession: number;
+};
+type BulkSeed = {
+  courseIds: number[];
+  configs: Record<number, BulkCourseConfig>;
+};
+
+const defaultBulkCourseConfig: BulkCourseConfig = {
+  count: 4,
+  maxSlots: 35,
+  sessionsPerWeek: 1,
+  periodsPerSession: 2,
+};
 
 const dayOptions = [
   { value: 2, label: "Thứ 2" },
@@ -70,7 +94,10 @@ function CreateCourseClassPage() {
   const [mode, setMode] = useState<Mode>("single");
   const [bulkStep, setBulkStep] = useState<BulkStep>("select");
   const [single, setSingle] = useState<ClassSectionFormValues | null>(null);
-  const [bulkSeed, setBulkSeed] = useState<BulkSeed>({ courseIds: [], count: 4, maxSlots: 35 });
+  const [bulkSeed, setBulkSeed] = useState<BulkSeed>({
+    courseIds: [],
+    configs: {},
+  });
   const [bulkRows, setBulkRows] = useState<RowState[]>([]);
 
   const semestersQuery = useQuery({
@@ -124,9 +151,15 @@ function CreateCourseClassPage() {
       const course = options.courses[0];
       const teachers = getCompatibleTeachers(course.id, options);
       setSingle({ ...initialValues, classCode: nextClassCode(course.code, rows), teacherId: teachers[0]?.id ?? 0 });
-      setBulkSeed((current) => ({ ...current, courseIds: [course.id] }));
+      setBulkSeed((current) => ({
+        courseIds: [course.id],
+        configs: {
+          ...current.configs,
+          [course.id]: current.configs[course.id] ?? defaultBulkCourseConfig,
+        },
+      }));
     }
-  }, [initialValues, options.courses, options.periods.length, options.rooms.length, options.teachers.length, rows, single]);
+  }, [initialValues, options, rows, single]);
 
   useEffect(() => {
     if (!single) return;
@@ -138,7 +171,7 @@ function CreateCourseClassPage() {
     if (teachers.length > 0 && !teachers.some((teacher) => teacher.id === single.teacherId)) {
       setSingle((current) => current ? { ...current, teacherId: teachers[0].id } : current);
     }
-  }, [options, single?.courseId, single?.teacherId]);
+  }, [options, single]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["admin", "class-sections", "semester", semesterId] });
@@ -172,13 +205,8 @@ function CreateCourseClassPage() {
   });
 
   const createBulkMutation = useMutation({
-    mutationFn: async (items: RowState[]) => {
-      const created = [];
-      for (const item of items) {
-        created.push(await adminApi.createClassSection(toRequest(item, semesterId)));
-      }
-      return created;
-    },
+    mutationFn: (items: RowState[]) =>
+      adminApi.createBulkClassSections(items.map((item) => toRequest(item, semesterId))),
     onSuccess: (created) => {
       invalidate();
       toast.success(`Đã tạo ${created.length} lớp học phần`);
@@ -206,7 +234,6 @@ function CreateCourseClassPage() {
   ];
   const singleWarnings = backendWarnings.filter((item) => item.code !== "COURSE_ALREADY_HAS_CLASSES");
   const singleBlocked = singleErrors.length > 0 || singleValidationQuery.isError;
-  const validBulkRows = bulkRows.filter((row) => isRowValid(row));
   const singleSchedules = single.schedules?.length
     ? single.schedules
     : [createDefaultSchedule(options, 0)];
@@ -374,7 +401,7 @@ function CreateCourseClassPage() {
           options={options}
           semesterId={semesterId}
           existingRows={rows}
-          onCreate={() => createBulkMutation.mutate(validBulkRows)}
+          onCreate={() => createBulkMutation.mutate(bulkRows)}
           creating={createBulkMutation.isPending}
         />
       )}
@@ -407,6 +434,10 @@ function BulkCreatePanel({
   onCreate: () => void;
   creating: boolean;
 }) {
+  const [summaries, setSummaries] = useState<BulkClassSectionCourseSummaryResponse[]>([]);
+  const [validatingBatch, setValidatingBatch] = useState(false);
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
   const validRows = rows.filter((row) => isRowValid(row));
   const invalidRows = rows.filter((row) => row.validation?.errors.length);
   const selectedCourses = options.courses.filter((course) => seed.courseIds.includes(course.id));
@@ -414,45 +445,93 @@ function BulkCreatePanel({
     .map((course) => ({ course, rows: rows.filter((row) => row.courseId === course.id) }))
     .filter((group) => group.rows.length > 0);
 
-  const generateRows = () => {
-    const count = Math.max(1, Math.min(seed.count || 1, 20));
-    const generated: RowState[] = [];
-
-    selectedCourses.forEach((course, courseIndex) => {
-      const teachers = getCompatibleTeachers(course.id, options);
-      const classCodes = nextClassCodes(course.code, [...existingRows, ...generated], count);
-      for (let index = 0; index < count; index++) {
-        const room = options.rooms[(courseIndex + index) % Math.max(options.rooms.length, 1)];
-        const teacher = teachers[index % Math.max(teachers.length, 1)];
-        const start = options.periods[(index * 2) % Math.max(options.periods.length, 1)];
-        const end = options.periods[Math.min(options.periods.findIndex((item) => item.id === start?.id) + 1, options.periods.length - 1)] ?? start;
-        generated.push({
-          key: `${Date.now()}-${course.id}-${index}`,
-          classCode: classCodes[index] ?? nextClassCode(course.code, [...existingRows, ...generated]),
-          courseId: course.id,
-          semesterId,
-          teacherId: teacher?.id ?? 0,
-          roomId: room?.id ?? 0,
-          dayOfWeek: dayOptions[(courseIndex + index) % dayOptions.length].value,
-          startPeriodId: start?.id ?? 0,
-          endPeriodId: end?.id ?? start?.id ?? 0,
-          maxSlots: seed.maxSlots || room?.capacity || 35,
+  const proposalMutation = useMutation({
+    mutationFn: () =>
+      adminApi.proposeBulkClassSections({
+        semesterId,
+        courses: selectedCourses.map((course) => {
+          const config = seed.configs[course.id] ?? defaultBulkCourseConfig;
+          return {
+            courseId: course.id,
+            classCount: countSafe(config.count),
+            maxSlots: Math.max(1, config.maxSlots),
+            sessionsPerWeek: Math.max(1, Math.min(config.sessionsPerWeek, 6)),
+            periodsPerSession: Math.max(1, Math.min(config.periodsPerSession, 14)),
+          };
+        }),
+      }),
+    onSuccess: (response) => {
+      const generated = response.items.map<RowState>((item, index) => {
+        const firstSchedule = item.schedules[0];
+        return {
+          key: `proposal-${item.courseId}-${item.classCode}-${index}`,
+          classCode: item.classCode,
+          courseId: item.courseId,
+          semesterId: item.semesterId,
+          teacherId: item.teacherId ?? 0,
+          roomId: firstSchedule?.roomId ?? 0,
+          dayOfWeek: firstSchedule?.dayOfWeek ?? 2,
+          startPeriodId: firstSchedule?.startPeriodId ?? 0,
+          endPeriodId: firstSchedule?.endPeriodId ?? 0,
+          maxSlots: item.maxSlots,
           status: "OPEN",
-          schedules: [
-            {
-              key: `bulk-${course.id}-${index}-0`,
-              roomId: room?.id ?? 0,
-              dayOfWeek: dayOptions[(courseIndex + index) % dayOptions.length].value,
-              startPeriodId: start?.id ?? 0,
-              endPeriodId: end?.id ?? start?.id ?? 0,
-            },
-          ],
+          schedules: item.schedules.map((schedule, scheduleIndex) => ({
+            key: `proposal-${index}-${scheduleIndex}`,
+            roomId: schedule.roomId,
+            dayOfWeek: schedule.dayOfWeek,
+            startPeriodId: schedule.startPeriodId,
+            endPeriodId: schedule.endPeriodId,
+          })),
+          validation: { valid: true, errors: [], warnings: [], infos: [] },
+        };
+      });
+      setRows(generated);
+      setSummaries(response.summaries);
+      setStep("edit");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Không thể tạo đề xuất lớp học phần");
+    },
+  });
+
+  const validationKey = useMemo(
+    () => JSON.stringify(rows.map((row) => toRequest(row, semesterId))),
+    [rows, semesterId],
+  );
+
+  useEffect(() => {
+    const currentRows = rowsRef.current;
+    if (step !== "edit" || currentRows.length === 0) return;
+    const hasLocalError = currentRows.some((row) =>
+      !isReady(row) || row.validation?.errors.some((error) => error.code.startsWith("CLIENT_")),
+    );
+    if (hasLocalError) return;
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setValidatingBatch(true);
+      const rowsToValidate = rowsRef.current;
+      void adminApi.validateBulkClassSections(rowsToValidate.map((row) => toRequest(row, semesterId)))
+        .then((response) => {
+          if (!active) return;
+          setRows(rowsRef.current.map((row, index) => ({
+            ...row,
+            validation: response.items[index]?.validation ?? row.validation,
+          })));
+        })
+        .catch((error: unknown) => {
+          if (active) {
+            toast.error(error instanceof Error ? error.message : "Không thể kiểm tra đề xuất");
+          }
+        })
+        .finally(() => {
+          if (active) setValidatingBatch(false);
         });
-      }
-    });
-    setRows(markRowsWithLocalValidation(generated, existingRows, options.periods, options.rooms));
-    setStep("edit");
-  };
+    }, 500);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [semesterId, setRows, step, validationKey]);
 
   const updateRow = (key: string, patch: Partial<RowState>) => {
     const nextRows = rows.map((row) => (row.key === key ? { ...row, ...patch } : row));
@@ -515,16 +594,50 @@ function BulkCreatePanel({
             2. Chỉnh đề xuất
           </Button>
         </div>
-        <div className={step === "select" ? "grid gap-3 lg:grid-cols-[minmax(260px,1fr)_160px_160px_auto]" : "hidden"}>
+        <div className={step === "select" ? "space-y-4" : "hidden"}>
           <CourseMultiSelect
             courses={options.courses}
             selectedIds={seed.courseIds}
-            onChange={(courseIds) => setSeed({ ...seed, courseIds })}
+            onChange={(courseIds) => {
+              const configs = { ...seed.configs };
+              courseIds.forEach((courseId) => {
+                configs[courseId] = configs[courseId] ?? { ...defaultBulkCourseConfig };
+              });
+              setSeed({ courseIds, configs });
+            }}
           />
-          <FieldInput label="Số lớp mỗi môn" type="number" value={seed.count} onChange={(count) => setSeed({ ...seed, count: Number(count) })} />
-          <FieldInput label="Sĩ số mỗi lớp" type="number" value={seed.maxSlots} onChange={(maxSlots) => setSeed({ ...seed, maxSlots: Number(maxSlots) })} />
+          <div className="space-y-3 lg:col-span-4">
+            {selectedCourses.map((course) => {
+              const config = seed.configs[course.id] ?? defaultBulkCourseConfig;
+              const updateConfig = (patch: Partial<BulkCourseConfig>) => {
+                setSeed({
+                  ...seed,
+                  configs: {
+                    ...seed.configs,
+                    [course.id]: { ...config, ...patch },
+                  },
+                });
+              };
+              return (
+                <div key={course.id} className="grid gap-3 rounded-md border bg-background p-3 lg:grid-cols-[minmax(220px,1fr)_140px_140px_150px_150px]">
+                  <div>
+                    <div className="font-medium">{course.code} - {course.name}</div>
+                    <div className="text-xs text-muted-foreground">{course.departmentName ?? "Chưa rõ khoa/bộ môn"}</div>
+                  </div>
+                  <FieldInput label="Số lớp" type="number" value={config.count} onChange={(value) => updateConfig({ count: Number(value) })} />
+                  <FieldInput label="Sĩ số/lớp" type="number" value={config.maxSlots} onChange={(value) => updateConfig({ maxSlots: Number(value) })} />
+                  <FieldInput label="Buổi/tuần" type="number" value={config.sessionsPerWeek} onChange={(value) => updateConfig({ sessionsPerWeek: Number(value) })} />
+                  <FieldInput label="Tiết/buổi" type="number" value={config.periodsPerSession} onChange={(value) => updateConfig({ periodsPerSession: Number(value) })} />
+                </div>
+              );
+            })}
+          </div>
           <div className="flex items-end">
-            <Button className="w-full gap-2" onClick={generateRows} disabled={seed.courseIds.length === 0}>
+            <Button
+              className="w-full gap-2"
+              onClick={() => proposalMutation.mutate()}
+              disabled={seed.courseIds.length === 0 || proposalMutation.isPending}
+            >
               <Wand2 className="h-4 w-4" />
               Tạo đề xuất
             </Button>
@@ -532,6 +645,16 @@ function BulkCreatePanel({
         </div>
 
         <div className={step === "edit" ? "space-y-4" : "hidden"}>
+          {summaries.some((summary) => summary.missingCount > 0) ? (
+            <div className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {summaries.filter((summary) => summary.missingCount > 0).map((summary) => (
+                <div key={summary.courseId}>
+                  {summary.courseCode}: đề xuất được {summary.proposedCount}/{summary.requestedCount} lớp,
+                  còn thiếu {summary.missingCount}. {summary.message}
+                </div>
+              ))}
+            </div>
+          ) : null}
           {groupedRows.map(({ course, rows: courseRows }) => (
             <div key={course.id} className="rounded-md border bg-background">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
@@ -635,7 +758,7 @@ function BulkCreatePanel({
         </div>
 
         <div className={step === "edit" ? "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800" : "hidden"}>
-          Hệ thống tự đánh dấu dòng hợp lệ khi tạo đề xuất. Dòng lỗi sẽ không được gửi khi bấm tạo.
+          Toàn bộ đề xuất được kiểm tra lại theo lô. Nếu một dòng lỗi, hệ thống sẽ không tạo bất kỳ lớp nào.
         </div>
 
         <div className={step === "edit" ? "flex flex-wrap items-center justify-between gap-3" : "hidden"}>
@@ -643,13 +766,33 @@ function BulkCreatePanel({
             {validRows.length}/{rows.length} dòng hợp lệ{invalidRows.length ? `, ${invalidRows.length} dòng đang có lỗi` : ""}
           </div>
           <div className="flex gap-2">
-            <Button onClick={onCreate} disabled={validRows.length === 0 || creating}>
+            <Button
+              onClick={onCreate}
+              disabled={rows.length === 0 || validRows.length !== rows.length || creating || validatingBatch}
+            >
               {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Tạo các lớp hợp lệ
+              {validatingBatch ? "Đang kiểm tra..." : "Tạo tất cả lớp"}
             </Button>
           </div>
         </div>
       </CardContent>
+      <Dialog open={proposalMutation.isPending}>
+        <DialogContent
+          className="max-w-md"
+          onEscapeKeyDown={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              Đang tạo đề xuất
+            </DialogTitle>
+            <DialogDescription>
+              Hệ thống đang tìm giảng viên, phòng và lịch học phù hợp. Vui lòng chờ trong giây lát.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
@@ -971,17 +1114,6 @@ function nextClassCode(courseCode: string, rows: Array<{ classCode: string }>) {
     .map((value) => Number(value));
   const next = Math.max(0, ...usedNumbers) + 1;
   return `${courseCode}-${String(next).padStart(2, "0")}`;
-}
-
-function nextClassCodes(courseCode: string, rows: Array<{ classCode: string }>, count: number) {
-  const generated: string[] = [];
-  const syntheticRows = [...rows];
-  for (let index = 0; index < count; index++) {
-    const classCode = nextClassCode(courseCode, syntheticRows);
-    generated.push(classCode);
-    syntheticRows.push({ classCode });
-  }
-  return generated;
 }
 
 function countSafe(value: number) {

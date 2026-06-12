@@ -10,21 +10,36 @@ import {
   CheckCircle2,
   GraduationCap,
   Layers,
-  LibraryBig,
-  MapPin,
-  RefreshCw,
   School,
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PageHeader, StatCard } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/lib/api/admin";
 import type { ClassSectionResponse } from "@/lib/api/types";
+import { useSemesterRealtime } from "@/hooks/useSemesterRealtime";
 
-export const Route = createFileRoute("/admin/dashboard")({ component: AdminDashboard });
+type DashboardSearch = {
+  semesterId?: number;
+};
+
+export const Route = createFileRoute("/admin/dashboard")({
+  validateSearch: (search: Record<string, unknown>): DashboardSearch => {
+    const semesterId = Number(search.semesterId);
+    return Number.isFinite(semesterId) && semesterId > 0 ? { semesterId } : {};
+  },
+  component: AdminDashboard,
+});
 
 function percentValue(value?: number | null) {
   return Math.min(100, Math.max(0, Math.round(value ?? 0)));
@@ -47,11 +62,19 @@ function occupancy(section: ClassSectionResponse) {
 }
 
 function AdminDashboard() {
-  const dashboardQuery = useQuery({
-    queryKey: ["admin", "dashboard"],
-    queryFn: adminApi.getDashboard,
+  const { semesterId } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const semestersQuery = useQuery({
+    queryKey: ["admin", "semesters"],
+    queryFn: adminApi.listSemesters,
     staleTime: 60 * 1000,
   });
+  const dashboardQuery = useQuery({
+    queryKey: ["admin", "dashboard", semesterId ?? "current"],
+    queryFn: () => adminApi.getDashboard(semesterId),
+    staleTime: 60 * 1000,
+  });
+  useSemesterRealtime(dashboardQuery.data?.currentSemester?.id);
 
   if (dashboardQuery.isPending) {
     return <DashboardSkeleton />;
@@ -61,22 +84,33 @@ function AdminDashboard() {
   const currentSemester = dashboard?.currentSemester;
   const attentionClasses = dashboard?.attentionClasses ?? [];
   const recentClasses = dashboard?.recentClasses ?? [];
-  const studentsByMajor = dashboard?.studentsByMajor ?? [];
 
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Tổng quan hệ thống"
-        description="Bảng điều hành nhanh cho dữ liệu đào tạo, học kỳ và lớp học phần"
+        title={currentSemester?.name ?? "Dashboard học kỳ"}
+        description="Tổng hợp riêng dữ liệu lớp học phần và đăng ký của học kỳ đang chọn"
         actions={
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => void dashboardQuery.refetch()}
+          <Select
+            value={String(semesterId ?? currentSemester?.id ?? "")}
+            onValueChange={(value) => {
+              void navigate({
+                search: { semesterId: Number(value) },
+                replace: true,
+              });
+            }}
           >
-            <RefreshCw className="h-4 w-4" />
-            Làm mới
-          </Button>
+            <SelectTrigger className="w-full sm:w-72">
+              <SelectValue placeholder="Chọn học kỳ" />
+            </SelectTrigger>
+            <SelectContent>
+              {(semestersQuery.data ?? []).map((semester) => (
+                <SelectItem key={semester.id} value={String(semester.id)}>
+                  {semester.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         }
       />
 
@@ -105,19 +139,19 @@ function AdminDashboard() {
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
               <SystemMetric
-                label="Lớp học phần đang mở"
-                value={dashboard?.openClassCount ?? 0}
-                helper={`${dashboard?.classSectionCount ?? 0} lớp tổng cộng`}
+                label="Lớp học phần"
+                value={dashboard?.classSectionCount ?? 0}
+                helper="Thuộc học kỳ này"
               />
               <SystemMetric
-                label="Có giảng viên phụ trách"
-                value={`${percentValue(dashboard?.assignedTeacherRate)}%`}
-                helper={`${dashboard?.assignedClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lớp`}
+                label="Chờ chốt"
+                value={dashboard?.pendingEnrollmentCount ?? 0}
+                helper="Lượt đăng ký PENDING"
               />
               <SystemMetric
-                label="Đã xếp lịch"
-                value={`${percentValue(dashboard?.scheduledClassRate)}%`}
-                helper={`${dashboard?.scheduledClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lớp`}
+                label="Đã chốt"
+                value={dashboard?.registeredEnrollmentCount ?? 0}
+                helper="Lượt đăng ký REGISTERED"
               />
             </div>
           </div>
@@ -149,34 +183,24 @@ function AdminDashboard() {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          label="Sinh viên"
-          value={dashboard?.studentCount ?? 0}
-          hint={`${studentsByMajor.length} ngành có dữ liệu`}
-          icon={GraduationCap}
-          tone="primary"
+      <div className="grid gap-4 md:grid-cols-3">
+        <SemesterStatusCard
+          label="Lớp đang mở"
+          value={dashboard?.openClassCount ?? 0}
+          helper={`${dashboard?.classSectionCount ?? 0} lớp trong học kỳ`}
+          icon={Layers}
         />
-        <StatCard
-          label="Giảng viên"
-          value={dashboard?.teacherCount ?? 0}
-          hint={`${dashboard?.departmentCount ?? 0} khoa / bộ môn`}
+        <SemesterStatusCard
+          label="Đã phân công giảng viên"
+          value={`${percentValue(dashboard?.assignedTeacherRate)}%`}
+          helper={`${dashboard?.assignedClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lớp`}
           icon={Users}
-          tone="info"
         />
-        <StatCard
-          label="Môn học"
-          value={dashboard?.courseCount ?? 0}
-          hint={`${dashboard?.totalCourseCredits ?? 0} tín chỉ`}
-          icon={BookOpen}
-          tone="success"
-        />
-        <StatCard
-          label="Phòng học"
-          value={dashboard?.roomCount ?? 0}
-          hint={`${dashboard?.roomCapacity ?? 0} chỗ ngồi`}
-          icon={MapPin}
-          tone="warning"
+        <SemesterStatusCard
+          label="Đã xếp lịch học"
+          value={`${percentValue(dashboard?.scheduledClassRate)}%`}
+          helper={`${dashboard?.scheduledClassCount ?? 0}/${dashboard?.classSectionCount ?? 0} lớp`}
+          icon={CalendarDays}
         />
       </div>
 
@@ -226,62 +250,12 @@ function AdminDashboard() {
         <section className="rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Sinh viên theo ngành</h2>
-              <p className="text-xs text-muted-foreground">Top ngành có số lượng cao nhất</p>
-            </div>
-            <LibraryBig className="h-5 w-5 text-muted-foreground" />
-          </div>
-
-          {studentsByMajor.length === 0 ? (
-            <EmptyState text="Chưa có dữ liệu ngành học." />
-          ) : (
-            <div className="mt-4 space-y-4">
-              {studentsByMajor.map((major) => (
-                <div key={major.majorId ?? major.majorName}>
-                  <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate font-medium">{major.majorName ?? "Chưa phân ngành"}</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {major.studentCount} SV
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      (dashboard?.studentCount ?? 0) > 0
-                        ? Math.round((major.studentCount / (dashboard?.studentCount ?? 1)) * 100)
-                        : 0
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <section className="rounded-xl border bg-card p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold">Thao tác nhanh</h2>
-            <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <QuickAction to="/admin/semesters" icon={CalendarDays} label="Quản lý học kỳ" />
-            <QuickAction to="/admin/class-sections" icon={Layers} label="Mở lớp học phần" />
-            <QuickAction to="/admin/students" icon={GraduationCap} label="Danh sách sinh viên" />
-            <QuickAction to="/admin/teachers" icon={Users} label="Phân công giảng viên" />
-            <QuickAction to="/admin/courses" icon={BookOpen} label="Danh mục học phần" />
-            <QuickAction to="/admin/departments" icon={Building2} label="Khoa / Bộ môn" />
-          </div>
-        </section>
-
-        <section className="rounded-xl border bg-card p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
               <h2 className="text-sm font-semibold">Lớp học phần mới cập nhật</h2>
-              <p className="text-xs text-muted-foreground">Theo bản ghi mới nhất trong hệ thống</p>
+              <p className="text-xs text-muted-foreground">Chỉ hiển thị lớp thuộc học kỳ này</p>
             </div>
             <Layers className="h-5 w-5 text-muted-foreground" />
           </div>
+
           {recentClasses.length === 0 ? (
             <EmptyState text="Chưa có lớp học phần nào." />
           ) : (
@@ -312,6 +286,23 @@ function AdminDashboard() {
           )}
         </section>
       </div>
+
+      <div>
+        <section className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold">Thao tác nhanh</h2>
+            <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <QuickAction to="/admin/semesters" icon={CalendarDays} label="Quản lý học kỳ" />
+            <QuickAction to="/admin/class-sections" icon={Layers} label="Mở lớp học phần" />
+            <QuickAction to="/admin/students" icon={GraduationCap} label="Danh sách sinh viên" />
+            <QuickAction to="/admin/teachers" icon={Users} label="Phân công giảng viên" />
+            <QuickAction to="/admin/courses" icon={BookOpen} label="Danh mục học phần" />
+            <QuickAction to="/admin/departments" icon={Building2} label="Khoa / Bộ môn" />
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
@@ -330,6 +321,31 @@ function SystemMetric({
       <div className="text-xs font-medium uppercase text-muted-foreground">{label}</div>
       <div className="mt-2 text-2xl font-semibold tabular-nums">{value}</div>
       <div className="mt-1 text-xs text-muted-foreground">{helper}</div>
+    </div>
+  );
+}
+
+function SemesterStatusCard({
+  label,
+  value,
+  helper,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  helper: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border bg-card p-5 shadow-sm">
+      <div>
+        <div className="text-sm text-muted-foreground">{label}</div>
+        <div className="mt-1 text-3xl font-semibold tabular-nums">{value}</div>
+        <div className="mt-1 text-xs text-muted-foreground">{helper}</div>
+      </div>
+      <div className="rounded-xl bg-primary/10 p-3 text-primary">
+        <Icon className="h-5 w-5" />
+      </div>
     </div>
   );
 }
@@ -368,10 +384,10 @@ function EmptyState({ text }: { text: string }) {
 function DashboardSkeleton() {
   return (
     <div className="space-y-5">
-      <PageHeader title="Tong quan he thong" description="Dang tai du lieu tong quan" />
+      <PageHeader title="Dashboard học kỳ" description="Đang tải dữ liệu học kỳ hiện tại" />
       <Skeleton className="h-56 rounded-xl" />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((item) => (
+      <div className="grid gap-4 md:grid-cols-3">
+        {[0, 1, 2].map((item) => (
           <Skeleton key={item} className="h-28 rounded-xl" />
         ))}
       </div>

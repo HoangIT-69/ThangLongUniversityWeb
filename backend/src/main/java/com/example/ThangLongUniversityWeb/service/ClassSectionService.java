@@ -19,6 +19,7 @@ import com.example.ThangLongUniversityWeb.entity.Semester;
 import com.example.ThangLongUniversityWeb.entity.Teacher;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
+import com.example.ThangLongUniversityWeb.enums.TeacherStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionScheduleRepository;
 import com.example.ThangLongUniversityWeb.repository.CourseRepository;
@@ -59,6 +60,7 @@ public class ClassSectionService {
     private final RegistrationRoundService registrationRoundService;
     private final GradeRepository gradeRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
+    private final SemesterRealtimeService semesterRealtimeService;
 
     public void checkScheduleConflict(ClassSectionRequest request, Long semesterId, Long excludeId) {
         ClassSectionValidationResponse validation = validateClassSection(request, semesterId, excludeId);
@@ -206,6 +208,9 @@ public class ClassSectionService {
     @Transactional
     @CacheEvict(cacheNames = {"adminDashboard", "classSectionOptions"}, allEntries = true)
     public ClassSectionResponse createClassSection(ClassSectionRequest request) {
+        Semester semester = semesterRepository.findByIdForUpdate(request.getSemesterId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky."));
+
         if (classSectionRepository.findBySemesterIdAndClassCode(request.getSemesterId(), request.getClassCode().trim()).isPresent()) {
             throw new RuntimeException("Ma lop hoc phan da ton tai trong hoc ky nay.");
         }
@@ -214,8 +219,6 @@ public class ClassSectionService {
 
         Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay mon hoc."));
-        Semester semester = semesterRepository.findById(request.getSemesterId())
-                .orElseThrow(() -> new RuntimeException("Khong tim thay hoc ky."));
         Teacher teacher = getTeacherOrNull(request.getTeacherId());
         validateTeacherDepartment(course, teacher);
         RegistrationRound registrationRound = resolveRegistrationRound(request, semester.getId());
@@ -235,6 +238,7 @@ public class ClassSectionService {
         ClassSection saved = classSectionRepository.save(section);
         replaceSchedules(saved, request.getSchedules());
         saved = classSectionRepository.findById(saved.getId()).orElseThrow();
+        semesterRealtimeService.publishAfterCommit(semester.getId(), "CLASS_SECTIONS");
         return mapToResponse(saved);
     }
 
@@ -268,6 +272,7 @@ public class ClassSectionService {
         replaceSchedules(section, request.getSchedules());
 
         ClassSection saved = classSectionRepository.save(section);
+        semesterRealtimeService.publishAfterCommit(section.getSemester().getId(), "CLASS_SECTIONS");
         return mapToResponse(saved);
     }
 
@@ -276,9 +281,11 @@ public class ClassSectionService {
     public void deleteClassSection(Long id) {
         ClassSection section = classSectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay lop hoc phan."));
+        Long semesterId = section.getSemester().getId();
         try {
             classSectionRepository.delete(section);
             classSectionRepository.flush();
+            semesterRealtimeService.publishAfterCommit(semesterId, "CLASS_SECTIONS");
         } catch (DataIntegrityViolationException ex) {
             throw new RuntimeException("Khong the xoa lop hoc phan vi da co du lieu lien quan.");
         }
@@ -305,7 +312,9 @@ public class ClassSectionService {
         section.setStatus(ClassSectionStatus.CANCELLED);
         section.setCurrentSlots((int) enrollmentRepository.countByClassSectionIdAndStatusIn(
                 section.getId(), List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED)));
-        return mapToResponse(classSectionRepository.save(section));
+        ClassSection saved = classSectionRepository.save(section);
+        semesterRealtimeService.publishAfterCommit(section.getSemester().getId(), "CLASS_SECTIONS");
+        return mapToResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -562,7 +571,13 @@ public class ClassSectionService {
     }
 
     private void validateTeacherDepartment(Course course, Teacher teacher) {
-        if (teacher == null || course == null || course.getMajor() == null || course.getMajor().getDepartment() == null) {
+        if (teacher == null) {
+            return;
+        }
+        if (teacher.getStatus() != TeacherStatus.DANG_GIANG_DAY) {
+            throw new RuntimeException("Giang vien khong o trang thai dang giang day.");
+        }
+        if (course == null || course.getMajor() == null || course.getMajor().getDepartment() == null) {
             return;
         }
         if (teacher.getDepartment() == null) {
@@ -592,6 +607,9 @@ public class ClassSectionService {
     }
 
     private void validateRoomCapacity(Room room, Integer maxSlots) {
+        if (!"AVAILABLE".equalsIgnoreCase(room.getStatus())) {
+            throw new RuntimeException("Phong " + room.getName() + " hien khong kha dung.");
+        }
         if (maxSlots != null && room.getCapacity() != null && maxSlots > room.getCapacity()) {
             throw new RuntimeException("Si so lop vuot qua suc chua phong " + room.getName() + ".");
         }

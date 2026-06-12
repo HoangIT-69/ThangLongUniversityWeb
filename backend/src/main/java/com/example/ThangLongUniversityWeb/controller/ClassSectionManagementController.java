@@ -1,11 +1,14 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.ClassSectionRequest;
+import com.example.ThangLongUniversityWeb.dto.request.BulkClassSectionProposalRequest;
+import com.example.ThangLongUniversityWeb.dto.request.BulkClassSectionRequest;
 import com.example.ThangLongUniversityWeb.dto.request.ExamScheduleRequest;
 import com.example.ThangLongUniversityWeb.dto.request.ExamSessionRequest;
 import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.service.ClassSectionService;
+import com.example.ThangLongUniversityWeb.service.BulkClassSectionService;
 import com.example.ThangLongUniversityWeb.service.DashboardService;
 import com.example.ThangLongUniversityWeb.service.ExamSessionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +35,7 @@ import java.util.stream.Collectors;
 public class ClassSectionManagementController {
 
     private final ClassSectionService classSectionService;
+    private final BulkClassSectionService bulkClassSectionService;
     private final ClassSectionRepository classSectionRepository;
     private final ExamSessionService examSessionService;
     private final DashboardService dashboardService;
@@ -95,6 +99,30 @@ public class ClassSectionManagementController {
             @RequestParam(required = false) Long excludeId
     ) {
         return ResponseEntity.ok(classSectionService.validateClassSection(request, request.getSemesterId(), excludeId));
+    }
+
+    @Operation(summary = "Sinh de xuat tao nhieu lop hoc phan khong trung lich")
+    @PostMapping("/bulk/proposals")
+    public ResponseEntity<?> proposeBulkClassSections(
+            @Valid @RequestBody BulkClassSectionProposalRequest request
+    ) {
+        return ResponseEntity.ok(bulkClassSectionService.propose(request));
+    }
+
+    @Operation(summary = "Kiem tra toan bo de xuat tao nhieu lop hoc phan")
+    @PostMapping("/bulk/validate")
+    public ResponseEntity<?> validateBulkClassSections(
+            @Valid @RequestBody BulkClassSectionRequest request
+    ) {
+        return ResponseEntity.ok(bulkClassSectionService.validate(request));
+    }
+
+    @Operation(summary = "Tao nhieu lop hoc phan trong mot transaction")
+    @PostMapping("/bulk")
+    public ResponseEntity<?> createBulkClassSections(
+            @Valid @RequestBody BulkClassSectionRequest request
+    ) {
+        return ResponseEntity.ok(bulkClassSectionService.create(request));
     }
 
     @Operation(summary = "Cập nhật lớp học phần (Đổi phòng, đổi giảng viên...)")

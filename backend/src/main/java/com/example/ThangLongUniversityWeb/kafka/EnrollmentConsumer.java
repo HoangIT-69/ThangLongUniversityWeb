@@ -11,6 +11,7 @@ import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.service.EnrollmentRequestStatusService;
+import com.example.ThangLongUniversityWeb.service.SemesterRealtimeService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -41,6 +42,7 @@ public class EnrollmentConsumer {
     private final ObjectMapper objectMapper;
     private final EnrollmentRequestStatusService enrollmentRequestStatusService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final SemesterRealtimeService semesterRealtimeService;
 
     @KafkaListener(topics = "class-registration", groupId = "university-group")
     @Transactional
@@ -136,6 +138,8 @@ public class EnrollmentConsumer {
                     targetClass.getClassCode(),
                     "Da them lop " + targetClass.getClassCode() + " vao danh sach cho xac nhan."
             );
+            semesterRealtimeService.publishAfterCommit(
+                    targetClass.getSemester().getId(), "ENROLLMENTS");
 
         } catch (DataIntegrityViolationException dup) {
             log.warn("[Kafka Consumer] Duplicate enrollment by unique constraint: {}", dup.getMessage());

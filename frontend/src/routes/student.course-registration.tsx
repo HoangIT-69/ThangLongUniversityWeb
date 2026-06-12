@@ -12,6 +12,7 @@ import type {
   EnrollmentResponse,
   StudentSemesterResponse,
 } from "@/lib/api/types";
+import { useSemesterRealtime } from "@/hooks/useSemesterRealtime";
 
 export const Route = createFileRoute("/student/course-registration")({
   component: CourseRegistrationPage,
@@ -178,6 +179,7 @@ function CourseRegistrationPage() {
   const queryClient = useQueryClient();
   const [semesterId, setSemesterId] = useState<number | null>(null);
   const [activeType, setActiveType] = useState<"REQUIRED" | "ELECTIVE">("REQUIRED");
+  useSemesterRealtime(semesterId);
 
   const overviewQuery = useQuery({
     queryKey: ["student", "course-registration-overview", semesterId],

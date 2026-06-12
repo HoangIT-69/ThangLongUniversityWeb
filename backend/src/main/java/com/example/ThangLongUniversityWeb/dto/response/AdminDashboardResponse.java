@@ -24,6 +24,8 @@ public class AdminDashboardResponse {
     private Long assignedClassCount;
     private Long scheduledClassCount;
     private Long totalRegisteredSlots;
+    private Long pendingEnrollmentCount;
+    private Long registeredEnrollmentCount;
     private Long totalCapacity;
     private Long totalCourseCredits;
     private Double averageOccupancy;

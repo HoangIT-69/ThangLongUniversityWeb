@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -21,7 +22,7 @@ public class AdminDashboardController {
 
     @Operation(summary = "Du lieu tong hop cho admin dashboard")
     @GetMapping("/dashboard")
-    public ResponseEntity<?> getDashboard() {
-        return ResponseEntity.ok(dashboardService.getAdminDashboard());
+    public ResponseEntity<?> getDashboard(@RequestParam(required = false) Long semesterId) {
+        return ResponseEntity.ok(dashboardService.getAdminDashboard(semesterId));
     }
 }

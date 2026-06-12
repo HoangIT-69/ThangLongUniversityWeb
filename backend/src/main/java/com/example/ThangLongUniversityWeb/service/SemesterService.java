@@ -29,6 +29,7 @@ public class SemesterService {
     private final EnrollmentRepository enrollmentRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
     private final RegistrationRoundService registrationRoundService;
+    private final SemesterRealtimeService semesterRealtimeService;
 
     @Cacheable(cacheNames = "semesters")
     @Transactional(readOnly = true)
@@ -99,6 +100,7 @@ public class SemesterService {
         } else if (round.isRegistrationOpen()) {
             registrationRoundService.closeRound(id, round.getId());
         }
+        semesterRealtimeService.publishAfterCommit(id, "SEMESTER_STATUS");
         return toStudentResponse(getSemesterOrThrow(id));
     }
 
@@ -118,6 +120,7 @@ public class SemesterService {
         semester.setRegistrationOpen(false);
         semester.setLocked(true);
         semesterRepository.save(semester);
+        semesterRealtimeService.publishAfterCommit(id, "SEMESTER_STATUS");
         return count;
     }
 
@@ -166,6 +169,7 @@ public class SemesterService {
             }
         }
 
+        semesterRealtimeService.publishAfterCommit(id, "SEMESTER_STATUS");
         return toStudentResponse(getSemesterOrThrow(id));
     }
 
@@ -188,6 +192,7 @@ public class SemesterService {
         semester.setRetakeOpen(false);
         semester.setRetakeLocked(true);
         semesterRepository.save(semester);
+        semesterRealtimeService.publishAfterCommit(id, "SEMESTER_STATUS");
         return count;
     }
 
@@ -211,7 +216,9 @@ public class SemesterService {
         semester.setRegistrationOpen(false);
         semester.setRetakeOpen(false);
         semester.setEnded(true);
-        return toStudentResponse(semesterRepository.save(semester));
+        StudentSemesterResponse response = toStudentResponse(semesterRepository.save(semester));
+        semesterRealtimeService.publishAfterCommit(id, "SEMESTER_STATUS");
+        return response;
     }
 
     public SemesterSummaryResponse getSemesterSummary(Long id) {

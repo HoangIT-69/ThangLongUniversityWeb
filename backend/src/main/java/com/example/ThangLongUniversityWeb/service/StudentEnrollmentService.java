@@ -42,6 +42,7 @@ public class StudentEnrollmentService {
     private final ClassSectionService classSectionService;
     private final RegistrationRoundService registrationRoundService;
     private final EnrollmentProcessor enrollmentProcessor;
+    private final SemesterRealtimeService semesterRealtimeService;
 
     private Student getCurrentStudent() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -210,7 +211,9 @@ public class StudentEnrollmentService {
         }
 
         String classCode = enrollment.getClassSection().getClassCode();
+        Long semesterId = enrollment.getClassSection().getSemester().getId();
         enrollmentRepository.delete(enrollment);
+        semesterRealtimeService.publishAfterCommit(semesterId, "ENROLLMENTS");
         return "Da bo chon lop " + classCode + " thanh cong!";
     }
 
