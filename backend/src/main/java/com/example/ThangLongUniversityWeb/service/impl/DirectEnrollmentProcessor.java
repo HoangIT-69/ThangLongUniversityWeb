@@ -11,6 +11,7 @@ import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.service.EnrollmentProcessor;
 import com.example.ThangLongUniversityWeb.service.EnrollmentRequestStatusService;
+import com.example.ThangLongUniversityWeb.service.SemesterRealtimeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,6 +32,7 @@ public class DirectEnrollmentProcessor implements EnrollmentProcessor {
     private final ClassSectionRepository classSectionRepository;
     private final EnrollmentRequestStatusService statusService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final SemesterRealtimeService semesterRealtimeService;
 
     @Override
     @Transactional
@@ -60,6 +62,8 @@ public class DirectEnrollmentProcessor implements EnrollmentProcessor {
             log.info("[Direct] Student {} selected class {}", username, classCode);
 
             pushStatus(username, requestId, EnrollmentRequestStatus.SUCCESS, classCode, successMessage);
+            semesterRealtimeService.publishAfterCommit(
+                    lockedClass.getSemester().getId(), "ENROLLMENTS");
             return new EnrollmentRequestResponse(requestId, successMessage);
         } catch (Exception e) {
             String errorMessage = e.getMessage() != null ? e.getMessage() : "Loi he thong khi xu ly dang ky.";

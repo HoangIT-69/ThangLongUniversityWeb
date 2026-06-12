@@ -4,6 +4,9 @@ import type {
   AdminClassSectionOptionsResponse,
   AdminClassSectionRequest,
   AdminClassSectionStudentResponse,
+  BulkClassSectionProposalRequest,
+  BulkClassSectionProposalResponse,
+  BulkClassSectionValidationResponse,
   ClassSectionValidationResponse,
   AdminCourseRequest,
   AdminRoomRequest,
@@ -51,7 +54,10 @@ export interface CreateAdminRequest {
 }
 
 export const adminApi = {
-  getDashboard: () => apiRequest<AdminDashboardResponse>("/api/admin/dashboard"),
+  getDashboard: (semesterId?: number | null) =>
+    apiRequest<AdminDashboardResponse>(
+      `/api/admin/dashboard${semesterId == null ? "" : `?semesterId=${encodeURIComponent(String(semesterId))}`}`,
+    ),
 
   listUsers: () => apiRequest<AdminUserResponse[]>("/api/admin/users"),
   createAdmin: (request: CreateAdminRequest) => {
@@ -416,6 +422,21 @@ export const adminApi = {
         body: JSON.stringify(request),
       },
     ),
+  proposeBulkClassSections: (request: BulkClassSectionProposalRequest) =>
+    apiRequest<BulkClassSectionProposalResponse>("/api/admin/class-sections/bulk/proposals", {
+      method: "POST",
+      body: JSON.stringify(request),
+    }),
+  validateBulkClassSections: (items: AdminClassSectionRequest[]) =>
+    apiRequest<BulkClassSectionValidationResponse>("/api/admin/class-sections/bulk/validate", {
+      method: "POST",
+      body: JSON.stringify({ items }),
+    }),
+  createBulkClassSections: (items: AdminClassSectionRequest[]) =>
+    apiRequest<ClassSectionResponse[]>("/api/admin/class-sections/bulk", {
+      method: "POST",
+      body: JSON.stringify({ items }),
+    }),
   updateClassSection: (id: number | string, request: AdminClassSectionRequest) =>
     apiRequest<ClassSectionResponse>(`/api/admin/class-sections/${id}`, {
       method: "PUT",

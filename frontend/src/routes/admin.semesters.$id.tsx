@@ -5,6 +5,7 @@ import { adminApi } from "@/lib/api/admin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSemesterRealtime } from "@/hooks/useSemesterRealtime";
 import {
   ArrowLeft,
   BookOpen,
@@ -46,6 +47,7 @@ function SemesterHubPage() {
   const { id } = Route.useParams();
   const semesterId = Number(id);
   const [activeTab, setActiveTab] = useState("overview");
+  useSemesterRealtime(semesterId);
 
   const semestersQuery = useQuery({
     queryKey: ["admin", "semesters"],

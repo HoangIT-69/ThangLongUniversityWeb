@@ -36,6 +36,7 @@ public class RegistrationRoundService {
     private final EnrollmentRepository enrollmentRepository;
     private final GradeRepository gradeRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
+    private final SemesterRealtimeService semesterRealtimeService;
 
     @Transactional
     public RegistrationRound ensureDefaultRound(Long semesterId, String roundType) {
@@ -95,7 +96,7 @@ public class RegistrationRoundService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "adminDashboard"}, allEntries = true)
     public RegistrationRoundResponse createRound(Long semesterId, RegistrationRoundRequest request) {
         Semester semester = getSemesterOrThrow(semesterId);
         String roundType = request != null && request.getRoundType() != null ? request.getRoundType() : "COURSE";
@@ -128,17 +129,18 @@ public class RegistrationRoundService {
         if (request != null && Boolean.TRUE.equals(request.getOpen())) {
             saved = openRoundInternal(semester, saved);
         }
+        semesterRealtimeService.publishAfterCommit(semesterId, "REGISTRATION_ROUNDS");
         return toResponse(saved);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "adminDashboard"}, allEntries = true)
     public RegistrationRoundResponse openRound(Long semesterId, Long roundId) {
         return openRound(semesterId, roundId, null);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "adminDashboard"}, allEntries = true)
     public RegistrationRoundResponse openRound(Long semesterId, Long roundId, RegistrationRoundRequest request) {
         Semester semester = getSemesterOrThrow(semesterId);
         RegistrationRound round = getRoundOrThrow(roundId);
@@ -146,11 +148,13 @@ public class RegistrationRoundService {
         if (request != null && request.getTimeSlots() != null) {
             updateTimeSlots(round, request.getTimeSlots());
         }
-        return toResponse(openRoundInternal(semester, round));
+        RegistrationRound saved = openRoundInternal(semester, round);
+        semesterRealtimeService.publishAfterCommit(semesterId, "REGISTRATION_ROUNDS");
+        return toResponse(saved);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "adminDashboard"}, allEntries = true)
     public RegistrationRoundResponse closeRound(Long semesterId, Long roundId) {
         Semester semester = getSemesterOrThrow(semesterId);
         RegistrationRound round = getRoundOrThrow(roundId);
@@ -176,11 +180,12 @@ public class RegistrationRoundService {
             }
             semesterRepository.save(semester);
         }
+        semesterRealtimeService.publishAfterCommit(semesterId, "REGISTRATION_ROUNDS");
         return toResponse(round);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "adminDashboard"}, allEntries = true)
     public int lockOpenRound(Long semesterId) {
         RegistrationRound round = registrationRoundRepository
                 .findFirstBySemesterIdAndRoundTypeAndRegistrationOpenTrueOrderByRoundNumberDesc(semesterId, "COURSE")
@@ -189,7 +194,7 @@ public class RegistrationRoundService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "semesters", allEntries = true)
+    @CacheEvict(cacheNames = {"semesters", "adminDashboard"}, allEntries = true)
     public int lockRound(Long semesterId, Long roundId) {
         Semester semester = getSemesterOrThrow(semesterId);
         RegistrationRound round = getRoundOrThrow(roundId);
@@ -261,6 +266,7 @@ public class RegistrationRoundService {
             semesterRepository.save(semester);
         }
 
+        semesterRealtimeService.publishAfterCommit(semesterId, "REGISTRATION_ROUNDS");
         return count;
     }
 

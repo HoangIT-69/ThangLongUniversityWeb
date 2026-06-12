@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { toast } from "sonner";
 import { Loader2, Lock, X } from "lucide-react";
 import { studentApi } from "@/lib/api/student";
+import { useSemesterRealtime } from "@/hooks/useSemesterRealtime";
 
 export const Route = createFileRoute("/student/retake-registration")({ component: RetakePage });
 
@@ -20,6 +21,7 @@ function RetakePage() {
   const queryClient = useQueryClient();
   const [semesterId, setSemesterId] = useState<number | null>(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState<Set<number>>(new Set());
+  useSemesterRealtime(semesterId);
 
   const overviewQuery = useQuery({
     queryKey: ["student", "retakes", "overview", semesterId],

@@ -55,6 +55,7 @@ public class StudentRetakeService {
     private final SystemSettingsRepository systemSettingsRepository;
     private final SemesterRepository semesterRepository;
     private final RegistrationRoundService registrationRoundService;
+    private final SemesterRealtimeService semesterRealtimeService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Lay phi thi lai tu system_settings (fallback mac dinh 200k)
@@ -197,6 +198,7 @@ public class StudentRetakeService {
             results.add(mapRegisteredItem(examRegistrationRepository.save(examReg)));
         }
 
+        semesterRealtimeService.publishAfterCommit(semester.getId(), "RETAKE_REGISTRATIONS");
         return new RetakeRegistrationResponse(results, (long) results.size() * feePerCourse);
     }
 
@@ -217,7 +219,9 @@ public class StudentRetakeService {
         }
 
         String courseName = getCourse(reg).getName();
+        Long semesterId = reg.getSemester().getId();
         examRegistrationRepository.delete(reg);
+        semesterRealtimeService.publishAfterCommit(semesterId, "RETAKE_REGISTRATIONS");
         return "Da bo chon thi lai / nang diem mon " + courseName + ".";
     }
 

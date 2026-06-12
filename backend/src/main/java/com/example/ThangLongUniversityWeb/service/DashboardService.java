@@ -18,6 +18,7 @@ import com.example.ThangLongUniversityWeb.repository.DepartmentRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.MajorRepository;
 import com.example.ThangLongUniversityWeb.repository.RoomRepository;
+import com.example.ThangLongUniversityWeb.repository.RegistrationRoundRepository;
 import com.example.ThangLongUniversityWeb.repository.StudentRepository;
 import com.example.ThangLongUniversityWeb.repository.TeacherRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,9 +37,6 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class DashboardService {
 
-    private static final List<EnrollmentStatus> ACTIVE_ENROLLMENT_STATUSES =
-            List.of(EnrollmentStatus.PENDING, EnrollmentStatus.REGISTERED);
-
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final CourseRepository courseRepository;
@@ -47,6 +45,7 @@ public class DashboardService {
     private final MajorRepository majorRepository;
     private final ClassSectionRepository classSectionRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final RegistrationRoundRepository registrationRoundRepository;
     private final ClassSectionService classSectionService;
     private final CourseService courseService;
     private final SemesterService semesterService;
@@ -55,10 +54,23 @@ public class DashboardService {
     private final PeriodService periodService;
 
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "adminDashboard")
-    public AdminDashboardResponse getAdminDashboard() {
-        List<ClassSection> sections = classSectionRepository.findAll();
+    @Cacheable(
+            cacheNames = "adminDashboard",
+            key = "#semesterId == null ? 'current' : #semesterId.toString()")
+    public AdminDashboardResponse getAdminDashboard(Long semesterId) {
+        StudentSemesterResponse currentSemester =
+                resolveDashboardSemester(semesterService.getAllSemestersReadOnly(), semesterId);
+        List<ClassSection> sections = currentSemester == null
+                ? List.of()
+                : classSectionRepository.findBySemesterId(currentSemester.getId());
         List<Course> courses = courseRepository.findAll();
+
+        if (currentSemester != null) {
+            boolean registrationOpen =
+                    registrationRoundRepository.existsBySemesterIdAndRoundTypeAndRegistrationOpenTrue(
+                            currentSemester.getId(), "COURSE");
+            currentSemester.setRegistrationOpen(registrationOpen);
+        }
 
         long classSectionCount = sections.size();
         long openClassCount = sections.stream()
@@ -75,7 +87,13 @@ public class DashboardService {
                 .filter(Objects::nonNull)
                 .mapToLong(Integer::longValue)
                 .sum();
-        long registeredSlots = enrollmentRepository.countByStatusIn(ACTIVE_ENROLLMENT_STATUSES);
+        long pendingEnrollments = currentSemester == null ? 0
+                : enrollmentRepository.countByClassSectionSemesterIdAndStatus(
+                        currentSemester.getId(), EnrollmentStatus.PENDING);
+        long registeredEnrollments = currentSemester == null ? 0
+                : enrollmentRepository.countByClassSectionSemesterIdAndStatus(
+                        currentSemester.getId(), EnrollmentStatus.REGISTERED);
+        long registeredSlots = pendingEnrollments + registeredEnrollments;
         long roomCapacity = roomRepository.findAll().stream()
                 .map(room -> room.getCapacity() == null ? 0L : room.getCapacity().longValue())
                 .mapToLong(Long::longValue)
@@ -91,6 +109,10 @@ public class DashboardService {
                 .toList();
 
         List<ClassSectionResponse> attentionClasses = sections.stream()
+                .filter(section -> section.getTeacher() == null
+                        || section.getSchedules() == null
+                        || section.getSchedules().isEmpty()
+                        || occupancyRate(section) >= 90)
                 .sorted(Comparator
                         .comparing((ClassSection section) -> section.getTeacher() != null)
                         .thenComparing(section -> section.getSchedules() != null && !section.getSchedules().isEmpty())
@@ -108,7 +130,7 @@ public class DashboardService {
                 .toList();
 
         return AdminDashboardResponse.builder()
-                .currentSemester(resolveCurrentSemester(semesterService.getAllSemestersReadOnly()))
+                .currentSemester(currentSemester)
                 .studentCount(studentRepository.count())
                 .teacherCount(teacherRepository.count())
                 .courseCount(courseRepository.count())
@@ -120,6 +142,8 @@ public class DashboardService {
                 .assignedClassCount(assignedClassCount)
                 .scheduledClassCount(scheduledClassCount)
                 .totalRegisteredSlots(registeredSlots)
+                .pendingEnrollmentCount(pendingEnrollments)
+                .registeredEnrollmentCount(registeredEnrollments)
                 .totalCapacity(totalCapacity)
                 .totalCourseCredits(courses.stream()
                         .map(Course::getCredits)
@@ -133,6 +157,12 @@ public class DashboardService {
                 .attentionClasses(attentionClasses)
                 .recentClasses(recentClasses)
                 .build();
+    }
+
+    private int occupancyRate(ClassSection section) {
+        int current = section.getCurrentSlots() == null ? 0 : section.getCurrentSlots();
+        int max = section.getMaxSlots() == null ? 0 : section.getMaxSlots();
+        return max == 0 ? 0 : Math.min(100, Math.round(current * 100f / max));
     }
 
     @Transactional(readOnly = true)
@@ -188,8 +218,20 @@ public class DashboardService {
     }
 
     private StudentSemesterResponse resolveCurrentSemester(List<StudentSemesterResponse> semesters) {
+        return resolveDashboardSemester(semesters, null);
+    }
+
+    private StudentSemesterResponse resolveDashboardSemester(
+            List<StudentSemesterResponse> semesters,
+            Long semesterId) {
         if (semesters == null || semesters.isEmpty()) {
             return null;
+        }
+        if (semesterId != null) {
+            return semesters.stream()
+                    .filter(semester -> Objects.equals(semester.getId(), semesterId))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy học kỳ."));
         }
 
         List<StudentSemesterResponse> sorted = semesters.stream()
@@ -203,7 +245,7 @@ public class DashboardService {
                         && semester.getEndDate() != null
                         && !today.isBefore(semester.getStartDate())
                         && !today.isAfter(semester.getEndDate()))
-                .findFirst()
+                .max(Comparator.comparing(StudentSemesterResponse::getStartDate))
                 .or(() -> sorted.stream().filter(StudentSemesterResponse::isRegistrationOpen).findFirst())
                 .or(() -> sorted.stream()
                         .filter(semester -> semester.getStartDate() != null && !semester.getStartDate().isAfter(today))

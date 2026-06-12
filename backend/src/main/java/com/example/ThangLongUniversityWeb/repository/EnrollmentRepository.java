@@ -37,6 +37,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     long countByStatusIn(List<EnrollmentStatus> statuses);
 
+    long countByClassSectionSemesterIdAndStatus(Long semesterId, EnrollmentStatus status);
+
     List<Enrollment> findByStudentId(Long studentId);
 
     long deleteByStudentId(Long studentId);

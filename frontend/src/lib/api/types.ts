@@ -304,6 +304,45 @@ export interface ClassSectionValidationResponse {
   infos?: ClassSectionValidationIssueResponse[];
 }
 
+export interface BulkClassSectionCourseRequest {
+  courseId: number;
+  classCount: number;
+  maxSlots: number;
+  sessionsPerWeek: number;
+  periodsPerSession: number;
+}
+
+export interface BulkClassSectionProposalRequest {
+  semesterId: number;
+  courses: BulkClassSectionCourseRequest[];
+}
+
+export interface BulkClassSectionCourseSummaryResponse {
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  requestedCount: number;
+  proposedCount: number;
+  missingCount: number;
+  message: string;
+}
+
+export interface BulkClassSectionProposalResponse {
+  items: AdminClassSectionRequest[];
+  summaries: BulkClassSectionCourseSummaryResponse[];
+}
+
+export interface BulkClassSectionValidationItemResponse {
+  index: number;
+  classCode: string;
+  validation: ClassSectionValidationResponse;
+}
+
+export interface BulkClassSectionValidationResponse {
+  valid: boolean;
+  items: BulkClassSectionValidationItemResponse[];
+}
+
 export interface AdminClassSectionStudentResponse {
   enrollmentId: number;
   studentId: number;
@@ -577,6 +616,8 @@ export interface AdminDashboardResponse {
   assignedClassCount: number;
   scheduledClassCount: number;
   totalRegisteredSlots: number;
+  pendingEnrollmentCount: number;
+  registeredEnrollmentCount: number;
   totalCapacity: number;
   totalCourseCredits: number;
   averageOccupancy: number;
