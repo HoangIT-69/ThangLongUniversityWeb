@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import ThangLongLanding from "@/features/landing/ThangLongLanding";
 import { LandingContentProvider } from "@/lib/landing-content";
 
-const SITE = "https://academe-view-pro.lovable.app";
+const SITE = "https://thanglonguniversity.online";
 
 function LandingWithProvider() {
   return (

@@ -7,8 +7,7 @@ import appCss from "../styles.css?url";
 
 const siteUrl = "https://thanglonguniversity.online/";
 const siteTitle = "Đại học Thăng Long - Cổng thông tin";
-const siteDescription =
-  "Hệ thống quản lý và cổng thông tin trực tuyến của Đại học Thăng Long.";
+const siteDescription = "Hệ thống quản lý và cổng thông tin trực tuyến của Đại học Thăng Long.";
 const socialImage = `${siteUrl}images/LogoThangLongUniversity.png`;
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -32,13 +31,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
     ],
     links: [
+      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
       { rel: "icon", type: "image/png", sizes: "48x48", href: "/favicon-48.png" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/favicon-192.png" },
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon-512.png" },
-      { rel: "shortcut icon", href: "/favicon.ico" },
       { rel: "apple-touch-icon", sizes: "192x192", href: "/favicon-192.png" },
       { rel: "manifest", href: "/site.webmanifest" },
-      { rel: "canonical", href: siteUrl },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://images.unsplash.com" },
