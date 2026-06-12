@@ -4,4 +4,4 @@ Disallow: /admin/
 Disallow: /teacher/
 Disallow: /student/
 
-Sitemap: https://academe-view-pro.lovable.app/sitemap.xml
+Sitemap: https://thanglonguniversity.online/sitemap.xml
