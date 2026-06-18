@@ -1,6 +1,7 @@
 import type {
   ClassSectionResponse,
   GradeResponse,
+  TeacherGradeRequest,
   TeacherStudentGradeResponse,
 } from "@/lib/api/types";
 
@@ -89,6 +90,24 @@ export function getTeacherRosterRows(
 
 export function getTeacherGradeRows(apiRows: GradeResponse[] | undefined): TeacherGradeRow[] {
   return apiRows?.map(mapApiGradeRow) ?? [];
+}
+
+export function isRetakeOrImproveEnrollment(row: TeacherGradeRow): boolean {
+  return row.enrollmentType === "RETAKE" || row.enrollmentType === "IMPROVE";
+}
+
+export function buildTeacherGradeUpdateRequest(row: TeacherGradeRow): TeacherGradeRequest {
+  const enrollmentId = Number(row.numericEnrollmentId ?? row.enrollmentId);
+  if (isRetakeOrImproveEnrollment(row)) {
+    return { enrollmentId, retestScore: row.retestScore };
+  }
+  return {
+    enrollmentId,
+    participationScore: row.participationScore,
+    midTermScore: row.midtermScore,
+    finalScore: row.finalScore,
+    retestScore: row.retestScore,
+  };
 }
 
 function formatScheduleItem(
