@@ -22,11 +22,16 @@ const COURSE_STATUS_LABELS: Record<string, { label: string; className: string }>
 interface TeacherGradeTableProps {
   rows: TeacherGradeRow[];
   disabled?: boolean;
+  retakeOnly?: boolean;
   onChange: (row: TeacherGradeRow) => void;
   onSave?: (row: TeacherGradeRow) => void;
 }
 
-export function TeacherGradeTable({ rows, disabled, onChange, onSave }: TeacherGradeTableProps) {
+export function TeacherGradeTable({ rows, disabled, retakeOnly, onChange, onSave }: TeacherGradeTableProps) {
+  const visibleRows = retakeOnly
+    ? rows.filter((row) => row.enrollmentType === "RETAKE" || row.enrollmentType === "IMPROVE")
+    : rows;
+
   return (
     <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
       <Table>
@@ -36,7 +41,7 @@ export function TeacherGradeTable({ rows, disabled, onChange, onSave }: TeacherG
             <TableHead className="w-28">Chuyên cần</TableHead>
             <TableHead className="w-28">Giữa kỳ</TableHead>
             <TableHead className="w-28">Cuối kỳ</TableHead>
-            <TableHead className="w-28">Thi lại</TableHead>
+            <TableHead className="w-28">Điểm thi</TableHead>
             <TableHead>Tổng</TableHead>
             <TableHead>Chữ</TableHead>
             <TableHead>GPA4</TableHead>
@@ -44,14 +49,14 @@ export function TeacherGradeTable({ rows, disabled, onChange, onSave }: TeacherG
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.length === 0 ? (
+          {visibleRows.length === 0 ? (
             <TableRow>
               <TableCell colSpan={9} className="py-12 text-center text-sm text-muted-foreground">
-                Chưa có sinh viên trong bảng điểm lớp này
+                {retakeOnly ? "Không có sinh viên thi lại/nâng điểm trong lớp này" : "Chưa có sinh viên trong bảng điểm lớp này"}
               </TableCell>
             </TableRow>
           ) : (
-            rows.map((row) => (
+            visibleRows.map((row) => (
               <GradeRow
                 key={row.enrollmentId}
                 row={row}
@@ -111,37 +116,52 @@ function GradeRow({
   const isBanned =
     row.courseStatus === "BANNED_FROM_EXAM" || row.courseStatus === "REPEAT_COURSE";
 
+  const isRetake = row.enrollmentType === "RETAKE" || row.enrollmentType === "IMPROVE";
+
   return (
     <TableRow className={isBanned ? "bg-destructive/5" : undefined}>
       <TableCell>
         <div className="min-w-52">
           <div className="font-medium">{row.studentName}</div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
             <span className="font-mono">{row.studentCode}</span>
+            {isRetake && (
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                {row.enrollmentType === "RETAKE" ? "Thi lại" : "Thi nâng điểm"}
+              </span>
+            )}
+            {isRetake && row.examAttemptNumber != null && (
+              <span className="text-[10px] text-muted-foreground">Lần {row.examAttemptNumber}</span>
+            )}
           </div>
+          {isRetake && (
+            <div className="mt-1 text-[11px] text-muted-foreground tabular-nums">
+              CC {row.participationScore ?? "-"} · GK {row.midtermScore ?? "-"} · CK {row.finalScore ?? "-"}
+            </div>
+          )}
         </div>
       </TableCell>
       <ScoreInput
         value={row.participationScore}
-        disabled={disabled}
+        disabled={disabled || isRetake}
         onChange={(value) => updateScore("participationScore", value)}
         onBlur={handleBlur}
       />
       <ScoreInput
         value={row.midtermScore}
-        disabled={disabled}
+        disabled={disabled || isRetake}
         onChange={(value) => updateScore("midtermScore", value)}
         onBlur={handleBlur}
       />
       <ScoreInput
         value={row.finalScore}
-        disabled={disabled}
+        disabled={disabled || isRetake}
         onChange={(value) => updateScore("finalScore", value)}
         onBlur={handleBlur}
       />
       <ScoreInput
         value={row.retestScore}
-        disabled={disabled}
+        disabled={disabled || !isRetake}
         onChange={(value) => updateScore("retestScore", value)}
         onBlur={handleBlur}
       />

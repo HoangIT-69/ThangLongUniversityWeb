@@ -85,6 +85,18 @@ public class AdminEnrollmentService {
 
         for (ExamRegistration registration : pendingRetakes) {
             registration.setStatus(EnrollmentStatus.REGISTERED);
+            if (registration.getCourse() != null) {
+                var activeSections = classSectionRepository.findBySemesterIdAndCourseId(semesterId, registration.getCourse().getId())
+                        .stream()
+                        .filter(cs -> cs.getStatus() != com.example.ThangLongUniversityWeb.enums.ClassSectionStatus.CANCELLED)
+                        .toList();
+                if (!activeSections.isEmpty()) {
+                    var selected = activeSections.stream()
+                            .min(java.util.Comparator.comparing(cs -> cs.getCurrentSlots() != null ? cs.getCurrentSlots() : 0))
+                            .orElse(null);
+                    registration.setClassSection(selected);
+                }
+            }
             examRegistrationRepository.save(registration);
         }
 

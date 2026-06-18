@@ -16,7 +16,9 @@ public class ExamSeatAssignmentResponse {
     private String studentName;
     private Long roomId;
     private String roomName;
+    private Long roomAssignmentId;
     private String sourceType;
     private Long enrollmentId;
     private Long examRegistrationId;
+    private String classCode;
 }

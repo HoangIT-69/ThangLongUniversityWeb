@@ -4,14 +4,13 @@ import com.example.ThangLongUniversityWeb.dto.request.GradeRequest;
 import com.example.ThangLongUniversityWeb.dto.response.GradeResponse;
 import com.example.ThangLongUniversityWeb.entity.ClassSection;
 import com.example.ThangLongUniversityWeb.entity.Enrollment;
-import com.example.ThangLongUniversityWeb.entity.Grade;
+import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
 import com.example.ThangLongUniversityWeb.entity.Teacher;
 import com.example.ThangLongUniversityWeb.entity.User;
 import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
-import com.example.ThangLongUniversityWeb.repository.GradeRepository;
-import com.example.ThangLongUniversityWeb.repository.UserRepository;
-import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
+import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
+import com.example.ThangLongUniversityWeb.repository.UserRepository;
 import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
 import com.example.ThangLongUniversityWeb.enums.CourseStudyStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
@@ -35,60 +34,48 @@ import java.util.List;
 public class TeacherGradeController {
 
     private final GradeService gradeService;
-    private final GradeRepository gradeRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ClassSectionRepository classSectionRepository;
     private final UserRepository userRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
 
-    /**
-     * Nhập/cập nhật điểm cho sinh viên
-     * Ràng buộc: ClassSection phải chưa đóng (isClosed = false) và giảng viên phải là người dạy lớp
-     */
     @Operation(summary = "Nhập/cập nhật điểm cho sinh viên")
     @PutMapping("/{enrollmentId}")
     public ResponseEntity<?> updateStudentGrade(
             @PathVariable Long enrollmentId,
             @RequestBody GradeRequest request) {
 
-        // Lấy enrollment
         Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy enrollment!"));
 
         ClassSection originalClassSection = enrollment.getClassSection();
+        Teacher currentTeacher = getCurrentTeacher();
 
-        // Lấy giảng viên hiện tại đang đăng nhập
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = auth.getName();
-        User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy user!"));
-        Teacher currentTeacher = currentUser.getTeacher();
-
-        if (currentTeacher == null) {
-            return ResponseEntity.status(403).body("Bạn không phải là giảng viên!");
-        }
+        List<ExamRegistration> activeRegistrations = examRegistrationRepository
+                .findActiveByOriginalEnrollmentId(enrollmentId, EnrollmentStatus.REGISTERED);
 
         boolean isAuthorized = false;
-        boolean isClosed = true;
+        boolean isClosed = false;
 
-        // Kiểm tra giảng viên lớp gốc
-        if (originalClassSection.getTeacher().getId().equals(currentTeacher.getId())) {
-            isAuthorized = true;
-            isClosed = originalClassSection.isClosed();
+        for (ExamRegistration reg : activeRegistrations) {
+            ClassSection gradingSection = reg.getClassSection();
+            if (gradingSection != null
+                    && gradingSection.getTeacher() != null
+                    && gradingSection.getTeacher().getId().equals(currentTeacher.getId())) {
+                isAuthorized = true;
+                isClosed = gradingSection.getStatus() == com.example.ThangLongUniversityWeb.enums.ClassSectionStatus.CANCELLED
+                        || gradingSection.isGradeLocked();
+                if (!isClosed) {
+                    break;
+                }
+            }
         }
 
-        // Nếu chưa được ủy quyền hoặc lớp gốc đã đóng, kiểm tra xem sinh viên có lớp thi lại không
-        if (!isAuthorized || isClosed) {
-            List<ExamRegistration> retakes = examRegistrationRepository.findByOriginalGrade_Enrollment_Id(enrollmentId);
-            for (ExamRegistration reg : retakes) {
-                if (reg.getStatus() == EnrollmentStatus.REGISTERED
-                        && reg.getClassSection() != null
-                        && reg.getClassSection().getTeacher() != null
-                        && reg.getClassSection().getTeacher().getId().equals(currentTeacher.getId())) {
-                    isAuthorized = true;
-                    isClosed = reg.getClassSection().isClosed();
-                    if (!isClosed) break; // Ưu tiên lớp đang mở
-                }
+        if (!isAuthorized && originalClassSection.getTeacher().getId().equals(currentTeacher.getId())) {
+            if (activeRegistrations.isEmpty()) {
+                isAuthorized = true;
+                isClosed = originalClassSection.getStatus() == com.example.ThangLongUniversityWeb.enums.ClassSectionStatus.CANCELLED
+                        || originalClassSection.isGradeLocked();
             }
         }
 
@@ -97,10 +84,9 @@ public class TeacherGradeController {
         }
 
         if (isClosed) {
-            return ResponseEntity.badRequest().body("Lớp đã đóng, không thể nhập điểm!");
+            return ResponseEntity.badRequest().body("Lớp đã khóa điểm hoặc bị hủy, không thể nhập điểm!");
         }
 
-        // Chặn cập nhật điểm cho SV bị cấm thi hoặc học lại
         CourseStudyStatus courseStatus = enrollment.getCourseStatus();
         if (courseStatus == CourseStudyStatus.BANNED_FROM_EXAM) {
             return ResponseEntity.badRequest().body("Sinh viên bị cấm thi do nghỉ quá buổi, không thể cập nhật điểm.");
@@ -114,25 +100,13 @@ public class TeacherGradeController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Lấy bảng điểm của cả lớp (cho giảng viên xem)
-     */
     @Operation(summary = "Lấy bảng điểm của lớp")
     @GetMapping("/class/{classSectionId}")
     public ResponseEntity<?> getClassGrades(@PathVariable Long classSectionId) {
         ClassSection classSection = classSectionRepository.findById(classSectionId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp!"));
 
-        // Kiểm tra: Giảng viên phải là người dạy lớp này
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = auth.getName();
-        User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy user!"));
-        Teacher currentTeacher = currentUser.getTeacher();
-
-        if (currentTeacher == null) {
-            return ResponseEntity.status(403).body("Bạn không phải là giảng viên!");
-        }
+        Teacher currentTeacher = getCurrentTeacher();
 
         if (!classSection.getTeacher().getId().equals(currentTeacher.getId())) {
             return ResponseEntity.status(403).body("Bạn không phải là giảng viên dạy lớp này!");
@@ -142,24 +116,13 @@ public class TeacherGradeController {
         return ResponseEntity.ok(grades);
     }
 
-    /**
-     * Khóa toàn bộ điểm của một lớp học phần
-     */
-    @Operation(summary = "Khóa điểm toàn bộ lớp học phần")
+    @Operation(summary = "Khóa toàn bộ điểm của một lớp học phần")
     @PostMapping("/class/{classSectionId}/lock")
     public ResponseEntity<?> lockClassGrades(@PathVariable Long classSectionId) {
         ClassSection classSection = classSectionRepository.findById(classSectionId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp!"));
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = auth.getName();
-        User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy user!"));
-        Teacher currentTeacher = currentUser.getTeacher();
-
-        if (currentTeacher == null) {
-            return ResponseEntity.status(403).body("Bạn không phải là giảng viên!");
-        }
+        Teacher currentTeacher = getCurrentTeacher();
 
         if (!classSection.getTeacher().getId().equals(currentTeacher.getId())) {
             return ResponseEntity.status(403).body("Bạn không phải là giảng viên dạy lớp này!");
@@ -168,5 +131,17 @@ public class TeacherGradeController {
         classSection.setGradeLocked(true);
         classSectionRepository.save(classSection);
         return ResponseEntity.ok("Đã khóa điểm lớp " + classSectionId);
+    }
+
+    private Teacher getCurrentTeacher() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = auth.getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user!"));
+        Teacher currentTeacher = currentUser.getTeacher();
+        if (currentTeacher == null) {
+            throw new RuntimeException("Bạn không phải là giảng viên!");
+        }
+        return currentTeacher;
     }
 }

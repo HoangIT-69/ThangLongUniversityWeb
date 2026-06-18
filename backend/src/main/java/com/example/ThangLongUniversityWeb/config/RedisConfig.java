@@ -8,8 +8,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -55,7 +56,28 @@ public class RedisConfig {
         om.registerModule(new JavaTimeModule());
         om.activateDefaultTyping(om.getPolymorphicTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
 
-        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(om);
+        // Tự implement RedisSerializer<Object> bằng Jackson thuần — tránh mọi deprecated wrapper
+        RedisSerializer<Object> serializer = new RedisSerializer<>() {
+            @Override
+            public byte[] serialize(Object value) throws SerializationException {
+                if (value == null) return new byte[0];
+                try {
+                    return om.writeValueAsBytes(value);
+                } catch (Exception e) {
+                    throw new SerializationException("Redis serialize error: " + e.getMessage(), e);
+                }
+            }
+
+            @Override
+            public Object deserialize(byte[] bytes) throws SerializationException {
+                if (bytes == null || bytes.length == 0) return null;
+                try {
+                    return om.readValue(bytes, Object.class);
+                } catch (Exception e) {
+                    throw new SerializationException("Redis deserialize error: " + e.getMessage(), e);
+                }
+            }
+        };
 
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(30))

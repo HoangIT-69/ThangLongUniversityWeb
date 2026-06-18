@@ -35,6 +35,7 @@ function TeacherGradesPage() {
   const [classSearch, setClassSearch] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
   const [gradeLocked, setGradeLocked] = useState(false);
+  const [retakeOnly, setRetakeOnly] = useState(false);
 
   const classesQuery = useQuery({
     queryKey: ["teacher", "classes", semesterId],
@@ -267,6 +268,11 @@ function TeacherGradesPage() {
                           )}
                           {isLocked ? "Đã khóa" : "Chưa khóa"}
                         </Badge>
+                        {row.virtualRetakeClass && (
+                          <Badge className="shrink-0 bg-amber-100 text-amber-800 hover:bg-amber-100 text-xs">
+                            Lớp thi lại/nâng
+                          </Badge>
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground">{row.classCode}</div>
                       {row.scheduleText && (
@@ -293,6 +299,11 @@ function TeacherGradesPage() {
                   {gradeLocked ? <Lock className="h-3 w-3" /> : <LockOpen className="h-3 w-3" />}
                   {gradeLocked ? "Đã khóa" : "Chưa khóa"}
                 </Badge>
+                {selectedClass?.virtualRetakeClass && (
+                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 text-xs">
+                    Lớp thi lại/nâng
+                  </Badge>
+                )}
               </div>
               <div className="mt-0.5 text-sm text-muted-foreground">
                 {selectedClass?.classCode}
@@ -308,6 +319,17 @@ function TeacherGradesPage() {
 
       {classSectionId && (
         <>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={retakeOnly}
+                onChange={(e) => setRetakeOnly(e.target.checked)}
+                className="rounded border"
+              />
+              Chỉ hiển thị sinh viên thi lại / thi nâng điểm
+            </label>
+          </div>
           {gradesQuery.isLoading && (
             <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
               Đang tải bảng điểm...
@@ -323,6 +345,7 @@ function TeacherGradesPage() {
           <TeacherGradeTable
             rows={draftRows}
             disabled={gradeLocked}
+            retakeOnly={retakeOnly}
             onChange={(nextRow) =>
               setDraftRows((current) =>
                 current.map((item) =>

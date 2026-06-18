@@ -437,6 +437,9 @@ public class ClassSectionService {
                 .examAt(section.getExamAt())
                 .examRoom(section.getExamRoom())
                 .examType(section.getExamType())
+                .sourceExamSessionId(section.getSourceExamSession() != null ? section.getSourceExamSession().getId() : null)
+                .virtualRetakeClass(section.getSourceExamSession() != null)
+                .semesterEnded(section.getSemester() != null && section.getSemester().isEnded())
                 .build();
     }
 

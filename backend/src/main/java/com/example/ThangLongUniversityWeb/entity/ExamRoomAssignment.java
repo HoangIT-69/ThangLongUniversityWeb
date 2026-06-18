@@ -24,4 +24,9 @@ public class ExamRoomAssignment {
 
     @Column(nullable = false)
     private Integer capacity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "proctor_id")
+    private Teacher proctor;
 }
+

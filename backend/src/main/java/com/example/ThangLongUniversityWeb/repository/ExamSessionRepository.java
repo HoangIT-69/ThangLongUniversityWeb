@@ -14,5 +14,7 @@ public interface ExamSessionRepository extends JpaRepository<ExamSession, Long> 
 
     Optional<ExamSession> findBySemesterIdAndCourseIdAndExamType(Long semesterId, Long courseId, ExamType examType);
 
+    Optional<ExamSession> findBySemesterIdAndCourseIdAndExamTypeAndCandidateSelection(Long semesterId, Long courseId, ExamType examType, String candidateSelection);
+
     List<ExamSession> findBySemesterIdAndExamAt(Long semesterId, java.time.LocalDateTime examAt);
 }

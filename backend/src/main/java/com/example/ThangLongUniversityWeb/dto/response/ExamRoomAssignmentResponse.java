@@ -15,4 +15,7 @@ public class ExamRoomAssignmentResponse {
     private String roomName;
     private Integer capacity;
     private Integer assignedCount;
+    private Long proctorId;
+    private String proctorCode;
+    private String proctorName;
 }

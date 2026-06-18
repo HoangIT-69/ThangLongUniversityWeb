@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -114,7 +114,7 @@ function TuitionPage() {
                 <div
                   className={`mt-1 text-lg font-bold tabular-nums ${!tuition.paid ? "text-destructive" : "text-green-600"}`}
                 >
-                  {formatVND(tuition.paid ? 0 : tuition.totalAmount)}
+                  {formatVND(tuition.paid ? 0 : (tuition.totalAmount - (tuition.paidAmount ?? 0)))}
                 </div>
               </div>
               <div className="rounded-lg bg-muted/40 p-3">

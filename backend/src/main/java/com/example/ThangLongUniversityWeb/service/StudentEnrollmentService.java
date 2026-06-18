@@ -14,6 +14,7 @@ import com.example.ThangLongUniversityWeb.entity.Enrollment;
 import com.example.ThangLongUniversityWeb.entity.Grade;
 import com.example.ThangLongUniversityWeb.entity.Student;
 import com.example.ThangLongUniversityWeb.entity.RegistrationRound;
+import com.example.ThangLongUniversityWeb.enums.CourseStudyStatus;
 import com.example.ThangLongUniversityWeb.enums.CourseType;
 import com.example.ThangLongUniversityWeb.enums.ClassSectionStatus;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
@@ -62,6 +63,7 @@ public class StudentEnrollmentService {
         return allSectionsInSemester.stream()
                 .filter(section -> section.getStatus() == ClassSectionStatus.OPEN)
                 .filter(section -> isVisibleForStudentMajor(section, student))
+                .filter(section -> !hasPassedCourse(student.getId(), section.getCourse().getId()))
                 .filter(section -> {
                     List<Enrollment> sameCourseEnrollments = enrollmentRepository.findByStudentIdAndCourseIdOrderByIdDesc(
                             student.getId(), section.getCourse().getId());
@@ -150,6 +152,9 @@ public class StudentEnrollmentService {
 
         List<Enrollment> previousCourseEnrollments = enrollmentRepository.findByStudentIdAndCourseIdOrderByIdDesc(
                 student.getId(), targetClass.getCourse().getId());
+        if (previousCourseEnrollments.stream().anyMatch(e -> e.getCourseStatus() == CourseStudyStatus.PASSED)) {
+            throw new RuntimeException("Ban da hoan thanh mon hoc nay.");
+        }
         if (previousCourseEnrollments.stream().anyMatch(e -> isActiveSelection(e)
                 && e.getClassSection().getSemester().getId().equals(targetClass.getSemester().getId()))) {
             throw new RuntimeException("Ban da chon/dang ky mon nay trong cung hoc ky.");
@@ -245,6 +250,7 @@ public class StudentEnrollmentService {
                 .stream()
                 .map(e -> new StudentExamResponse(
                         e.getClassSection().getClassCode(),
+                        "NORMAL",
                         e.getClassSection().getCourse().getName(),
                         e.getClassSection().getCourse().getCredits(),
                         e.getClassSection().getExamAt(),
@@ -302,6 +308,11 @@ public class StudentEnrollmentService {
         );
 
         return new StudentGradesSummaryResponse(semesterId, round2(semesterGpa), round2(cumulativeGpa), items);
+    }
+
+    private boolean hasPassedCourse(Long studentId, Long courseId) {
+        return enrollmentRepository.findByStudentIdAndCourseIdOrderByIdDesc(studentId, courseId).stream()
+                .anyMatch(e -> e.getCourseStatus() == CourseStudyStatus.PASSED);
     }
 
     private boolean isActiveSelection(Enrollment enrollment) {

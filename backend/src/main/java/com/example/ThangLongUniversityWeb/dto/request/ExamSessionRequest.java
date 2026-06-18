@@ -12,5 +12,7 @@ public class ExamSessionRequest {
     private ExamType examType;
     private LocalDateTime examAt;
     private List<Long> roomIds;
+    private List<Long> proctorIds;
     private String allocationMethod;
+    private String candidateSelection;
 }

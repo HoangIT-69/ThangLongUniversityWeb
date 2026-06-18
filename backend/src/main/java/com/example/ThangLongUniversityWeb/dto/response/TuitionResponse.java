@@ -19,6 +19,9 @@ public class TuitionResponse {
     @Schema(description = "Tổng tiền (VNĐ)", example = "10000000")
     private Long totalAmount;
 
+    @Schema(description = "Số tiền đã thanh toán (VNĐ)", example = "8000000")
+    private Long paidAmount;
+
     @Schema(description = "Giá mỗi tín chỉ (VNĐ)", example = "850000")
     private Long pricePerCredit;
 

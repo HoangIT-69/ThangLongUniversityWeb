@@ -13,7 +13,7 @@ import java.util.List;
         name = "exam_sessions",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_exam_session_semester_course_type",
-                columnNames = {"semester_id", "course_id", "exam_type"}
+                columnNames = {"semester_id", "course_id", "exam_type", "candidate_selection"}
         )
 )
 @Getter
@@ -36,6 +36,9 @@ public class ExamSession {
     @Enumerated(EnumType.STRING)
     @Column(name = "exam_type", nullable = false)
     private ExamType examType = ExamType.NORMAL;
+
+    @Column(name = "candidate_selection", nullable = false)
+    private String candidateSelection = "ALL"; // "ALL", "NORMAL_ONLY", "RETAKE_ONLY"
 
     @Column(nullable = false)
     private LocalDateTime examAt;

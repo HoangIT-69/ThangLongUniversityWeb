@@ -6,6 +6,7 @@ import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse;
 import com.example.ThangLongUniversityWeb.dto.response.LearningResultsResponse.SemesterGpaSummary;
 import com.example.ThangLongUniversityWeb.entity.*;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
+import com.example.ThangLongUniversityWeb.enums.EnrollmentType;
 import com.example.ThangLongUniversityWeb.repository.AttendanceRecordRepository;
 import com.example.ThangLongUniversityWeb.repository.EnrollmentRepository;
 import com.example.ThangLongUniversityWeb.repository.GradeRepository;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,22 +44,56 @@ public class GradeService {
         Enrollment enrollment = enrollmentRepository.findById(request.getEnrollmentId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy enrollment!"));
 
+        ExamRegistration activeRegistration = findActiveExamRegistration(enrollment.getId());
+
+        if (activeRegistration != null) {
+            validateRetakeGradeRequest(request);
+        }
+
         Grade grade = gradeRepository.findByEnrollmentId(request.getEnrollmentId())
                 .orElseGet(Grade::new);
 
         grade.setEnrollment(enrollment);
-        grade.setParticipationScore(request.getParticipationScore());
-        grade.setMidtermScore(request.getMidTermScore());
-        grade.setFinalScore(request.getFinalScore());
-        grade.setRetestScore(request.getRetestScore());
+        if (activeRegistration != null) {
+            grade.setParticipationScore(grade.getParticipationScore());
+            grade.setMidtermScore(grade.getMidtermScore());
+            grade.setFinalScore(grade.getFinalScore());
+            grade.setRetestScore(request.getRetestScore());
+            grade.prepareGradeCalculation(activeRegistration.getRegistrationType());
+        } else {
+            grade.setParticipationScore(request.getParticipationScore());
+            grade.setMidtermScore(request.getMidTermScore());
+            grade.setFinalScore(request.getFinalScore());
+            grade.setRetestScore(request.getRetestScore());
+            grade.prepareGradeCalculation(null);
+        }
 
         Grade savedGrade = gradeRepository.save(grade);
 
-        // Đồng bộ lại grade vào enrollment rồi tính courseStatus
         enrollment.setGrade(savedGrade);
         courseOutcomeService.recalculate(enrollment);
 
-        return mapToResponse(savedGrade);
+        return mapToResponse(enrollment, savedGrade, activeRegistration);
+    }
+
+    private ExamRegistration findActiveExamRegistration(Long enrollmentId) {
+        List<ExamRegistration> registrations = examRegistrationRepository
+                .findActiveByOriginalEnrollmentId(enrollmentId, EnrollmentStatus.REGISTERED);
+        return registrations.isEmpty() ? null : registrations.getFirst();
+    }
+
+    private void validateRetakeGradeRequest(GradeRequest request) {
+        if (request.getRetestScore() == null
+                && request.getParticipationScore() == null
+                && request.getMidTermScore() == null
+                && request.getFinalScore() == null) {
+            return;
+        }
+        if (request.getParticipationScore() != null
+                || request.getMidTermScore() != null
+                || request.getFinalScore() != null) {
+            throw new RuntimeException("Sinh vien dang ky thi lai/nang diem chi duoc cap nhat diem thi lai.");
+        }
     }
 
     /**
@@ -99,8 +135,7 @@ public class GradeService {
         // 2. Sinh viên thi lại/cải thiện (qua ExamRegistration)
         List<GradeResponse> retakeGrades = examRegistrationRepository.findByClassSectionIdAndStatus(classSectionId, EnrollmentStatus.REGISTERED).stream()
                 .map(reg -> {
-                    GradeResponse res = mapToResponse(reg.getOriginalGrade());
-                    // Ghi đè loại đăng ký để giảng viên biết đây là thi lại/cải thiện
+                    GradeResponse res = mapToResponse(reg.getOriginalGrade().getEnrollment(), reg.getOriginalGrade(), reg);
                     res.setEnrollmentType(reg.getRegistrationType() != null ? reg.getRegistrationType().name() : "RETAKE");
                     return res;
                 })
@@ -119,14 +154,19 @@ public class GradeService {
                 .orElseThrow(() -> new RuntimeException("Khong tim thay sinh vien!"));
         Long studentId = student.getId();
 
-        List<GradeResponse> allGradeResponses = getStudentAllGrades(studentId);
+        List<GradeResponse> allGradeResponses = mergeEnrollmentAndExamGrades(
+                getStudentAllGrades(studentId),
+                getStudentExamRegistrationGrades(studentId, null));
         List<GradeResponse> allGrades = allGradeResponses.stream()
                 .filter(this::hasCompletedGrade)
                 .collect(Collectors.toList());
 
-        List<GradeResponse> grades = semesterId != null
-                ? getStudentGradesBySemester(studentId, semesterId)
+        List<GradeResponse> rawGrades = semesterId != null
+                ? mergeEnrollmentAndExamGrades(
+                        getStudentGradesBySemester(studentId, semesterId),
+                        getStudentExamRegistrationGrades(studentId, semesterId))
                 : allGradeResponses;
+        List<GradeResponse> grades = dedupeGradeRows(rawGrades);
         List<GradeResponse> completedGradesForSelectedSemester = grades.stream()
                 .filter(this::hasCompletedGrade)
                 .collect(Collectors.toList());
@@ -186,7 +226,74 @@ public class GradeService {
     }
 
     private boolean hasCompletedGrade(GradeResponse grade) {
+        if (grade.getExamRegistrationId() != null) {
+            return grade.getRetestScore() != null
+                    && grade.getTotalScore() != null
+                    && grade.getGradePoint() != null
+                    && grade.getCredits() != null;
+        }
         return grade.getTotalScore() != null && grade.getGradePoint() != null && grade.getCredits() != null;
+    }
+
+    private boolean isDisplayableGrade(GradeResponse grade) {
+        if (grade.getExamRegistrationId() != null) {
+            return true;
+        }
+        return grade.getTotalScore() != null
+                || grade.getParticipationScore() != null
+                || grade.getMidtermScore() != null
+                || grade.getFinalScore() != null;
+    }
+
+    private List<GradeResponse> mergeEnrollmentAndExamGrades(
+            List<GradeResponse> enrollmentGrades,
+            List<GradeResponse> examGrades) {
+        List<GradeResponse> merged = new ArrayList<>(enrollmentGrades);
+        merged.addAll(examGrades);
+        return merged;
+    }
+
+    private List<GradeResponse> getStudentExamRegistrationGrades(Long studentId, Long semesterId) {
+        List<ExamRegistration> registrations = semesterId != null
+                ? examRegistrationRepository.findByStudentIdAndSemesterIdAndStatus(
+                        studentId, semesterId, EnrollmentStatus.REGISTERED)
+                : examRegistrationRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.REGISTERED);
+
+        return registrations.stream()
+                .map(this::mapExamRegistrationToGradeResponse)
+                .filter(this::isDisplayableGrade)
+                .toList();
+    }
+
+    private GradeResponse mapExamRegistrationToGradeResponse(ExamRegistration registration) {
+        Grade grade = registration.getOriginalGrade();
+        Enrollment enrollment = grade.getEnrollment();
+        GradeResponse response = mapToResponse(enrollment, grade, registration);
+
+        Semester registrationSemester = registration.getSemester();
+        if (registrationSemester == null && registration.getClassSection() != null) {
+            registrationSemester = registration.getClassSection().getSemester();
+        }
+        if (registrationSemester != null) {
+            response.setSemesterId(registrationSemester.getId());
+            response.setSemesterName(registrationSemester.getName());
+        }
+
+        Course course = registration.getCourse() != null
+                ? registration.getCourse()
+                : enrollment.getClassSection().getCourse();
+        response.setCourseId(course.getId());
+        response.setCourseCode(course.getCode());
+        response.setCourseName(course.getName());
+        response.setCredits(course.getCredits());
+
+        response.setStudySemesterName(enrollment.getClassSection().getSemester().getName());
+        if (registration.getRegistrationType() != null) {
+            response.setEnrollmentType(registration.getRegistrationType().name());
+        } else {
+            response.setEnrollmentType(EnrollmentType.RETAKE.name());
+        }
+        return response;
     }
 
     private boolean isVisibleInStudentGrades(Enrollment enrollment) {
@@ -207,6 +314,37 @@ public class GradeService {
         return semesterRepository.findById(semesterId)
                 .map(s -> s.getStartDate() != null ? s.getStartDate() : java.time.LocalDate.MIN.plusDays(s.getId()))
                 .orElse(java.time.LocalDate.MIN);
+    }
+
+    private List<GradeResponse> dedupeGradeRows(List<GradeResponse> grades) {
+        Map<String, GradeResponse> uniqueRows = new LinkedHashMap<>();
+        for (GradeResponse grade : grades) {
+            if (!isDisplayableGrade(grade)) {
+                continue;
+            }
+            String key = grade.getExamRegistrationId() != null
+                    ? "exam:" + grade.getExamRegistrationId()
+                    : grade.getSemesterId() + ":" + grade.getCourseId();
+            uniqueRows.putIfAbsent(key, grade);
+        }
+        return uniqueRows.values().stream()
+                .sorted(Comparator
+                        .comparing(GradeResponse::getSemesterId, Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(GradeResponse::getCourseCode, Comparator.nullsLast(String::compareTo)))
+                .collect(Collectors.toList());
+    }
+
+    private List<GradeResponse> dedupeBestPerCoursePerSemester(List<GradeResponse> grades) {
+        Map<String, GradeResponse> bestBySemesterCourse = new LinkedHashMap<>();
+        for (GradeResponse grade : grades) {
+            String key = grade.getSemesterId() + ":" + grade.getCourseId();
+            bestBySemesterCourse.merge(key, grade, this::betterGrade);
+        }
+        return bestBySemesterCourse.values().stream()
+                .sorted(Comparator
+                        .comparing(GradeResponse::getSemesterId, Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(GradeResponse::getCourseCode, Comparator.nullsLast(String::compareTo)))
+                .collect(Collectors.toList());
     }
 
     private List<GradeResponse> getBestGradesByCourse(List<GradeResponse> grades) {
@@ -264,10 +402,14 @@ public class GradeService {
      */
     private GradeResponse mapToResponse(Grade grade) {
         Enrollment enrollment = grade.getEnrollment();
-        return mapToResponse(enrollment, grade);
+        return mapToResponse(enrollment, grade, null);
     }
 
     private GradeResponse mapToResponse(Enrollment enrollment, Grade grade) {
+        return mapToResponse(enrollment, grade, null);
+    }
+
+    private GradeResponse mapToResponse(Enrollment enrollment, Grade grade, ExamRegistration examRegistration) {
         Student student = enrollment.getStudent();
         ClassSection classSection = enrollment.getClassSection();
         Course course = classSection.getCourse();
@@ -303,6 +445,8 @@ public class GradeService {
                 .absenceCount(absences)
                 .createdAt(grade != null ? grade.getCreatedAt() : null)
                 .updatedAt(grade != null ? grade.getUpdatedAt() : null)
+                .examRegistrationId(examRegistration != null ? examRegistration.getId() : null)
+                .examAttemptNumber(examRegistration != null ? examRegistration.getAttemptNumber() : null)
                 .build();
     }
 }

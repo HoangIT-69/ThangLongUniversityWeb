@@ -36,6 +36,8 @@ public interface ClassSectionRepository extends JpaRepository<ClassSection, Long
 
     Optional<ClassSection> findBySemesterIdAndClassCode(Long semesterId, String classCode);
 
+    Optional<ClassSection> findBySourceExamSessionId(Long examSessionId);
+
     @EntityGraph(attributePaths = {
             "course",
             "course.major",

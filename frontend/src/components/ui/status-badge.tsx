@@ -41,15 +41,17 @@ const map: Record<string, Variant> = {
   ONLINE: "info",
   PROJECT: "primary",
   "ĐANG HỌC": "info",
+  "ĐANG DẠY": "success",
+  "ĐÃ KẾT THÚC": "muted",
   "ĐỦ ĐIỀU KIỆN THI": "success",
   "HỌC LẠI": "warning",
-  "REPEAT_COURSE": "warning",
+  REPEAT_COURSE: "warning",
   "CẤM THI": "destructive",
-  "BANNED_FROM_EXAM": "destructive",
+  BANNED_FROM_EXAM: "destructive",
   "THI LẠI": "warning",
-  "RETAKE_EXAM": "warning",
+  RETAKE_EXAM: "warning",
   "QUA MÔN": "success",
-  "PASSED": "success",
+  PASSED: "success",
 };
 
 export function StatusBadge({ value, variant }: { value: string; variant?: Variant }) {

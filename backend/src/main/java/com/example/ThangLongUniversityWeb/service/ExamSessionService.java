@@ -35,6 +35,8 @@ public class ExamSessionService {
     private final EnrollmentRepository enrollmentRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
+    private final TeacherRepository teacherRepository;
+    private final RetakeClassAssignmentService retakeClassAssignmentService;
 
     @Transactional(readOnly = true)
     public List<ExamSessionResponse> listSessions(Long semesterId) {
@@ -55,13 +57,19 @@ public class ExamSessionService {
         Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay mon hoc."));
 
+        String selection = request.getCandidateSelection();
+        if (selection == null || selection.isBlank()) {
+            selection = "ALL";
+        }
+
         ExamSession session = examSessionRepository
-                .findBySemesterIdAndCourseIdAndExamType(semesterId, course.getId(), ExamType.NORMAL)
+                .findBySemesterIdAndCourseIdAndExamTypeAndCandidateSelection(semesterId, course.getId(), ExamType.NORMAL, selection)
                 .orElseGet(ExamSession::new);
         session.setSemester(semester);
         session.setCourse(course);
         session.setExamType(ExamType.NORMAL);
         session.setExamAt(request.getExamAt());
+        session.setCandidateSelection(selection);
         session = examSessionRepository.save(session);
 
         examSeatAssignmentRepository.deleteByExamSessionId(session.getId());
@@ -73,17 +81,26 @@ public class ExamSessionService {
                         .orElseThrow(() -> new RuntimeException("Khong tim thay phong thi id=" + roomId)))
                 .toList();
         int totalCapacity = rooms.stream().mapToInt(room -> room.getCapacity() != null ? room.getCapacity() : 0).sum();
-        List<ExamCandidate> candidates = collectCandidates(semesterId, course.getId());
+        List<ExamCandidate> candidates = collectCandidates(semesterId, course.getId(), selection);
         if (totalCapacity < candidates.size()) {
             throw new RuntimeException("Tong suc chua phong thi (" + totalCapacity + ") khong du cho " + candidates.size() + " sinh vien.");
         }
 
         List<ExamRoomAssignment> assignments = new ArrayList<>();
-        for (Room room : rooms) {
+        for (int i = 0; i < rooms.size(); i++) {
+            Room room = rooms.get(i);
             ExamRoomAssignment assignment = new ExamRoomAssignment();
             assignment.setExamSession(session);
             assignment.setRoom(room);
             assignment.setCapacity(room.getCapacity() != null ? room.getCapacity() : 0);
+            if (request.getProctorIds() != null && i < request.getProctorIds().size()) {
+                Long proctorId = request.getProctorIds().get(i);
+                if (proctorId != null) {
+                    Teacher proctor = teacherRepository.findById(proctorId)
+                            .orElseThrow(() -> new RuntimeException("Khong tim thay giang vien coi thi id=" + proctorId));
+                    assignment.setProctor(proctor);
+                }
+            }
             assignments.add(examRoomAssignmentRepository.save(assignment));
         }
 
@@ -137,7 +154,20 @@ public class ExamSessionService {
             usedInRoom++;
         }
 
-        return toResponse(session);
+        List<com.example.ThangLongUniversityWeb.entity.ExamRegistration> retakeRegistrations =
+                examRegistrationRepository.findBySemesterIdAndCourseIdAndStatus(
+                        semesterId, course.getId(), EnrollmentStatus.REGISTERED);
+
+        RetakeClassAssignmentService.AssignmentResult assignmentResult =
+                retakeClassAssignmentService.syncAssignmentsAfterSeatAllocation(
+                        session, assignments, retakeRegistrations);
+
+        ExamSessionResponse response = toResponse(session);
+        response.setAssignedRetakeCount(assignmentResult.assignedCount());
+        response.setVirtualClassCode(assignmentResult.virtualClassCode());
+        response.setVirtualClassSectionId(assignmentResult.virtualClassSectionId());
+        response.setAssignmentWarnings(assignmentResult.warnings());
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -146,7 +176,12 @@ public class ExamSessionService {
             return List.of();
         }
 
-        List<ExamCandidate> candidates = collectCandidates(semesterId, request.getCourseId());
+        String selection = request.getCandidateSelection();
+        if (selection == null || selection.isBlank()) {
+            selection = "ALL";
+        }
+
+        List<ExamCandidate> candidates = collectCandidates(semesterId, request.getCourseId(), selection);
         if (candidates.isEmpty()) {
             return List.of();
         }
@@ -200,14 +235,23 @@ public class ExamSessionService {
     }
 
     @Transactional(readOnly = true)
-    public List<com.example.ThangLongUniversityWeb.dto.response.ExamCandidateResponse> getCandidates(Long semesterId, Long courseId) {
-        return collectCandidates(semesterId, courseId).stream()
-                .map(c -> com.example.ThangLongUniversityWeb.dto.response.ExamCandidateResponse.builder()
-                        .studentId(c.student().getId())
-                        .studentCode(c.student().getStudentCode())
-                        .studentName(c.student().getFullName())
-                        .sourceType(c.sourceType())
-                        .build())
+    public List<com.example.ThangLongUniversityWeb.dto.response.ExamCandidateResponse> getCandidates(Long semesterId, Long courseId, String candidateSelection) {
+        return collectCandidates(semesterId, courseId, candidateSelection).stream()
+                .map(c -> {
+                    String classCode = null;
+                    if (c.enrollment() != null && c.enrollment().getClassSection() != null) {
+                        classCode = c.enrollment().getClassSection().getClassCode();
+                    } else if (c.examRegistration() != null && c.examRegistration().getClassSection() != null) {
+                        classCode = c.examRegistration().getClassSection().getClassCode();
+                    }
+                    return com.example.ThangLongUniversityWeb.dto.response.ExamCandidateResponse.builder()
+                            .studentId(c.student().getId())
+                            .studentCode(c.student().getStudentCode())
+                            .studentName(c.student().getFullName())
+                            .sourceType(c.sourceType())
+                            .classCode(classCode)
+                            .build();
+                })
                 .toList();
     }
 
@@ -216,7 +260,11 @@ public class ExamSessionService {
         return examSeatAssignmentRepository.findByStudentIdAndExamSessionSemesterIdOrderByExamSessionExamAtAsc(studentId, semesterId)
                 .stream()
                 .map(seat -> new StudentExamResponse(
-                        seat.getEnrollment() != null ? seat.getEnrollment().getClassSection().getClassCode() : seat.getSourceType(),
+                        seat.getEnrollment() != null ? seat.getEnrollment().getClassSection().getClassCode()
+                                : (seat.getExamRegistration() != null && seat.getExamRegistration().getClassSection() != null
+                                ? seat.getExamRegistration().getClassSection().getClassCode()
+                                : seat.getSourceType()),
+                        seat.getSourceType() != null ? seat.getSourceType() : "NORMAL",
                         seat.getExamSession().getCourse().getName(),
                         seat.getExamSession().getCourse().getCredits(),
                         seat.getExamSession().getExamAt(),
@@ -235,24 +283,31 @@ public class ExamSessionService {
         return preFinalAvg >= 4.0f && absences <= 3;
     }
 
-    private List<ExamCandidate> collectCandidates(Long semesterId, Long courseId) {
+    private List<ExamCandidate> collectCandidates(Long semesterId, Long courseId, String candidateSelection) {
         Map<Long, ExamCandidate> byStudent = new LinkedHashMap<>();
         
+        boolean includeNormal = candidateSelection == null || "ALL".equalsIgnoreCase(candidateSelection) || "NORMAL_ONLY".equalsIgnoreCase(candidateSelection);
+        boolean includeRetake = candidateSelection == null || "ALL".equalsIgnoreCase(candidateSelection) || "RETAKE_ONLY".equalsIgnoreCase(candidateSelection);
+
         // 1. First-time students
-        enrollmentRepository.findByClassSectionSemesterIdAndStatus(semesterId, EnrollmentStatus.REGISTERED)
-                .stream()
-                .filter(e -> e.getClassSection().getCourse().getId().equals(courseId))
-                .filter(this::isEligibleForExam)
-                .forEach(e -> byStudent.putIfAbsent(e.getStudent().getId(), new ExamCandidate(e.getStudent(), e, null, "NORMAL")));
+        if (includeNormal) {
+            enrollmentRepository.findByClassSectionSemesterIdAndStatus(semesterId, EnrollmentStatus.REGISTERED)
+                    .stream()
+                    .filter(e -> e.getClassSection().getCourse().getId().equals(courseId))
+                    .filter(this::isEligibleForExam)
+                    .forEach(e -> byStudent.putIfAbsent(e.getStudent().getId(), new ExamCandidate(e.getStudent(), e, null, "NORMAL")));
+        }
 
         // 2. Retake & Improve students
-        examRegistrationRepository.findBySemesterIdAndCourseIdAndStatus(semesterId, courseId, EnrollmentStatus.REGISTERED)
-                .stream()
-                .filter(r -> r.getRegistrationType() != null)
-                .forEach(r -> {
-                    String type = r.getRegistrationType().name();
-                    byStudent.putIfAbsent(r.getStudent().getId(), new ExamCandidate(r.getStudent(), null, r, type));
-                });
+        if (includeRetake) {
+            examRegistrationRepository.findBySemesterIdAndCourseIdAndStatus(semesterId, courseId, EnrollmentStatus.REGISTERED)
+                    .stream()
+                    .filter(r -> r.getRegistrationType() != null)
+                    .forEach(r -> {
+                        String type = r.getRegistrationType().name();
+                        byStudent.putIfAbsent(r.getStudent().getId(), new ExamCandidate(r.getStudent(), null, r, type));
+                    });
+        }
 
         List<ExamCandidate> list = new ArrayList<>(byStudent.values());
         list.sort(Comparator.comparing(c -> c.student().getStudentCode()));
@@ -275,6 +330,9 @@ public class ExamSessionService {
                         .roomName(room.getRoom().getName())
                         .capacity(room.getCapacity())
                         .assignedCount(countsByRoomAssignment.getOrDefault(room.getId(), 0))
+                        .proctorId(room.getProctor() != null ? room.getProctor().getId() : null)
+                        .proctorCode(room.getProctor() != null ? room.getProctor().getTeacherCode() : null)
+                        .proctorName(room.getProctor() != null ? room.getProctor().getFullName() : null)
                         .build())
                 .toList();
         return ExamSessionResponse.builder()
@@ -289,10 +347,17 @@ public class ExamSessionService {
                 .examAt(session.getExamAt())
                 .studentCount(seats.size())
                 .rooms(rooms)
+                .candidateSelection(session.getCandidateSelection())
                 .build();
     }
 
     private ExamSeatAssignmentResponse toSeatResponse(ExamSeatAssignment seat) {
+        String classCode = null;
+        if (seat.getEnrollment() != null && seat.getEnrollment().getClassSection() != null) {
+            classCode = seat.getEnrollment().getClassSection().getClassCode();
+        } else if (seat.getExamRegistration() != null && seat.getExamRegistration().getClassSection() != null) {
+            classCode = seat.getExamRegistration().getClassSection().getClassCode();
+        }
         return ExamSeatAssignmentResponse.builder()
                 .id(seat.getId())
                 .studentId(seat.getStudent().getId())
@@ -300,10 +365,33 @@ public class ExamSessionService {
                 .studentName(seat.getStudent().getFullName())
                 .roomId(seat.getRoomAssignment().getRoom().getId())
                 .roomName(seat.getRoomAssignment().getRoom().getName())
+                .roomAssignmentId(seat.getRoomAssignment().getId())
                 .sourceType(seat.getSourceType())
                 .enrollmentId(seat.getEnrollment() != null ? seat.getEnrollment().getId() : null)
                 .examRegistrationId(seat.getExamRegistration() != null ? seat.getExamRegistration().getId() : null)
+                .classCode(classCode)
                 .build();
+    }
+
+    @Transactional
+    public void moveSeat(Long seatId, Long targetRoomAssignmentId) {
+        ExamSeatAssignment seat = examSeatAssignmentRepository.findById(seatId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy chỗ ngồi thi id=" + seatId));
+        ExamRoomAssignment targetRoom = examRoomAssignmentRepository.findById(targetRoomAssignmentId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng thi id=" + targetRoomAssignmentId));
+
+        if (!seat.getExamSession().getId().equals(targetRoom.getExamSession().getId())) {
+            throw new RuntimeException("Phòng thi đích phải thuộc cùng một ca thi.");
+        }
+
+        // Check capacity of target room
+        int currentAssigned = examSeatAssignmentRepository.countByRoomAssignmentId(targetRoomAssignmentId);
+        if (currentAssigned >= targetRoom.getCapacity()) {
+            throw new RuntimeException("Phòng thi " + targetRoom.getRoom().getName() + " đã hết chỗ (Sĩ số: " + currentAssigned + "/" + targetRoom.getCapacity() + ").");
+        }
+
+        seat.setRoomAssignment(targetRoom);
+        examSeatAssignmentRepository.save(seat);
     }
 
     private record ExamCandidate(Student student, Enrollment enrollment, ExamRegistration examRegistration, String sourceType) {

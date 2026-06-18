@@ -203,9 +203,22 @@ public class ClassSectionManagementController {
     @GetMapping("/semester/{semesterId}/exam-sessions/candidates")
     public ResponseEntity<?> getExamCandidates(
             @PathVariable Long semesterId,
-            @RequestParam Long courseId
+            @RequestParam Long courseId,
+            @RequestParam(required = false, defaultValue = "ALL") String candidateSelection
     ) {
-        return ResponseEntity.ok(examSessionService.getCandidates(semesterId, courseId));
+        return ResponseEntity.ok(examSessionService.getCandidates(semesterId, courseId, candidateSelection));
+    }
+
+    @Operation(summary = "Di chuyen phong thi cho sinh vien")
+    @PutMapping("/exam-sessions/seats/{seatId}/move")
+    public ResponseEntity<?> moveSeat(
+            @PathVariable Long seatId,
+            @RequestParam Long targetRoomAssignmentId
+    ) {
+        examSessionService.moveSeat(seatId, targetRoomAssignmentId);
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("success", true);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Lay danh sach sinh vien trong mot lich thi theo mon")
