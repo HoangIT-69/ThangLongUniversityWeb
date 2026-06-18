@@ -14,4 +14,5 @@ public class ExamCandidateResponse {
     private String studentCode;
     private String studentName;
     private String sourceType;
+    private String classCode;
 }

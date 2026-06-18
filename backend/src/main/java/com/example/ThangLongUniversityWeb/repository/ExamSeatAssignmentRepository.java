@@ -15,4 +15,6 @@ public interface ExamSeatAssignmentRepository extends JpaRepository<ExamSeatAssi
     List<ExamSeatAssignment> findByStudentIdAndExamSessionSemesterIdOrderByExamSessionExamAtAsc(Long studentId, Long semesterId);
 
     void deleteByExamSessionId(Long examSessionId);
+
+    int countByRoomAssignmentId(Long roomAssignmentId);
 }

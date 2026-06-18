@@ -13,6 +13,9 @@ import java.time.LocalDateTime;
 public class StudentExamResponse {
     @Schema(description = "Mã lớp học", example = "IT001.N1")
     private String classCode;
+
+    @Schema(description = "Loại thi", example = "NORMAL")
+    private String examSourceType;
     
     @Schema(description = "Tên môn học", example = "Java Core Programming")
     private String courseName;

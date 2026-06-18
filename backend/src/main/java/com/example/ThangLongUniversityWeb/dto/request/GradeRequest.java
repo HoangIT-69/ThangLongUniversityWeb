@@ -31,5 +31,5 @@ public class GradeRequest {
     @Schema(description = "Điểm thi lại / cải thiện (0-10)", example = "9.0")
     @DecimalMin(value = "0.0", message = "Điểm thi lại phải >= 0")
     @DecimalMax(value = "10.0", message = "Điểm thi lại phải <= 10")
-    private Double retestScore;
+    private Float retestScore;
 }

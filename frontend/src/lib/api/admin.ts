@@ -337,12 +337,23 @@ export const adminApi = {
       `/api/admin/class-sections/semester/${semesterId}/exam-sessions/validate-conflicts`,
       { method: "POST", body: jsonBody(request) },
     ),
-  listExamCandidates: (semesterId: number | string, courseId: number) => {
+  listExamCandidates: (semesterId: number | string, courseId: number, candidateSelection?: string) => {
     const qs = new URLSearchParams({ courseId: String(courseId) });
+    if (candidateSelection) qs.set("candidateSelection", candidateSelection);
     return apiRequest<ExamCandidateResponse[]>(
       `/api/admin/class-sections/semester/${semesterId}/exam-sessions/candidates?${qs.toString()}`,
     );
   },
+  updateExamRegistrationClassSection: (registrationId: number, classSectionId: number) =>
+    apiRequest<{ success: boolean; classCode: string; classSectionId: number }>(
+      `/api/admin/exam-registrations/${registrationId}/class-section?classSectionId=${classSectionId}`,
+      { method: "PUT" },
+    ),
+  moveExamSeatAssignment: (seatId: number, targetRoomAssignmentId: number) =>
+    apiRequest<{ success: boolean }>(
+      `/api/admin/class-sections/exam-sessions/seats/${seatId}/move?targetRoomAssignmentId=${targetRoomAssignmentId}`,
+      { method: "PUT" },
+    ),
   listExamSessionSeats: (examSessionId: number | string) =>
     apiRequest<ExamSeatAssignmentResponse[]>(
       `/api/admin/class-sections/exam-sessions/${examSessionId}/seats`,

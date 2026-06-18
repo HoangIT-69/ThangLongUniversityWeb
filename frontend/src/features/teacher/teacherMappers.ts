@@ -20,6 +20,7 @@ export interface TeacherClassRow {
   maxSlots: number | null;
   status: string;
   gradeStatus: string;
+  virtualRetakeClass?: boolean;
 }
 
 export interface TeacherRosterRow {
@@ -60,6 +61,8 @@ export interface TeacherGradeRow {
   gradeStatus: string;
   courseStatus: string | null;
   absenceCount: number | null;
+  enrollmentType?: string | null;
+  examAttemptNumber?: number | null;
 }
 
 const dayLabels: Record<number, string> = {
@@ -125,8 +128,14 @@ function mapApiClassSection(section: ClassSectionResponse): TeacherClassRow {
     scheduleRoomItems,
     currentSlots: section.currentSlots ?? null,
     maxSlots: section.maxSlots ?? null,
-    status: section.status ?? (isClosed ? "CLOSED" : "OPEN"),
+    status:
+      section.status === "CANCELLED"
+        ? "CANCELLED"
+        : section.semesterEnded
+          ? "ĐÃ KẾT THÚC"
+          : "ĐANG DẠY",
     gradeStatus: section.gradeLocked ? "LOCKED" : "OPEN",
+    virtualRetakeClass: section.virtualRetakeClass ?? false,
   };
 }
 
@@ -154,8 +163,7 @@ function mapApiRosterRow(row: TeacherStudentGradeResponse): TeacherRosterRow {
 
 function mapApiGradeRow(row: GradeResponse): TeacherGradeRow {
   const courseStatus = row.courseStatus ?? null;
-  const banned =
-    courseStatus === "BANNED_FROM_EXAM" || courseStatus === "REPEAT_COURSE";
+  const banned = courseStatus === "BANNED_FROM_EXAM" || courseStatus === "REPEAT_COURSE";
   return {
     enrollmentId: String(row.enrollmentId),
     numericEnrollmentId: row.enrollmentId,
@@ -174,5 +182,7 @@ function mapApiGradeRow(row: GradeResponse): TeacherGradeRow {
     gradeStatus: "OPEN",
     courseStatus,
     absenceCount: row.absenceCount ?? null,
+    enrollmentType: row.enrollmentType ?? null,
+    examAttemptNumber: row.examAttemptNumber ?? null,
   };
 }

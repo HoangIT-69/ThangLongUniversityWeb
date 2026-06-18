@@ -55,7 +55,7 @@ public class GradeResponse {
     private Float finalScore;
     
     @Schema(description = "Điểm thi lại / cải thiện", example = "9.0")
-    private Double retestScore;
+    private Float retestScore;
     
     @Schema(description = "Số lần thi", example = "1")
     private Integer attemptNumber;
@@ -86,4 +86,13 @@ public class GradeResponse {
 
     @Schema(description = "Số buổi vắng", example = "2")
     private Long absenceCount;
+
+    @Schema(description = "ID đăng ký thi lại/nâng (nếu có)")
+    private Long examRegistrationId;
+
+    @Schema(description = "Lần thi lại/nâng theo đăng ký")
+    private Integer examAttemptNumber;
+
+    @Schema(description = "Học kỳ học môn gốc (khi là dòng thi lại/nâng)")
+    private String studySemesterName;
 }

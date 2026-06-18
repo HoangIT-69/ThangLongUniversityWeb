@@ -18,6 +18,8 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
      */
     Optional<Grade> findByEnrollmentId(Long enrollmentId);
 
+    long countByRetestScoreIsNotNull();
+
     /**
      * Lấy danh sách Grade của sinh viên theo Semester
      */

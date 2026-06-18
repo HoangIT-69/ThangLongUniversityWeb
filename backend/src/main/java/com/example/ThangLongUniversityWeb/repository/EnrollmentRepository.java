@@ -57,8 +57,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             "WHERE e.student.id = :studentId AND e.status IN ('PASSED', 'REGISTERED')")
     List<Long> findEnrolledOrPassedCourseIdsByStudentId(@Param("studentId") Long studentId);
 
-    @Query("SELECT e.classSection.course.id FROM Enrollment e " +
-            "WHERE e.student.id = :studentId AND e.status = 'PASSED'")
+    @Query("SELECT DISTINCT e.classSection.course.id FROM Enrollment e " +
+            "WHERE e.student.id = :studentId AND e.courseStatus = 'PASSED'")
     List<Long> findPassedCourseIdsByStudentId(@Param("studentId") Long studentId);
 
     @Query("SELECT e.classSection FROM Enrollment e " +

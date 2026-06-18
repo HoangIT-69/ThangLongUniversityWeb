@@ -1,8 +1,10 @@
 package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.entity.ExamRegistration;
+import com.example.ThangLongUniversityWeb.entity.ClassSection;
 import com.example.ThangLongUniversityWeb.enums.EnrollmentStatus;
 import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
+import com.example.ThangLongUniversityWeb.repository.ClassSectionRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class AdminExamRegistrationController {
 
     private final ExamRegistrationRepository examRegistrationRepository;
+    private final ClassSectionRepository classSectionRepository;
 
     @Operation(summary = "Danh sách đăng ký thi lại theo học kỳ (filter theo status)")
     @GetMapping
@@ -49,15 +52,20 @@ public class AdminExamRegistrationController {
             item.put("studentCode", r.getStudent().getStudentCode());
             item.put("studentName", r.getStudent().getFullName());
             var classSection = r.getClassSection();
-            var course = r.getCourse() != null ? r.getCourse() : classSection.getCourse();
-            var semester = r.getSemester() != null ? r.getSemester() : classSection.getSemester();
+            var course = r.getCourse() != null ? r.getCourse() : (classSection != null ? classSection.getCourse() : null);
+            var semester = r.getSemester() != null ? r.getSemester() : (classSection != null ? classSection.getSemester() : null);
+            if (course != null) {
+                item.put("courseName", course.getName());
+                item.put("courseCode", course.getCode());
+                item.put("credits", course.getCredits());
+            }
+            if (semester != null) {
+                item.put("semesterId", semester.getId());
+                item.put("semesterName", semester.getName());
+            }
             item.put("classSectionId", classSection != null ? classSection.getId() : null);
-            item.put("classCode", classSection != null ? classSection.getClassCode() : "Chua xep lop thi");
-            item.put("courseName", course.getName());
-            item.put("courseCode", course.getCode());
-            item.put("credits", course.getCredits());
-            item.put("semesterId", semester.getId());
-            item.put("semesterName", semester.getName());
+            item.put("classCode", classSection != null ? classSection.getClassCode() : null);
+            item.put("classAssigned", classSection != null);
             item.put("status", r.getStatus() != null ? r.getStatus().name() : null);
             item.put("registrationType", r.getRegistrationType() != null ? r.getRegistrationType().name() : null);
             item.put("feeCharged", r.getFeeCharged());
@@ -91,5 +99,36 @@ public class AdminExamRegistrationController {
         summary.put("totalFeeCharged", totalFee);
 
         return ResponseEntity.ok(summary);
+    }
+
+    @Operation(summary = "Cap nhat lop hoc phan gan cho sinh vien thi lai")
+    @PutMapping("/{registrationId}/class-section")
+    public ResponseEntity<?> updateClassSection(
+            @PathVariable Long registrationId,
+            @RequestParam Long classSectionId
+    ) {
+        ExamRegistration reg = examRegistrationRepository.findById(registrationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đăng ký thi lại."));
+        ClassSection cs = classSectionRepository.findById(classSectionId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần."));
+
+        var course = reg.getCourse() != null ? reg.getCourse() : (reg.getClassSection() != null ? reg.getClassSection().getCourse() : null);
+        var semester = reg.getSemester() != null ? reg.getSemester() : (reg.getClassSection() != null ? reg.getClassSection().getSemester() : null);
+
+        if (course == null || !cs.getCourse().getId().equals(course.getId())) {
+            throw new RuntimeException("Lớp học phần không thuộc môn học này.");
+        }
+        if (semester == null || !cs.getSemester().getId().equals(semester.getId())) {
+            throw new RuntimeException("Lớp học phần không thuộc học kỳ này.");
+        }
+
+        reg.setClassSection(cs);
+        examRegistrationRepository.save(reg);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("classCode", cs.getClassCode());
+        response.put("classSectionId", cs.getId());
+        return ResponseEntity.ok(response);
     }
 }

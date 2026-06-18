@@ -40,7 +40,7 @@ public class RegistrationRound {
     @Column(nullable = false)
     private boolean locked = false;
 
-    @Column(name = "round_type", nullable = false, columnDefinition = "varchar(50) DEFAULT 'COURSE'")
+    @Column(name = "round_type", nullable = false, length = 50)
     private String roundType = "COURSE";
 
     @OneToMany(mappedBy = "registrationRound", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -55,6 +55,9 @@ public class RegistrationRound {
     protected void onCreate() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
+        }
+        if (roundType == null || roundType.isBlank()) {
+            roundType = "COURSE";
         }
     }
 }

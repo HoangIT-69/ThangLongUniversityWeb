@@ -17,6 +17,7 @@ import com.example.ThangLongUniversityWeb.repository.GradeRepository;
 import com.example.ThangLongUniversityWeb.repository.RegistrationRoundRepository;
 import com.example.ThangLongUniversityWeb.repository.SemesterRepository;
 import com.example.ThangLongUniversityWeb.repository.ExamRegistrationRepository;
+import com.example.ThangLongUniversityWeb.repository.TuitionBillRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class RegistrationRoundService {
     private final EnrollmentRepository enrollmentRepository;
     private final GradeRepository gradeRepository;
     private final ExamRegistrationRepository examRegistrationRepository;
+    private final TuitionBillRepository tuitionBillRepository;
     private final SemesterRealtimeService semesterRealtimeService;
 
     @Transactional
@@ -236,6 +238,18 @@ public class RegistrationRoundService {
             // For RETAKE: lock exam registrations in this round
             var pending = examRegistrationRepository.findByRegistrationRoundIdAndStatus(roundId, EnrollmentStatus.PENDING);
             for (var reg : pending) {
+                // Tạm tách luồng thanh toán với thi ra riêng: Cho phép chốt đăng ký trước, thanh toán sau.
+                // Do đó không cần kiểm tra bill.isCompleted() khi khóa đợt thi lại nữa.
+                /*
+                if (reg.getFeeCharged() != null && reg.getFeeCharged() > 0) {
+                    var bill = tuitionBillRepository.findByStudentIdAndSemesterId(
+                            reg.getStudent().getId(), semesterId).orElse(null);
+                    if (bill == null || !bill.isCompleted()) {
+                        throw new RuntimeException("Sinh vien " + reg.getStudent().getStudentCode()
+                                + " chua thanh toan phi thi lai/nang diem.");
+                    }
+                }
+                */
                 reg.setStatus(EnrollmentStatus.REGISTERED);
                 examRegistrationRepository.save(reg);
             }

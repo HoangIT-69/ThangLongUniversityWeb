@@ -46,8 +46,12 @@ public class StudentRetakeService {
     private static final float IMPROVE_MAX_EXCLUSIVE = 8.0f;
     /** Key trong bang system_settings */
     public static final String KEY_RETAKE_FEE = "retake_fee_per_course";
+    public static final String KEY_MAX_RETAKE_ATTEMPTS = "max_retake_attempts";
+    public static final String KEY_MAX_IMPROVE_ATTEMPTS = "max_improve_attempts";
     /** Gia tri mac dinh khi chua cau hinh */
     public static final long DEFAULT_RETAKE_FEE = 200_000L;
+    public static final int DEFAULT_MAX_RETAKE_ATTEMPTS = 2;
+    public static final int DEFAULT_MAX_IMPROVE_ATTEMPTS = 1;
 
     private final StudentRepository studentRepository;
     private final GradeRepository gradeRepository;
@@ -69,16 +73,38 @@ public class StudentRetakeService {
                 .orElse(DEFAULT_RETAKE_FEE);
     }
 
+    public int getMaxRetakeAttempts() {
+        return systemSettingsRepository.findById(KEY_MAX_RETAKE_ATTEMPTS)
+                .map(SystemSettings::getValue)
+                .map(v -> {
+                    try { return Integer.parseInt(v); } catch (NumberFormatException e) { return DEFAULT_MAX_RETAKE_ATTEMPTS; }
+                })
+                .orElse(DEFAULT_MAX_RETAKE_ATTEMPTS);
+    }
+
+    public int getMaxImproveAttempts() {
+        return systemSettingsRepository.findById(KEY_MAX_IMPROVE_ATTEMPTS)
+                .map(SystemSettings::getValue)
+                .map(v -> {
+                    try { return Integer.parseInt(v); } catch (NumberFormatException e) { return DEFAULT_MAX_IMPROVE_ATTEMPTS; }
+                })
+                .orElse(DEFAULT_MAX_IMPROVE_ATTEMPTS);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // 1. Lay danh sach mon du dieu kien thi lai / nang diem
     // ─────────────────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public List<RetakeEligibleCourseResponse> getEligibleCourses(Long semesterId) {
+        if (semesterId == null) {
+            throw new RuntimeException("Can chon hoc ky de xem mon du dieu kien thi lai / thi nang diem.");
+        }
         Student student = getCurrentStudent();
         long fee = getRetakeFee();
         return latestCompletedGradesByCourse(student.getId()).stream()
                 .filter(this::isEligible)
-                .map(grade -> mapEligibleCourse(grade, fee))
+                .filter(grade -> isOpenForRegistration(student.getId(), grade, semesterId))
+                .map(grade -> mapEligibleCourse(student.getId(), grade, fee, semesterId))
                 .toList();
     }
 
@@ -172,7 +198,6 @@ public class StudentRetakeService {
             }
             EnrollmentType enrollmentType = courseStatus == CourseStudyStatus.RETAKE_EXAM
                     ? EnrollmentType.RETAKE : EnrollmentType.IMPROVE;
-            int nextAttempt = (latestGrade.getAttemptNumber() != null ? latestGrade.getAttemptNumber() : 1) + 1;
 
             ExamRegistration existing = examRegistrationRepository.findByStudentIdAndCourseIdAndSemesterId(
                             student.getId(), course.getId(), semester.getId())
@@ -184,6 +209,10 @@ public class StudentRetakeService {
                 results.add(mapRegisteredItem(existing));
                 continue;
             }
+
+            validateAttemptLimits(student.getId(), course.getId(), semester.getId(), enrollmentType);
+
+            int nextAttempt = computeNextExamAttempt(student.getId(), course.getId());
 
             ExamRegistration examReg = existing != null ? existing : new ExamRegistration();
             examReg.setStudent(student);
@@ -268,7 +297,50 @@ public class StudentRetakeService {
                     && grade.getTotalScore() < IMPROVE_MAX_EXCLUSIVE);
     }
 
-    private RetakeEligibleCourseResponse mapEligibleCourse(Grade grade, long fee) {
+    private static final List<EnrollmentStatus> COUNTED_ATTEMPT_STATUSES = List.of(EnrollmentStatus.REGISTERED);
+
+    private void validateAttemptLimits(Long studentId, Long courseId, Long semesterId, EnrollmentType enrollmentType) {
+        if (enrollmentType == EnrollmentType.RETAKE) {
+            long priorAttempts = examRegistrationRepository
+                    .countByStudentIdAndCourseIdAndRegistrationTypeAndSemesterIdNotAndStatusIn(
+                            studentId, courseId, EnrollmentType.RETAKE, semesterId, COUNTED_ATTEMPT_STATUSES);
+            if (priorAttempts >= getMaxRetakeAttempts()) {
+                throw new RuntimeException("Ban da dat so lan thi lai toi da (" + getMaxRetakeAttempts() + " lan) cho mon nay.");
+            }
+        } else {
+            long priorImprove = examRegistrationRepository
+                    .countByStudentIdAndCourseIdAndRegistrationTypeAndSemesterIdNotAndStatusIn(
+                            studentId, courseId, EnrollmentType.IMPROVE, semesterId, COUNTED_ATTEMPT_STATUSES);
+            if (priorImprove >= getMaxImproveAttempts()) {
+                throw new RuntimeException("Ban chi duoc thi nang diem toi da " + getMaxImproveAttempts() + " lan cho mon nay.");
+            }
+        }
+    }
+
+    private boolean isOpenForRegistration(Long studentId, Grade grade, Long semesterId) {
+        Long courseId = grade.getEnrollment().getClassSection().getCourse().getId();
+        if (examRegistrationRepository.findByStudentIdAndCourseIdAndSemesterId(studentId, courseId, semesterId).isPresent()) {
+            return false;
+        }
+        EnrollmentType enrollmentType = grade.getEnrollment().getCourseStatus() == CourseStudyStatus.RETAKE_EXAM
+                ? EnrollmentType.RETAKE : EnrollmentType.IMPROVE;
+        try {
+            validateAttemptLimits(studentId, courseId, semesterId, enrollmentType);
+            return true;
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
+
+    private int computeNextExamAttempt(Long studentId, Long courseId) {
+        long prior = examRegistrationRepository.countByStudentIdAndCourseIdAndRegistrationTypeAndStatusIn(
+                studentId, courseId, EnrollmentType.RETAKE, COUNTED_ATTEMPT_STATUSES)
+                + examRegistrationRepository.countByStudentIdAndCourseIdAndRegistrationTypeAndStatusIn(
+                studentId, courseId, EnrollmentType.IMPROVE, COUNTED_ATTEMPT_STATUSES);
+        return (int) prior + 1;
+    }
+
+    private RetakeEligibleCourseResponse mapEligibleCourse(Long studentId, Grade grade, long fee, Long semesterId) {
         Enrollment enrollment = grade.getEnrollment();
         Course course = enrollment.getClassSection().getCourse();
         String type = grade.getTotalScore() < RETAKE_THRESHOLD ? "RETAKE" : "IMPROVE";
@@ -280,7 +352,7 @@ public class StudentRetakeService {
                 course.getName(),
                 course.getCredits(),
                 grade.getTotalScore(),
-                grade.getAttemptNumber(),
+                computeNextExamAttempt(studentId, course.getId()),
                 type,
                 fee
         );

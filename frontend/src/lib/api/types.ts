@@ -389,6 +389,9 @@ export interface ClassSectionResponse {
   examAt?: string | null;
   examRoom?: string | null;
   examType?: "NORMAL" | "RETAKE" | "IMPROVE" | null;
+  sourceExamSessionId?: number | null;
+  virtualRetakeClass?: boolean;
+  semesterEnded?: boolean;
 }
 
 export interface TeacherGradeRequest {
@@ -503,6 +506,7 @@ export interface EnrollmentResponse {
 
 export interface StudentExamResponse {
   classCode: string;
+  examSourceType?: string | null;
   courseName: string;
   credits: number;
   examAt?: string | null;
@@ -554,6 +558,9 @@ export interface GradeResponse {
   updatedAt?: string | null;
   courseStatus?: CourseStudyStatus | string | null;
   absenceCount?: number | null;
+  examRegistrationId?: number | null;
+  examAttemptNumber?: number | null;
+  studySemesterName?: string | null;
 }
 
 export interface TuitionItemResponse {
@@ -569,6 +576,7 @@ export interface TuitionResponse {
   semesterName: string;
   totalCredits: number;
   totalAmount: number;
+  paidAmount: number;
   pricePerCredit: number;
   paid: boolean;
   items: TuitionItemResponse[];
@@ -916,7 +924,9 @@ export interface ExamSessionRequest {
   examType?: "NORMAL" | "RETAKE" | "IMPROVE" | null;
   examAt: string;
   roomIds: number[];
+  proctorIds?: (number | null)[] | null;
   allocationMethod?: "SEQUENTIAL" | "BALANCED" | null;
+  candidateSelection?: "ALL" | "NORMAL_ONLY" | "RETAKE_ONLY" | null;
 }
 
 export interface ExamRoomAssignmentResponse {
@@ -925,6 +935,9 @@ export interface ExamRoomAssignmentResponse {
   roomName: string;
   capacity: number;
   assignedCount: number;
+  proctorId?: number | null;
+  proctorCode?: string | null;
+  proctorName?: string | null;
 }
 
 export interface ExamSessionResponse {
@@ -939,6 +952,11 @@ export interface ExamSessionResponse {
   examAt: string;
   studentCount: number;
   rooms: ExamRoomAssignmentResponse[];
+  candidateSelection?: "ALL" | "NORMAL_ONLY" | "RETAKE_ONLY" | null;
+  assignedRetakeCount?: number | null;
+  virtualClassCode?: string | null;
+  virtualClassSectionId?: number | null;
+  assignmentWarnings?: string[] | null;
 }
 
 export interface ExamSeatAssignmentResponse {
@@ -948,9 +966,11 @@ export interface ExamSeatAssignmentResponse {
   studentName: string;
   roomId: number;
   roomName: string;
+  roomAssignmentId?: number;
   sourceType: string;
   enrollmentId?: number | null;
   examRegistrationId?: number | null;
+  classCode?: string | null;
 }
 
 export interface SemesterSummaryResponse {
@@ -985,8 +1005,9 @@ export interface AdminExamRegistrationResponse {
   studentId: number;
   studentCode: string;
   studentName: string;
-  classSectionId: number;
-  classCode: string;
+  classSectionId?: number | null;
+  classCode?: string | null;
+  classAssigned?: boolean;
   courseName: string;
   courseCode: string;
   credits: number;
@@ -1021,4 +1042,5 @@ export interface ExamCandidateResponse {
   studentCode: string;
   studentName: string;
   sourceType: string;
+  classCode?: string | null;
 }

@@ -66,7 +66,7 @@ public class CourseOutcomeService {
         Float participation = grade.getParticipationScore();
         Float midterm = grade.getMidtermScore();
         Float finalScore = grade.getFinalScore();
-        Double retest = grade.getRetestScore();
+        Float retest = grade.getRetestScore();
 
         // Chưa có đủ điểm chuyên cần + giữa kỳ
         if (participation == null || midterm == null) {

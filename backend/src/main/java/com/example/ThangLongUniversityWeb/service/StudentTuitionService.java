@@ -83,13 +83,29 @@ public class StudentTuitionService {
         TuitionBill bill = tuitionBillRepository.findByStudentIdAndSemesterId(student.getId(), semesterId)
                 .orElse(new TuitionBill());
 
-        if (!bill.isCompleted()) {
+        if (bill.getId() == null) {
             bill.setStudent(student);
             bill.setSemester(semester);
             bill.setTotalAmount(totalAmount);
-            if (bill.getPaidAmount() == null) bill.setPaidAmount(BigDecimal.ZERO);
-            if (bill.getCreatedAt() == null) bill.setCreatedAt(LocalDateTime.now());
+            bill.setPaidAmount(BigDecimal.ZERO);
+            bill.setCompleted(false);
+            bill.setCreatedAt(LocalDateTime.now());
             bill = tuitionBillRepository.save(bill);
+        } else {
+            // Nếu tổng học phí tính toán đã thay đổi (ví dụ do được chốt đăng ký thi lại sau khi đóng học phí chính thức)
+            if (bill.getTotalAmount() == null || bill.getTotalAmount().compareTo(totalAmount) != 0) {
+                bill.setTotalAmount(totalAmount);
+                if (bill.getPaidAmount() == null) {
+                    bill.setPaidAmount(BigDecimal.ZERO);
+                }
+                // Nếu số tiền đã đóng nhỏ hơn tổng tiền mới, đánh dấu hóa đơn chưa hoàn thành để sinh viên đóng tiếp phần thiếu
+                if (bill.getPaidAmount().compareTo(totalAmount) < 0) {
+                    bill.setCompleted(false);
+                } else {
+                    bill.setCompleted(true);
+                }
+                bill = tuitionBillRepository.save(bill);
+            }
         }
 
         // Build chi tiet tung mon
@@ -98,12 +114,12 @@ public class StudentTuitionService {
             int credits = course.getCredits() != null ? course.getCredits() : 0;
             long subtotal = PRICE_PER_CREDIT.longValue() * credits;
             return new TuitionItemResponse(
-                    "COURSE",
-                    course.getCode(),
-                    course.getName(),
-                    credits,
-                    PRICE_PER_CREDIT.longValue(),
-                    subtotal
+                     "COURSE",
+                     course.getCode(),
+                     course.getName(),
+                     credits,
+                     PRICE_PER_CREDIT.longValue(),
+                     subtotal
             );
         }).toList();
 
@@ -111,12 +127,12 @@ public class StudentTuitionService {
             var course = reg.getCourse() != null ? reg.getCourse() : reg.getClassSection().getCourse();
             long fee = reg.getFeeCharged() != null ? reg.getFeeCharged() : 0L;
             return new TuitionItemResponse(
-                    "RETAKE",
-                    course.getCode(),
-                    course.getName(),
-                    course.getCredits(),
-                    fee,
-                    fee
+                     "RETAKE",
+                     course.getCode(),
+                     course.getName(),
+                     course.getCredits(),
+                     fee,
+                     fee
             );
         }).toList();
 
@@ -128,6 +144,7 @@ public class StudentTuitionService {
                 .semesterName(semester.getName())
                 .totalCredits(totalCredits)
                 .totalAmount(bill.getTotalAmount().longValue())
+                .paidAmount(bill.getPaidAmount() != null ? bill.getPaidAmount().longValue() : 0L)
                 .pricePerCredit(PRICE_PER_CREDIT.longValue())
                 .isPaid(bill.isCompleted())
                 .items(allItems)
@@ -145,8 +162,14 @@ public class StudentTuitionService {
             throw new RuntimeException("Hóa đơn này đã được thanh toán!");
         }
 
+        long paid = bill.getPaidAmount() != null ? bill.getPaidAmount().longValue() : 0L;
+        long remaining = bill.getTotalAmount().longValue() - paid;
+        if (remaining <= 0) {
+            throw new RuntimeException("Hóa đơn này đã được thanh toán đầy đủ!");
+        }
+
         // VNPAY yêu cầu số tiền nhân thêm 100
-        long amount = bill.getTotalAmount().longValue() * 100L;
+        long amount = remaining * 100L;
 
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", vnPayConfig.getVnpVersion());

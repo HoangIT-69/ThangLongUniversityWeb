@@ -18,6 +18,12 @@ function formatDateTime(value?: string | null) {
   );
 }
 
+const EXAM_SOURCE_LABELS: Record<string, string> = {
+  NORMAL: "Thi lần đầu",
+  RETAKE: "Thi lại",
+  IMPROVE: "Thi nâng điểm",
+};
+
 function ExamsPage() {
   const semestersQuery = useQuery({
     queryKey: ["student", "semesters"],
@@ -81,6 +87,15 @@ function ExamsPage() {
             header: "Môn học",
             accessor: (e) => e.courseName,
             render: (e) => <span className="font-medium">{e.courseName}</span>,
+          },
+          {
+            key: "examType",
+            header: "Loại thi",
+            render: (e) => (
+              <span className="text-xs">
+                {EXAM_SOURCE_LABELS[e.examSourceType ?? "NORMAL"] ?? e.examSourceType ?? "-"}
+              </span>
+            ),
           },
           {
             key: "classCode",

@@ -25,4 +25,9 @@ public class ExamSessionResponse {
     private LocalDateTime examAt;
     private Integer studentCount;
     private List<ExamRoomAssignmentResponse> rooms;
+    private String candidateSelection;
+    private Integer assignedRetakeCount;
+    private String virtualClassCode;
+    private Long virtualClassSectionId;
+    private List<String> assignmentWarnings;
 }

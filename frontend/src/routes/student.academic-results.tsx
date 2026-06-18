@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -160,6 +160,7 @@ function AcademicResultsPage() {
               <TableHead className="text-center hidden sm:table-cell">Chuyên cần</TableHead>
               <TableHead className="text-center hidden sm:table-cell">Giữa kỳ</TableHead>
               <TableHead className="text-center hidden sm:table-cell">Cuối kỳ</TableHead>
+              <TableHead className="text-center hidden sm:table-cell">Thi lại/nâng</TableHead>
               <TableHead className="text-center">Tổng</TableHead>
               <TableHead className="text-center">Chữ</TableHead>
               <TableHead className="text-center">GPA4</TableHead>
@@ -169,24 +170,33 @@ function AcademicResultsPage() {
           <TableBody>
             {resultsQuery.isLoading ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={11} className="py-10 text-center text-sm text-muted-foreground">
                   Đang tải bảng điểm...
                 </TableCell>
               </TableRow>
             ) : grades.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={11} className="py-10 text-center text-sm text-muted-foreground">
                   Chưa có điểm.
                 </TableCell>
               </TableRow>
             ) : (
               grades.map((r) => {
                 const isFailed = r.totalScore != null && r.totalScore < 4;
+                const isRetakeRow =
+                  r.examRegistrationId != null ||
+                  r.enrollmentType === "RETAKE" ||
+                  r.enrollmentType === "IMPROVE";
                 return (
-                  <TableRow key={r.enrollmentId}>
+                  <TableRow key={r.examRegistrationId ? `exam-${r.examRegistrationId}` : r.enrollmentId}>
                     <TableCell>
                       <div className="font-medium">{r.courseName}</div>
                       <div className="text-xs text-muted-foreground font-mono">{r.classCode}</div>
+                      {r.studySemesterName && r.examRegistrationId != null && (
+                        <div className="text-[11px] text-muted-foreground">
+                          Học gốc: {r.studySemesterName}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                       {r.semesterName}
@@ -200,6 +210,15 @@ function AcademicResultsPage() {
                     </TableCell>
                     <TableCell className="text-center tabular-nums hidden sm:table-cell">
                       {r.finalScore != null ? r.finalScore.toFixed(1) : "-"}
+                    </TableCell>
+                    <TableCell className="text-center tabular-nums hidden sm:table-cell">
+                      {r.retestScore != null ? (
+                        <span className="font-semibold text-amber-700">{r.retestScore.toFixed(1)}</span>
+                      ) : isRetakeRow ? (
+                        <span className="text-xs text-muted-foreground">Chờ chấm</span>
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
                     <TableCell className="text-center">
                       <span
@@ -219,19 +238,33 @@ function AcademicResultsPage() {
                       {r.gradePoint != null ? r.gradePoint.toFixed(2) : "-"}
                     </TableCell>
                     <TableCell className="text-center">
-                      {r.courseStatus === "BANNED_FROM_EXAM" && (
-                        <span className="rounded px-2 py-0.5 text-xs font-semibold bg-destructive/15 text-destructive">Cấm thi</span>
+                      {r.enrollmentType === "RETAKE" && (
+                        <span className="rounded px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700">
+                          Thi lại
+                        </span>
                       )}
-                      {r.courseStatus === "REPEAT_COURSE" && (
-                        <span className="rounded px-2 py-0.5 text-xs font-semibold bg-destructive/15 text-destructive">Học lại</span>
+                      {r.enrollmentType === "IMPROVE" && (
+                        <span className="rounded px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700">
+                          Thi nâng
+                        </span>
                       )}
-                      {r.courseStatus === "RETAKE_EXAM" && (
-                        <span className="rounded px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700">Thi lại</span>
+                      {r.enrollmentType !== "RETAKE" && r.enrollmentType !== "IMPROVE" && (
+                        <>
+                          {r.courseStatus === "BANNED_FROM_EXAM" && (
+                            <span className="rounded px-2 py-0.5 text-xs font-semibold bg-destructive/15 text-destructive">Cấm thi</span>
+                          )}
+                          {r.courseStatus === "REPEAT_COURSE" && (
+                            <span className="rounded px-2 py-0.5 text-xs font-semibold bg-destructive/15 text-destructive">Học lại</span>
+                          )}
+                          {r.courseStatus === "RETAKE_EXAM" && (
+                            <span className="rounded px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700">Thi lại</span>
+                          )}
+                          {r.courseStatus === "PASSED" && (
+                            <span className="rounded px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700">Đạt</span>
+                          )}
+                        </>
                       )}
-                      {r.courseStatus === "PASSED" && (
-                        <span className="rounded px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700">Đạt</span>
-                      )}
-                      {(!r.courseStatus || r.courseStatus === "IN_PROGRESS") && (
+                      {(!r.courseStatus || r.courseStatus === "IN_PROGRESS") && !isRetakeRow && (
                         <span className="text-xs text-muted-foreground">Đang học</span>
                       )}
                     </TableCell>

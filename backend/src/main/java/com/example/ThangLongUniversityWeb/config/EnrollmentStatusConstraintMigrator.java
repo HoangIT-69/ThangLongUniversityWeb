@@ -24,6 +24,9 @@ public class EnrollmentStatusConstraintMigrator implements CommandLineRunner {
         migrateSemesterEndedColumn();
         migrateClassSectionStatusColumn();
         migrateExamRegistrationCourseSemesterColumns();
+        migrateExamRoomAssignmentProctorColumn();
+        migrateExamSessionCandidateSelection();
+        migrateClassSectionSourceExamSession();
     }
 
     private void migrateClassSectionStatusColumn() {
@@ -182,5 +185,39 @@ public class EnrollmentStatusConstraintMigrator implements CommandLineRunner {
                 ON exam_registrations (student_id, semester_id, course_id)
                 WHERE semester_id IS NOT NULL AND course_id IS NOT NULL
                 """);
+    }
+
+    private void migrateExamRoomAssignmentProctorColumn() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE exam_room_assignments ADD COLUMN IF NOT EXISTS proctor_id BIGINT REFERENCES teachers(id)");
+        } catch (Exception ignored) {
+            // Best-effort migration
+        }
+    }
+
+    private void migrateExamSessionCandidateSelection() {
+        try {
+            // Add column candidate_selection if not exists, default to 'ALL'
+            jdbcTemplate.execute("ALTER TABLE exam_sessions ADD COLUMN IF NOT EXISTS candidate_selection VARCHAR(20) DEFAULT 'ALL' NOT NULL");
+            
+            // Drop old unique constraint if it exists (which is on semester_id, course_id, exam_type)
+            jdbcTemplate.execute("ALTER TABLE exam_sessions DROP CONSTRAINT IF EXISTS uk_exam_session_semester_course_type");
+            
+            // Re-add unique constraint including candidate_selection
+            jdbcTemplate.execute("ALTER TABLE exam_sessions ADD CONSTRAINT uk_exam_session_semester_course_type UNIQUE (semester_id, course_id, exam_type, candidate_selection)");
+        } catch (Exception e) {
+            System.err.println("Error migrating exam session candidate selection: " + e.getMessage());
+        }
+    }
+
+    private void migrateClassSectionSourceExamSession() {
+        try {
+            jdbcTemplate.execute("""
+                    ALTER TABLE class_sections
+                    ADD COLUMN IF NOT EXISTS source_exam_session_id BIGINT REFERENCES exam_sessions(id)
+                    """);
+        } catch (Exception ignored) {
+            // Best-effort migration
+        }
     }
 }

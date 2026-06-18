@@ -70,6 +70,10 @@ public class ClassSection {
     @Column(name = "exam_type")
     private ExamType examType = ExamType.NORMAL;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_exam_session_id")
+    private ExamSession sourceExamSession;
+
     public boolean isClosed() {
         return status == ClassSectionStatus.CLOSED || status == ClassSectionStatus.CANCELLED;
     }

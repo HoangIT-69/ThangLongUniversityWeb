@@ -100,4 +100,13 @@ public class ClassSectionResponse {
 
     @Schema(description = "Loại thi", example = "NORMAL")
     private ExamType examType;
+
+    @Schema(description = "ID ca thi nguon (lop ao thi lai/nang)")
+    private Long sourceExamSessionId;
+
+    @Schema(description = "Lop hoc phan ao chi de cham thi lai/nang")
+    private boolean virtualRetakeClass;
+
+    @Schema(description = "Trạng thái học kỳ đã kết thúc", example = "false")
+    private boolean semesterEnded;
 }
