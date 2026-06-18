@@ -46,12 +46,12 @@ public class GradeService {
 
         ExamRegistration activeRegistration = findActiveExamRegistration(enrollment.getId());
 
-        if (activeRegistration != null) {
-            validateRetakeGradeRequest(request);
-        }
-
         Grade grade = gradeRepository.findByEnrollmentId(request.getEnrollmentId())
                 .orElseGet(Grade::new);
+
+        if (activeRegistration != null) {
+            validateRetakeGradeRequest(request, grade);
+        }
 
         grade.setEnrollment(enrollment);
         if (activeRegistration != null) {
@@ -82,16 +82,16 @@ public class GradeService {
         return registrations.isEmpty() ? null : registrations.getFirst();
     }
 
-    private void validateRetakeGradeRequest(GradeRequest request) {
+    private void validateRetakeGradeRequest(GradeRequest request, Grade grade) {
         if (request.getRetestScore() == null
                 && request.getParticipationScore() == null
                 && request.getMidTermScore() == null
                 && request.getFinalScore() == null) {
             return;
         }
-        if (request.getParticipationScore() != null
-                || request.getMidTermScore() != null
-                || request.getFinalScore() != null) {
+        if ((request.getParticipationScore() != null && !request.getParticipationScore().equals(grade.getParticipationScore()))
+                || (request.getMidTermScore() != null && !request.getMidTermScore().equals(grade.getMidtermScore()))
+                || (request.getFinalScore() != null && !request.getFinalScore().equals(grade.getFinalScore()))) {
             throw new RuntimeException("Sinh vien dang ky thi lai/nang diem chi duoc cap nhat diem thi lai.");
         }
     }
