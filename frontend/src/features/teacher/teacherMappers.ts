@@ -139,6 +139,11 @@ function mapApiClassSection(section: ClassSectionResponse): TeacherClassRow {
   };
 }
 
+const roundTo2Decimals = (val: number | null | undefined): number | null => {
+  if (val == null) return null;
+  return Math.round(val * 100) / 100;
+};
+
 function mapApiRosterRow(row: TeacherStudentGradeResponse): TeacherRosterRow {
   return {
     enrollmentId: String(row.enrollmentId),
@@ -152,9 +157,9 @@ function mapApiRosterRow(row: TeacherStudentGradeResponse): TeacherRosterRow {
     advisorName: row.advisorName ?? null,
     majorName: row.majorName ?? null,
     facultyName: row.facultyName ?? null,
-    midtermScore: row.midTermScore ?? null,
-    finalScore: row.finalScore ?? null,
-    totalScore: row.totalScore ?? null,
+    midtermScore: roundTo2Decimals(row.midTermScore),
+    finalScore: roundTo2Decimals(row.finalScore),
+    totalScore: roundTo2Decimals(row.totalScore),
     status: row.status,
     courseStatus: row.courseStatus ?? null,
     absenceCount: row.absenceCount ?? null,
@@ -171,11 +176,11 @@ function mapApiGradeRow(row: GradeResponse): TeacherGradeRow {
     studentName: row.studentName,
     classCode: row.classCode,
     courseName: row.courseName,
-    participationScore: row.participationScore ?? null,
-    midtermScore: row.midtermScore ?? null,
-    finalScore: row.finalScore ?? null,
-    retestScore: row.retestScore ?? null,
-    totalScore: row.totalScore ?? null,
+    participationScore: roundTo2Decimals(row.participationScore),
+    midtermScore: roundTo2Decimals(row.midtermScore),
+    finalScore: roundTo2Decimals(row.finalScore),
+    retestScore: roundTo2Decimals(row.retestScore),
+    totalScore: roundTo2Decimals(row.totalScore),
     letterGrade: row.letterGrade ?? null,
     gpa4: row.gpa4 ?? row.gradePoint ?? null,
     canEdit: !banned,

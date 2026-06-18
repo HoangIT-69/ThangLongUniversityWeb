@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,6 +42,7 @@ public class TeacherGradeController {
 
     @Operation(summary = "Nhập/cập nhật điểm cho sinh viên")
     @PutMapping("/{enrollmentId}")
+    @Transactional
     public ResponseEntity<?> updateStudentGrade(
             @PathVariable Long enrollmentId,
             @RequestBody GradeRequest request) {
@@ -118,6 +120,7 @@ public class TeacherGradeController {
 
     @Operation(summary = "Khóa toàn bộ điểm của một lớp học phần")
     @PostMapping("/class/{classSectionId}/lock")
+    @Transactional
     public ResponseEntity<?> lockClassGrades(@PathVariable Long classSectionId) {
         ClassSection classSection = classSectionRepository.findById(classSectionId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp!"));
