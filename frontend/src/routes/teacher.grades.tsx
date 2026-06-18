@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { TeacherGradeTable } from "@/features/teacher/TeacherGradeTable";
 import {
+  buildTeacherGradeUpdateRequest,
   getTeacherClassRows,
   getTeacherGradeRows,
   type TeacherGradeRow,
@@ -95,13 +96,10 @@ function TeacherGradesPage() {
 
   const updateGradeMutation = useMutation({
     mutationFn: (row: TeacherGradeRow) =>
-      teacherApi.updateGrade(row.numericEnrollmentId ?? row.enrollmentId, {
-        enrollmentId: Number(row.numericEnrollmentId ?? row.enrollmentId),
-        participationScore: row.participationScore,
-        midTermScore: row.midtermScore,
-        finalScore: row.finalScore,
-        retestScore: row.retestScore,
-      }),
+      teacherApi.updateGrade(
+        row.numericEnrollmentId ?? row.enrollmentId,
+        buildTeacherGradeUpdateRequest(row),
+      ),
     onSuccess: () => {
       toast.success("Đã lưu điểm");
       void queryClient.invalidateQueries({ queryKey: ["teacher", "grades", classSectionId] });
@@ -114,13 +112,7 @@ function TeacherGradesPage() {
       // Save all editable rows first
       const editableRows = draftRows.filter((r) => r.canEdit && r.numericEnrollmentId);
       for (const row of editableRows) {
-        await teacherApi.updateGrade(row.numericEnrollmentId!, {
-          enrollmentId: Number(row.numericEnrollmentId),
-          participationScore: row.participationScore,
-          midTermScore: row.midtermScore,
-          finalScore: row.finalScore,
-          retestScore: row.retestScore,
-        });
+        await teacherApi.updateGrade(row.numericEnrollmentId!, buildTeacherGradeUpdateRequest(row));
       }
       await teacherApi.lockClassGrades(classSectionId);
     },

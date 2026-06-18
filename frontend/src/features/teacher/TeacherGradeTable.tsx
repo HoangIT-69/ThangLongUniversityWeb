@@ -41,7 +41,7 @@ export function TeacherGradeTable({ rows, disabled, retakeOnly, onChange, onSave
             <TableHead className="w-28">Chuyên cần</TableHead>
             <TableHead className="w-28">Giữa kỳ</TableHead>
             <TableHead className="w-28">Cuối kỳ</TableHead>
-            <TableHead className="w-28">Điểm thi</TableHead>
+            <TableHead className="w-28">Điểm thi lại</TableHead>
             <TableHead>Tổng</TableHead>
             <TableHead>Chữ</TableHead>
             <TableHead>GPA4</TableHead>
