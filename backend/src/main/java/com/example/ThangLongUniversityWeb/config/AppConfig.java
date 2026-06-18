@@ -13,6 +13,7 @@ public class AppConfig {
         ObjectMapper mapper = new ObjectMapper();
         // Cực kỳ quan trọng: Đăng ký module này để Jackson hiểu được kiểu LocalDate, LocalDateTime
         mapper.registerModule(new JavaTimeModule());
+        mapper.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         return mapper;
     }
 }
