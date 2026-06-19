@@ -160,6 +160,7 @@ QUY CHẾ HỌC VỤ (Sổ tay sinh viên)
                 systemContent = SYSTEM_PROMPT + "\n\nDỮ LIỆU THAM KHẢO (từ cơ sở tri thức chính thức):\n"
                         + retrievedContext
                         + "\n\nHãy ưu tiên sử dụng dữ liệu tham khảo trên khi trả lời. "
+                        + "Nếu dữ liệu tham khảo có thông tin về thanglonguniversity.online hoặc nền tảng sinh viên này, hãy trả lời theo đó thay vì từ chối. "
                         + "Nếu dữ liệu tham khảo không đủ, hãy nói rõ.";
             }
 

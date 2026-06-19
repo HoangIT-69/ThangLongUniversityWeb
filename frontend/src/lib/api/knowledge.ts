@@ -9,6 +9,14 @@ export interface KnowledgeDocumentItem {
   isActive: boolean;
   fetchedAt: string;
   chunkCount: number;
+  searchableChunkCount: number;
+}
+
+export interface KnowledgeChunkItem {
+  id: number;
+  chunkIndex: number;
+  content: string;
+  createdAt: string;
 }
 
 export interface IngestTextPayload {
@@ -28,6 +36,10 @@ export interface IngestUrlPayload {
 
 export function listKnowledgeDocuments() {
   return apiRequest<KnowledgeDocumentItem[]>("/api/admin/knowledge/documents");
+}
+
+export function getDocumentChunks(id: number) {
+  return apiRequest<KnowledgeChunkItem[]>(`/api/admin/knowledge/documents/${id}/chunks`);
 }
 
 export function ingestText(payload: IngestTextPayload) {

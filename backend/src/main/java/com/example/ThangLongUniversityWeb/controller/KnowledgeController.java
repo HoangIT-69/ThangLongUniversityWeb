@@ -2,6 +2,7 @@ package com.example.ThangLongUniversityWeb.controller;
 
 import com.example.ThangLongUniversityWeb.dto.request.IngestTextRequest;
 import com.example.ThangLongUniversityWeb.dto.request.IngestUrlRequest;
+import com.example.ThangLongUniversityWeb.dto.response.KnowledgeChunkResponse;
 import com.example.ThangLongUniversityWeb.dto.response.KnowledgeDocumentResponse;
 import com.example.ThangLongUniversityWeb.entity.KnowledgeDocument;
 import com.example.ThangLongUniversityWeb.repository.KnowledgeChunkRepository;
@@ -36,9 +37,26 @@ public class KnowledgeController {
                 .isActive(d.getIsActive())
                 .fetchedAt(d.getFetchedAt())
                 .chunkCount(chunkRepository.countByDocument(d))
+                .searchableChunkCount(chunkRepository.countSearchableByDocumentId(d.getId()))
                 .build()
         ).toList();
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/documents/{id}/chunks")
+    public ResponseEntity<List<KnowledgeChunkResponse>> listDocumentChunks(@PathVariable Long id) {
+        KnowledgeDocument doc = documentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + id));
+        List<KnowledgeChunkResponse> chunks = chunkRepository.findByDocumentOrderByChunkIndexAsc(doc)
+                .stream()
+                .map(c -> KnowledgeChunkResponse.builder()
+                        .id(c.getId())
+                        .chunkIndex(c.getChunkIndex())
+                        .content(c.getContent())
+                        .createdAt(c.getCreatedAt())
+                        .build())
+                .toList();
+        return ResponseEntity.ok(chunks);
     }
 
     @PostMapping("/ingest")

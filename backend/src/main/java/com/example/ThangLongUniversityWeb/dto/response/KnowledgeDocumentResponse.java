@@ -20,4 +20,5 @@ public class KnowledgeDocumentResponse {
     private Boolean isActive;
     private LocalDateTime fetchedAt;
     private long chunkCount;
+    private long searchableChunkCount;
 }

@@ -5,7 +5,6 @@ import com.example.ThangLongUniversityWeb.entity.KnowledgeDocument;
 import com.example.ThangLongUniversityWeb.repository.KnowledgeChunkRepository;
 import com.example.ThangLongUniversityWeb.repository.KnowledgeDocumentRepository;
 import com.example.ThangLongUniversityWeb.service.DocumentIngestionService;
-import com.example.ThangLongUniversityWeb.service.EmbeddingService;
 import com.example.ThangLongUniversityWeb.service.TextChunker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,6 @@ public class DocumentIngestionServiceImpl implements DocumentIngestionService {
 
     private final KnowledgeDocumentRepository documentRepository;
     private final KnowledgeChunkRepository chunkRepository;
-    private final EmbeddingService embeddingService;
     private final TextChunker textChunker;
 
     @Override
@@ -52,7 +50,7 @@ public class DocumentIngestionServiceImpl implements DocumentIngestionService {
                 .build();
         documentRepository.save(doc);
 
-        embedAndSaveChunks(doc, content);
+        chunkAndSave(doc, content);
         log.info("Ingested '{}' → {} chunks", title, chunkRepository.countByDocument(doc));
         return doc.getId();
     }
@@ -100,7 +98,7 @@ public class DocumentIngestionServiceImpl implements DocumentIngestionService {
                 .reduce("", (a, b) -> a + "\n\n" + b);
 
         chunkRepository.deleteByDocument(doc);
-        embedAndSaveChunks(doc, combined);
+        chunkAndSave(doc, combined);
         log.info("Re-indexed doc {} → {} chunks", documentId, chunkRepository.countByDocument(doc));
     }
 
@@ -126,26 +124,20 @@ public class DocumentIngestionServiceImpl implements DocumentIngestionService {
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private void embedAndSaveChunks(KnowledgeDocument doc, String content) {
+    private void chunkAndSave(KnowledgeDocument doc, String content) {
         List<String> texts = textChunker.chunk(content);
         if (texts.isEmpty()) return;
 
-        // Batch embed all chunks at once
-        List<float[]> embeddings = embeddingService.embedBatch(texts);
-
         List<KnowledgeChunk> chunks = new ArrayList<>();
         for (int i = 0; i < texts.size(); i++) {
-            String embJson = (embeddings != null && i < embeddings.size() && embeddings.get(i) != null)
-                    ? EmbeddingService.toJson(embeddings.get(i))
-                    : null;
             chunks.add(KnowledgeChunk.builder()
                     .document(doc)
                     .chunkIndex(i)
                     .content(texts.get(i))
-                    .embedding(embJson)
                     .build());
         }
         chunkRepository.saveAll(chunks);
+        chunkRepository.refreshSearchVectorsForDocument(doc.getId());
     }
 
     private static String sha256(String input) {

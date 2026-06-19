@@ -23,6 +23,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   deleteKnowledgeDocument,
+  getDocumentChunks,
   ingestText,
   ingestUrl,
   listKnowledgeDocuments,
@@ -30,7 +31,7 @@ import {
   reindexDocument,
   type KnowledgeDocumentItem,
 } from "@/lib/api/knowledge";
-import { Brain, Globe, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Brain, Eye, Globe, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/knowledge")({ component: KnowledgePage });
@@ -72,6 +73,7 @@ function KnowledgePage() {
   const queryClient = useQueryClient();
   const [addMode, setAddMode] = useState<"text" | "url" | null>(null);
   const [toDelete, setToDelete] = useState<KnowledgeDocumentItem | null>(null);
+  const [viewDoc, setViewDoc] = useState<KnowledgeDocumentItem | null>(null);
 
   // Text ingest form
   const [textForm, setTextForm] = useState({
@@ -93,6 +95,12 @@ function KnowledgePage() {
   const listQuery = useQuery({
     queryKey: ["admin", "knowledge", "documents"],
     queryFn: listKnowledgeDocuments,
+  });
+
+  const chunksQuery = useQuery({
+    queryKey: ["admin", "knowledge", "chunks", viewDoc?.id],
+    queryFn: () => getDocumentChunks(viewDoc!.id),
+    enabled: viewDoc != null,
   });
 
   const ingestTextMut = useMutation({
@@ -229,12 +237,29 @@ function KnowledgePage() {
                     <td className="px-4 py-3">
                       <PriorityBadge priority={doc.priority} />
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums">{doc.chunkCount}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {doc.chunkCount}
+                      {doc.searchableChunkCount != null &&
+                        doc.searchableChunkCount < doc.chunkCount && (
+                        <span className="block text-[10px] text-warning-foreground">
+                          {doc.searchableChunkCount} indexed
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">
                       {new Date(doc.fetchedAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setViewDoc(doc)}
+                          title="Xem nội dung"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
                         <Button
                           size="icon"
                           variant="ghost"
@@ -433,12 +458,63 @@ function KnowledgePage() {
         </DialogContent>
       </Dialog>
 
+      {/* View chunks dialog */}
+      <Dialog open={viewDoc != null} onOpenChange={(o) => !o && setViewDoc(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{viewDoc?.title}</DialogTitle>
+            {viewDoc && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-1">
+                <span className="bg-secondary px-2 py-0.5 rounded">{viewDoc.sourceType}</span>
+                <PriorityBadge priority={viewDoc.priority} />
+                <span>{viewDoc.chunkCount} chunk</span>
+                {viewDoc.sourceUrl && (
+                  <a
+                    href={viewDoc.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline truncate max-w-md"
+                  >
+                    {viewDoc.sourceUrl}
+                  </a>
+                )}
+              </div>
+            )}
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-3 py-2">
+            {chunksQuery.isLoading ? (
+              <div className="text-center text-muted-foreground py-8">Đang tải nội dung...</div>
+            ) : chunksQuery.isError ? (
+              <div className="text-center text-destructive py-8">Không thể tải nội dung chunk</div>
+            ) : (chunksQuery.data ?? []).length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">Chưa có chunk nào</div>
+            ) : (
+              (chunksQuery.data ?? []).map((chunk) => (
+                <div key={chunk.id} className="rounded-md border bg-muted/30 p-3">
+                  <div className="text-[11px] font-medium text-muted-foreground mb-2">
+                    Chunk #{chunk.chunkIndex}
+                  </div>
+                  <pre className="whitespace-pre-wrap break-words text-xs font-mono leading-relaxed">
+                    {chunk.content}
+                  </pre>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDoc(null)}>
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete confirm */}
       {toDelete && (
         <ConfirmDialog
           open={!!toDelete}
           title="Xóa tài liệu"
-          description={`Xóa "${toDelete.title}" và tất cả ${toDelete.chunkCount} chunk embedding của nó?`}
+          description={`Xóa "${toDelete.title}" và tất cả ${toDelete.chunkCount} chunk của nó?`}
           onConfirm={() => deleteMut.mutate(toDelete.id)}
           onCancel={() => setToDelete(null)}
           loading={deleteMut.isPending}
