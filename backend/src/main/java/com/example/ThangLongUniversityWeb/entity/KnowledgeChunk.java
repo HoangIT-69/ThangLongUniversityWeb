@@ -41,6 +41,10 @@ public class KnowledgeChunk {
     @Column(columnDefinition = "TEXT")
     private String metadata;
 
+    /** PostgreSQL full-text search vector; populated via native SQL after save. */
+    @Column(name = "search_vector", columnDefinition = "tsvector", insertable = false, updatable = false)
+    private String searchVector;
+
     @Column(name = "created_at", updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
