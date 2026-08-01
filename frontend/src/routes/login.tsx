@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/api/types";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { AlertCircle, BookOpen, CheckCircle2, Loader2, Sparkles, WifiOff } from "lucide-react";
+import { AlertCircle, BookOpen, CheckCircle2, GraduationCap, Loader2, ShieldCheck, Sparkles, UserCheck, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
@@ -298,6 +298,67 @@ function LoginPage() {
                 {cooldownSeconds > 0 ? `Thử lại sau ${cooldownSeconds}s` : "Đăng nhập"}
               </Button>
             </form>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-slate-200 dark:border-slate-800" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground lg:bg-background">
+                  Đăng nhập nhanh (Demo)
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex flex-col items-center justify-center gap-1.5 h-auto py-2.5 px-2 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
+                disabled={isSubmitting || cooldownSeconds > 0}
+                onClick={() => {
+                  setUsername("admin");
+                  setPassword("password123");
+                  void submitLogin({ username: "admin", password: "password123" });
+                }}
+              >
+                <ShieldCheck className="h-4 w-4 text-rose-500" />
+                <span className="text-xs font-medium">Admin</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex flex-col items-center justify-center gap-1.5 h-auto py-2.5 px-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
+                disabled={isSubmitting || cooldownSeconds > 0}
+                onClick={() => {
+                  setUsername("gv001");
+                  setPassword("password123");
+                  void submitLogin({ username: "gv001", password: "password123" });
+                }}
+              >
+                <GraduationCap className="h-4 w-4 text-blue-500" />
+                <span className="text-xs font-medium">Giảng viên</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex flex-col items-center justify-center gap-1.5 h-auto py-2.5 px-2 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-colors"
+                disabled={isSubmitting || cooldownSeconds > 0}
+                onClick={() => {
+                  setUsername("sv0001");
+                  setPassword("password123");
+                  void submitLogin({ username: "sv0001", password: "password123" });
+                }}
+              >
+                <UserCheck className="h-4 w-4 text-emerald-500" />
+                <span className="text-xs font-medium">Sinh viên</span>
+              </Button>
+            </div>
 
             <p className="mt-8 text-center text-xs text-muted-foreground">
               © {new Date().getFullYear()} Trường Đại học Thăng Long. Bảo lưu mọi quyền.
